@@ -1,0 +1,74 @@
+[workspace]
+resolver = "2"
+
+# v0.2 の実装 surface を root で明示し、各 package task が同じ境界を参照できるようにします。
+members = [
+  "core/transport",
+  "core/signaling",
+  "core/sfu",
+  "core/turn",
+  "core/security",
+  "core/audit",
+  "core/quality",
+  "core/ports",
+  "core/domain",
+  "core/identity",
+  "core/command",
+  "core/reason",
+  "core/protocol",
+  "core/configuration",
+  "core/features",
+  "core/cross-plane",
+  "core/operation",
+  "core/runtime",
+  "core/time",
+  "core/state",
+  "core/recovery",
+  "drivers/webrtc-str0m",
+  "drivers/network",
+  "drivers/persistence",
+  "drivers/observability",
+  "drivers/security",
+  "drivers/browser",
+  "drivers/native",
+  "entrypoints/signaling-server",
+  "entrypoints/sfu-server",
+  "entrypoints/turn-server",
+  "entrypoints/cli",
+  "entrypoints/demo",
+  "entrypoints/configuration",
+  "entrypoints/endpoints",
+  "entrypoints/topology",
+  "entrypoints/internal-control",
+  "entrypoints/admin",
+  "regulated",
+  "tests",
+  "integration-tests",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.96"
+license = "Apache-2.0"
+publish = true
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.metadata.arcrtc]
+architecture = "ddd-hexagonal"
+root = "Kernel"
+
+[workspace.metadata.arcrtc.manifest]
+owner_layer = "package"
+package_role = "root workspace manifest"
+allowed_dependency_direction = "workspace membership is not dependency permission"
+dependency_class = "build_tool_dependency"
+
+[workspace.metadata.arcrtc.layers]
+core = ["core/transport", "core/signaling", "core/sfu", "core/turn", "core/security", "core/audit", "core/quality", "core/ports", "core/domain", "core/identity", "core/command", "core/reason", "core/protocol", "core/configuration", "core/features", "core/cross-plane", "core/operation", "core/runtime", "core/time", "core/state", "core/recovery"]
+drivers = ["drivers/webrtc-str0m", "drivers/network", "drivers/persistence", "drivers/observability", "drivers/security", "drivers/browser", "drivers/native"]
+entrypoints = ["entrypoints/signaling-server", "entrypoints/sfu-server", "entrypoints/turn-server", "entrypoints/cli", "entrypoints/demo", "entrypoints/configuration", "entrypoints/endpoints", "entrypoints/topology", "entrypoints/internal-control", "entrypoints/admin"]
+sdk = ["sdk/typescript", "sdk/android", "sdk/ios"]
+regulated = ["regulated"]

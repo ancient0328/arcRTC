@@ -1,0 +1,65 @@
+# OS / filesystem noise
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100/
+.Trashes/
+.fseventsd/
+
+# Editor / local workspace state
+.idea/
+.vscode/
+.memory/
+.codex/
+.claude/
+*.swp
+*.swo
+*~
+
+# Rust / Cargo build output
+/target/
+**/target/
+*.profraw
+
+# Android / Gradle / Kotlin build output
+.gradle/
+**/.gradle/
+.kotlin/
+**/.kotlin/
+build/
+**/build/
+local.properties
+
+# Swift Package Manager / Xcode local output
+.build/
+**/.build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+# Node / TypeScript local output
+node_modules/
+**/node_modules/
+dist/
+coverage/
+.pnpm-store/
+
+# Python helper cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Logs / temporary output
+*.log
+tmp/
+.tmp/

@@ -1,0 +1,25 @@
+[package]
+name = "arcrtc-driver-network"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "drivers"
+package_role = "network io driver surface"
+allowed_dependency_direction = "drivers may depend on core and must not depend on entrypoints"
+dependency_class = "driver_implementation_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-core-command = { path = "../../core/command" }
+arcrtc-core-identity = { path = "../../core/identity" }
+arcrtc-core-ports = { path = "../../core/ports" }
+arcrtc-core-protocol = { path = "../../core/protocol" }
+arcrtc-core-quality = { path = "../../core/quality" }
+arcrtc-core-reason = { path = "../../core/reason" }
+arcrtc-core-turn = { path = "../../core/turn" }

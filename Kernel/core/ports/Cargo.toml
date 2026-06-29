@@ -1,0 +1,23 @@
+[package]
+name = "arcrtc-core-ports"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "core"
+package_role = "port ownership surface"
+allowed_dependency_direction = "core owns ports; drivers implement them"
+dependency_class = "core_semantic_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-core-identity = { path = "../identity" }
+arcrtc-core-protocol = { path = "../protocol" }
+arcrtc-core-quality = { path = "../quality" }
+arcrtc-core-reason = { path = "../reason" }
+arcrtc-core-state = { path = "../state" }

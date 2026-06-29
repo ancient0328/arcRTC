@@ -1,0 +1,25 @@
+[package]
+name = "arcrtc-turn-server"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "entrypoints"
+package_role = "turn server composition surface"
+allowed_dependency_direction = "entrypoints may depend on core and selected drivers"
+dependency_class = "entrypoint_composition_dependency"
+
+[[bin]]
+name = "arcrtc-turn-server"
+path = "src/main.rs"
+
+[dependencies]
+arcrtc-driver-network = { path = "../../drivers/network" }
+arcrtc-driver-observability = { path = "../../drivers/observability" }
+arcrtc-driver-persistence = { path = "../../drivers/persistence" }
+arcrtc-driver-security = { path = "../../drivers/security" }
+arcrtc-core-reason = { path = "../../core/reason" }
+arcrtc-core-turn = { path = "../../core/turn" }

@@ -1,0 +1,3 @@
+# arcRTC v0.2 は semantic evidence / guard record を多く持つため、
+# high-arity constructor の扱いを個別 allow ではなく workspace policy に集約する。
+too-many-arguments-threshold = 32

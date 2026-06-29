@@ -1,0 +1,19 @@
+[package]
+name = "arcrtc-entrypoint-endpoints"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "entrypoints"
+package_role = "endpoint wiring surface"
+allowed_dependency_direction = "entrypoints may depend on core and selected drivers"
+dependency_class = "entrypoint_composition_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-core-reason = { path = "../../core/reason" }

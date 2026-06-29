@@ -1,0 +1,22 @@
+[profile]
+name = "reference-benchmark"
+environment_class = "benchmark_host"
+opens_public_endpoint = false
+non_claim_scope = ["benchmark_threshold_not_claimed", "production_readiness_not_claimed", "live_readiness_not_claimed"]
+
+[runtime]
+planes = ["signaling", "turn", "sfu", "composition"]
+shutdown_mode = "GracefulLocal"
+timeout_ms = 30000
+
+[fixtures]
+rooms = 8
+participants_per_room = 6
+turn_allocations = 8
+sfu_routes = 24
+packet_payload_bytes = 1200
+
+[evidence]
+emit_json = true
+output_dir = "target/reference-evidence/benchmark"
+correlation_prefix = "impl-reference-benchmark"

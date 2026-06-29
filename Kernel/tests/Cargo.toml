@@ -1,0 +1,65 @@
+[package]
+name = "arcrtc-roadmap-tests"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[package.metadata.arcrtc]
+owner_layer = "testing"
+package_role = "test roadmap executable asset surface"
+allowed_dependency_direction = "testing may inspect implementation source; production source must not depend on testing"
+dependency_class = "test_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-driver-browser = { path = "../drivers/browser" }
+arcrtc-driver-native = { path = "../drivers/native" }
+arcrtc-driver-network = { path = "../drivers/network" }
+arcrtc-driver-observability = { path = "../drivers/observability" }
+arcrtc-driver-persistence = { path = "../drivers/persistence" }
+arcrtc-driver-security = { path = "../drivers/security" }
+arcrtc-driver-webrtc-str0m = { path = "../drivers/webrtc-str0m" }
+arcrtc-entrypoint-admin = { path = "../entrypoints/admin" }
+arcrtc-entrypoint-configuration = { path = "../entrypoints/configuration" }
+arcrtc-entrypoint-endpoints = { path = "../entrypoints/endpoints" }
+arcrtc-entrypoint-internal-control = { path = "../entrypoints/internal-control" }
+arcrtc-entrypoint-topology = { path = "../entrypoints/topology" }
+arcrtc-core-audit = { path = "../core/audit" }
+arcrtc-core-command = { path = "../core/command" }
+arcrtc-core-configuration = { path = "../core/configuration" }
+arcrtc-core-cross-plane = { path = "../core/cross-plane" }
+arcrtc-core-domain = { path = "../core/domain" }
+arcrtc-core-features = { path = "../core/features" }
+arcrtc-core-identity = { path = "../core/identity" }
+arcrtc-core-operation = { path = "../core/operation" }
+arcrtc-core-ports = { path = "../core/ports" }
+arcrtc-core-protocol = { path = "../core/protocol" }
+arcrtc-core-quality = { path = "../core/quality" }
+arcrtc-core-reason = { path = "../core/reason" }
+arcrtc-core-recovery = { path = "../core/recovery" }
+arcrtc-core-runtime = { path = "../core/runtime" }
+arcrtc-core-security = { path = "../core/security" }
+arcrtc-core-sfu = { path = "../core/sfu" }
+arcrtc-core-signaling = { path = "../core/signaling" }
+arcrtc-core-state = { path = "../core/state" }
+arcrtc-core-time = { path = "../core/time" }
+arcrtc-core-transport = { path = "../core/transport" }
+arcrtc-core-turn = { path = "../core/turn" }
+arcrtc-regulated = { path = "../regulated" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "benchmark_scenarios_criterion"
+harness = false
+
+[[bench]]
+name = "v01_ice_shape_criterion"
+harness = false

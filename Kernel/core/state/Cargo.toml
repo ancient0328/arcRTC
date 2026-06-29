@@ -1,0 +1,16 @@
+[package]
+name = "arcrtc-core-state"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "core"
+package_role = "state persistence policy surface"
+allowed_dependency_direction = "core must not depend on drivers or entrypoints"
+dependency_class = "core_semantic_dependency"
+
+[lib]
+path = "src/lib.rs"

@@ -1,0 +1,23 @@
+[package]
+name = "arcrtc-implementation-production-readiness-tests"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.96"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[dependencies]
+arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
+arcrtc-implementation-evidence = { path = "../../implementation-support/evidence" }
+arcrtc-product-deployment = { path = "../../product-implementation/deployment" }
+arcrtc-product-monitoring = { path = "../../product-implementation/monitoring" }
+arcrtc-product-persistence-topology = { path = "../../product-implementation/persistence-topology" }
+arcrtc-product-policy = { path = "../../product-implementation/product-policy" }
+arcrtc-product-rollback = { path = "../../product-implementation/rollback" }
+serde_json = "1"

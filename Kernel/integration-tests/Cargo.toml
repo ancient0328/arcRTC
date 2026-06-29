@@ -1,0 +1,27 @@
+[package]
+name = "arcrtc-roadmap-integration-tests"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[package.metadata.arcrtc]
+owner_layer = "testing"
+package_role = "controlled integration test roadmap surface"
+allowed_dependency_direction = "testing may inspect composed surfaces; production source must not depend on testing"
+dependency_class = "test_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-driver-network = { path = "../drivers/network" }
+arcrtc-core-command = { path = "../core/command" }
+arcrtc-core-cross-plane = { path = "../core/cross-plane" }
+arcrtc-core-identity = { path = "../core/identity" }
+arcrtc-core-reason = { path = "../core/reason" }
+arcrtc-core-sfu = { path = "../core/sfu" }
+arcrtc-core-signaling = { path = "../core/signaling" }
+arcrtc-core-transport = { path = "../core/transport" }
+arcrtc-core-turn = { path = "../core/turn" }

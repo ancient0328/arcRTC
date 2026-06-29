@@ -1,0 +1,22 @@
+[profile]
+name = "reference-local"
+environment_class = "local_single_host"
+opens_public_endpoint = false
+non_claim_scope = ["production_readiness_not_claimed", "live_readiness_not_claimed", "public_distribution_readiness_not_claimed"]
+
+[runtime]
+planes = ["signaling", "turn", "sfu", "composition"]
+shutdown_mode = "GracefulLocal"
+timeout_ms = 5000
+
+[fixtures]
+rooms = 2
+participants_per_room = 3
+turn_allocations = 2
+sfu_routes = 4
+packet_payload_bytes = 1200
+
+[evidence]
+emit_json = true
+output_dir = "target/reference-evidence/local"
+correlation_prefix = "impl-reference-local"

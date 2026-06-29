@@ -1,0 +1,22 @@
+[package]
+name = "arcrtc-product-signaling"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+arcrtc-core-signaling = { path = "../../../Kernel/core/signaling" }
+arcrtc-core-command = { path = "../../../Kernel/core/command" }
+arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
+arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
+arcrtc-implementation-evidence = { path = "../../implementation-support/evidence" }
+arcrtc-reference-output = { path = "../../reference-implementation/output" }
+arcrtc-product-policy = { path = "../product-policy" }

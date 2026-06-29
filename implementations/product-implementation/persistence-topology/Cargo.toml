@@ -1,0 +1,19 @@
+[package]
+name = "arcrtc-product-persistence-topology"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+arcrtc-core-state = { path = "../../../Kernel/core/state" }
+arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
+arcrtc-implementation-evidence = { path = "../../implementation-support/evidence" }
+serde = { version = "1", features = ["derive"] }

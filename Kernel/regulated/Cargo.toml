@@ -1,0 +1,19 @@
+[package]
+name = "arcrtc-regulated"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "regulated"
+package_role = "regulated optional support surface"
+allowed_dependency_direction = "regulated may use admitted opaque core references only"
+dependency_class = "regulated_optional_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-core-identity = { path = "../core/identity" }
