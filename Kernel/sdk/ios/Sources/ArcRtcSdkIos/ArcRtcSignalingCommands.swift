@@ -1,4 +1,84 @@
 // iOS SDK signaling-only surface の責務別 source shard です。
+public struct ArcRtcJoinCommand: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let credentialRef: String
+    public let sessionRef: String?
+
+    public init(roomId: String, participantId: String, credentialRef: String, sessionRef: String? = nil) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.credentialRef = credentialRef
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcLeaveCommand: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sessionRef: String?
+
+    public init(roomId: String, participantId: String, sessionRef: String? = nil) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcOfferCommand: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sdpRef: String
+    public let sessionRef: String?
+
+    public init(roomId: String, participantId: String, sdpRef: String, sessionRef: String? = nil) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sdpRef = sdpRef
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcAnswerCommand: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sdpRef: String
+    public let sessionRef: String?
+
+    public init(roomId: String, participantId: String, sdpRef: String, sessionRef: String? = nil) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sdpRef = sdpRef
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcIceCandidateCommand: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let candidateRef: String
+    public let sessionRef: String?
+
+    public init(roomId: String, participantId: String, candidateRef: String, sessionRef: String? = nil) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.candidateRef = candidateRef
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcReconnectCommand: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sessionRef: String
+
+    public init(roomId: String, participantId: String, sessionRef: String) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sessionRef = sessionRef
+    }
+}
+
 public struct JoinRoomCommand: SignalingCommandProtocol, Equatable {
     public let kind: SignalingCommandKind = .joinRoom
     public let correlationId: CorrelationId
@@ -187,4 +267,3 @@ public enum SignalingSendOutcome: Equatable, Sendable {
     case result(SignalingCommandResult)
     case error(ArcRtcSdkError)
 }
-

@@ -849,7 +849,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         touch_hash(prohibited);
     }
     for concern in [
-        runtime::RuntimeTaskConcern::DomainStateTransition,
+        runtime::RuntimeTaskConcern::PriorDomainDecisionReference,
         runtime::RuntimeTaskConcern::RuntimePortTaskContract,
         runtime::RuntimeTaskConcern::ConcreteTaskHandle,
         runtime::RuntimeTaskConcern::DriverIoWorker,

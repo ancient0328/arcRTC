@@ -4,15 +4,6 @@ mod cli_main;
 #[allow(dead_code)]
 #[path = "../../entrypoints/demo/src/main.rs"]
 mod demo_main;
-#[allow(dead_code)]
-#[path = "../../entrypoints/sfu-server/src/main.rs"]
-mod sfu_server_main;
-#[allow(dead_code)]
-#[path = "../../entrypoints/signaling-server/src/main.rs"]
-mod signaling_server_main;
-#[allow(dead_code)]
-#[path = "../../entrypoints/turn-server/src/main.rs"]
-mod turn_server_main;
 
 use arcrtc_core_command::CoreCommandSurface;
 use arcrtc_core_configuration::{ConfigurationOwner, CoreConfigurationSurface};
@@ -22,6 +13,10 @@ use arcrtc_core_identity::{
 };
 use arcrtc_core_reason::CatalogedReasonRef;
 use arcrtc_entrypoint_admin as admin;
+use arcrtc_entrypoint_composition_root::{
+    run_resident_loop, ResidentDriverBindingRef, ResidentLoopFailureKind, ResidentServerKind,
+    ResidentServerLoopConfig, RuntimeProfileObservationRef, ShutdownDrainObservationRef,
+};
 use arcrtc_entrypoint_configuration as configuration;
 use arcrtc_entrypoint_endpoints as endpoints;
 use arcrtc_entrypoint_internal_control as internal_control;
@@ -321,161 +316,64 @@ fn binary_entrypoint_composition_guards_are_fail_closed_without_source_changes()
         assert_eq!(demo_guard(flags), Err(expected));
     }
 
-    for (index, expected) in [
-        (
-            0,
-            signaling_server_main::SignalingServerCompositionError::RuntimeConfigurationMissing,
-        ),
-        (
-            1,
-            signaling_server_main::SignalingServerCompositionError::SelectedDriverMissing,
-        ),
-        (
-            2,
-            signaling_server_main::SignalingServerCompositionError::CoreUseCaseBoundaryBypassed,
-        ),
-        (
-            3,
-            signaling_server_main::SignalingServerCompositionError::EntrypointOwnsSignalingJoinDecision,
-        ),
-        (
-            4,
-            signaling_server_main::SignalingServerCompositionError::EntrypointOwnsRoomStateTransition,
-        ),
-        (
-            5,
-            signaling_server_main::SignalingServerCompositionError::EntrypointDefinesReasonVocabulary,
-        ),
-        (
-            6,
-            signaling_server_main::SignalingServerCompositionError::EntrypointDefinesPortTrait,
-        ),
-        (
-            7,
-            signaling_server_main::SignalingServerCompositionError::RegulatedPathMixed,
-        ),
-        (
-            8,
-            signaling_server_main::SignalingServerCompositionError::StartupFailureNotFailClosed,
-        ),
-        (
-            9,
-            signaling_server_main::SignalingServerCompositionError::StartupFailureRecordPathMissing,
-        ),
-    ] {
-        let mut flags = [true; 10];
-        flags[index] = false;
-        assert_eq!(signaling_guard(flags), Err(expected));
-    }
+    let observation = run_resident_loop(resident_config(
+        ResidentServerKind::Signaling,
+        vec![
+            ResidentDriverBindingRef::Network,
+            ResidentDriverBindingRef::Persistence,
+            ResidentDriverBindingRef::Observability,
+            ResidentDriverBindingRef::Security,
+        ],
+        "runtime-profile:signaling",
+        "shutdown:signaling",
+        "supervision:signaling",
+    ))
+    .unwrap();
+    assert_eq!(observation.server_kind(), ResidentServerKind::Signaling);
 
-    for (index, expected) in [
+    for (config, expected) in [
         (
-            0,
-            sfu_server_main::SfuServerCompositionError::RuntimeConfigurationMissing,
+            resident_config(
+                ResidentServerKind::Signaling,
+                vec![ResidentDriverBindingRef::Network],
+                "",
+                "shutdown:signaling",
+                "supervision:signaling",
+            ),
+            ResidentLoopFailureKind::ConfigMissing,
         ),
         (
-            1,
-            sfu_server_main::SfuServerCompositionError::SelectedDriverMissing,
+            resident_config(
+                ResidentServerKind::Turn,
+                Vec::new(),
+                "runtime-profile:turn",
+                "shutdown:turn",
+                "supervision:turn",
+            ),
+            ResidentLoopFailureKind::DriverBindingMissing,
         ),
         (
-            2,
-            sfu_server_main::SfuServerCompositionError::CoreUseCaseBoundaryBypassed,
+            resident_config(
+                ResidentServerKind::Sfu,
+                vec![ResidentDriverBindingRef::SfuTransport],
+                "runtime-profile:sfu",
+                "",
+                "supervision:sfu",
+            ),
+            ResidentLoopFailureKind::ShutdownDrainRejected,
         ),
         (
-            3,
-            sfu_server_main::SfuServerCompositionError::EntrypointOwnsSfuRouteSelection,
-        ),
-        (
-            4,
-            sfu_server_main::SfuServerCompositionError::EntrypointOwnsForwardingDecision,
-        ),
-        (
-            5,
-            sfu_server_main::SfuServerCompositionError::EntrypointOwnsQualityOrBackpressurePolicy,
-        ),
-        (
-            6,
-            sfu_server_main::SfuServerCompositionError::EntrypointDefinesReasonVocabulary,
-        ),
-        (
-            7,
-            sfu_server_main::SfuServerCompositionError::EntrypointDefinesPortTrait,
-        ),
-        (
-            8,
-            sfu_server_main::SfuServerCompositionError::RegulatedPathMixed,
-        ),
-        (
-            9,
-            sfu_server_main::SfuServerCompositionError::StartupFailureNotFailClosed,
-        ),
-        (
-            10,
-            sfu_server_main::SfuServerCompositionError::StartupFailureRecordPathMissing,
+            resident_config(
+                ResidentServerKind::Sfu,
+                vec![ResidentDriverBindingRef::SfuTransport],
+                "runtime-profile:sfu",
+                "shutdown:sfu",
+                "",
+            ),
+            ResidentLoopFailureKind::SupervisionObservationFailed,
         ),
     ] {
-        let mut flags = [true; 11];
-        flags[index] = false;
-        assert_eq!(sfu_guard(flags), Err(expected));
-    }
-
-    for (index, expected) in [
-        (
-            0,
-            turn_server_main::TurnServerCompositionError::RuntimeConfigurationMissing,
-        ),
-        (
-            1,
-            turn_server_main::TurnServerCompositionError::SelectedDriverMissing,
-        ),
-        (
-            2,
-            turn_server_main::TurnServerCompositionError::CoreUseCaseBoundaryBypassed,
-        ),
-        (
-            3,
-            turn_server_main::TurnServerCompositionError::EntrypointOwnsAllocationLifecycle,
-        ),
-        (
-            4,
-            turn_server_main::TurnServerCompositionError::EntrypointOwnsPermissionDecision,
-        ),
-        (
-            5,
-            turn_server_main::TurnServerCompositionError::EntrypointOwnsChannelBindDecision,
-        ),
-        (
-            6,
-            turn_server_main::TurnServerCompositionError::EntrypointOwnsRelayAuthorization,
-        ),
-        (
-            7,
-            turn_server_main::TurnServerCompositionError::EntrypointOwnsTurnCredentialIssuance,
-        ),
-        (
-            8,
-            turn_server_main::TurnServerCompositionError::EntrypointDefinesReasonVocabulary,
-        ),
-        (
-            9,
-            turn_server_main::TurnServerCompositionError::EntrypointDefinesPortTrait,
-        ),
-        (
-            10,
-            turn_server_main::TurnServerCompositionError::RegulatedPathMixed,
-        ),
-        (
-            11,
-            turn_server_main::TurnServerCompositionError::StartupFailureNotFailClosed,
-        ),
-        (
-            12,
-            turn_server_main::TurnServerCompositionError::StartupFailureRecordPathMissing,
-        ),
-    ] {
-        let mut flags = [true; 13];
-        flags[index] = false;
-        assert_eq!(turn_guard(flags), Err(expected));
+        assert_eq!(run_resident_loop(config), Err(expected));
     }
 }
 
@@ -510,51 +408,26 @@ fn binary_entrypoint_failure_reasons_are_cataloged() {
         let _ = demo_main::DemoCompositionFailure::from_kind(kind);
     }
 
-    for kind in [
-        signaling_server_main::SignalingServerStartupFailureKind::RuntimeConfigMissing,
-        signaling_server_main::SignalingServerStartupFailureKind::RuntimeConfigInvalid,
-        signaling_server_main::SignalingServerStartupFailureKind::SecretUnavailable,
-        signaling_server_main::SignalingServerStartupFailureKind::DriverShutdown,
-        signaling_server_main::SignalingServerStartupFailureKind::PublicEndpointNotAllowed,
-        signaling_server_main::SignalingServerStartupFailureKind::RuntimeReconfigurationNotAllowed,
+    for (kind, expected_debug) in [
+        (ResidentLoopFailureKind::ConfigMissing, "ConfigMissing"),
+        (
+            ResidentLoopFailureKind::DriverBindingMissing,
+            "DriverBindingMissing",
+        ),
+        (
+            ResidentLoopFailureKind::RuntimeStartRejected,
+            "RuntimeStartRejected",
+        ),
+        (
+            ResidentLoopFailureKind::ShutdownDrainRejected,
+            "ShutdownDrainRejected",
+        ),
+        (
+            ResidentLoopFailureKind::SupervisionObservationFailed,
+            "SupervisionObservationFailed",
+        ),
     ] {
-        assert_eq!(
-            cataloged(kind.reason_code()).definition().code().as_str(),
-            kind.reason_code()
-        );
-        let _ = signaling_server_main::SignalingServerStartupFailure::from_kind(kind);
-    }
-
-    for kind in [
-        sfu_server_main::SfuServerStartupFailureKind::RuntimeConfigMissing,
-        sfu_server_main::SfuServerStartupFailureKind::RuntimeConfigInvalid,
-        sfu_server_main::SfuServerStartupFailureKind::SecretUnavailable,
-        sfu_server_main::SfuServerStartupFailureKind::DriverShutdown,
-        sfu_server_main::SfuServerStartupFailureKind::DeploymentTopologyUnsupported,
-        sfu_server_main::SfuServerStartupFailureKind::PublicEndpointNotAllowed,
-        sfu_server_main::SfuServerStartupFailureKind::RuntimeReconfigurationNotAllowed,
-    ] {
-        assert_eq!(
-            cataloged(kind.reason_code()).definition().code().as_str(),
-            kind.reason_code()
-        );
-        let _ = sfu_server_main::SfuServerStartupFailure::from_kind(kind);
-    }
-
-    for kind in [
-        turn_server_main::TurnServerStartupFailureKind::RuntimeConfigMissing,
-        turn_server_main::TurnServerStartupFailureKind::RuntimeConfigInvalid,
-        turn_server_main::TurnServerStartupFailureKind::SecretUnavailable,
-        turn_server_main::TurnServerStartupFailureKind::DriverShutdown,
-        turn_server_main::TurnServerStartupFailureKind::DeploymentTopologyUnsupported,
-        turn_server_main::TurnServerStartupFailureKind::PublicEndpointNotAllowed,
-        turn_server_main::TurnServerStartupFailureKind::RuntimeReconfigurationNotAllowed,
-    ] {
-        assert_eq!(
-            cataloged(kind.reason_code()).definition().code().as_str(),
-            kind.reason_code()
-        );
-        let _ = turn_server_main::TurnServerStartupFailure::from_kind(kind);
+        assert_eq!(format!("{kind:?}"), expected_debug);
     }
 }
 
@@ -1539,37 +1412,19 @@ fn demo_guard(
     )
 }
 
-fn signaling_guard(
-    flags: [bool; 10],
-) -> Result<
-    signaling_server_main::SignalingServerCompositionGuard,
-    signaling_server_main::SignalingServerCompositionError,
-> {
-    signaling_server_main::SignalingServerCompositionGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9],
-    )
-}
-
-fn sfu_guard(
-    flags: [bool; 11],
-) -> Result<sfu_server_main::SfuServerCompositionGuard, sfu_server_main::SfuServerCompositionError>
-{
-    sfu_server_main::SfuServerCompositionGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10],
-    )
-}
-
-fn turn_guard(
-    flags: [bool; 13],
-) -> Result<
-    turn_server_main::TurnServerCompositionGuard,
-    turn_server_main::TurnServerCompositionError,
-> {
-    turn_server_main::TurnServerCompositionGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10], flags[11], flags[12],
+fn resident_config(
+    server_kind: ResidentServerKind,
+    driver_binding_refs: Vec<ResidentDriverBindingRef>,
+    runtime_profile_ref: &'static str,
+    shutdown_ref: &'static str,
+    supervision_ref: &'static str,
+) -> ResidentServerLoopConfig {
+    ResidentServerLoopConfig::new(
+        server_kind,
+        RuntimeProfileObservationRef::new(runtime_profile_ref),
+        driver_binding_refs,
+        ShutdownDrainObservationRef::new(shutdown_ref),
+        ShutdownDrainObservationRef::new(supervision_ref),
     )
 }
 

@@ -1,11 +1,11 @@
 # core-transport-and-media
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the pure transport contract owned by `core/transport` of arcRTC v0.2 Kernel, together with SDP/ICE negotiation, ICE candidate policy / connectivity lifecycle, media codec/track/layer negotiation, packet rewrite / media transform boundary, and secure media session lifecycle, at a granularity sufficient for reimplementation from this chapter alone. This chapter makes the Sans-IO semantics core-owned and separates I/O implementations such as socket / runtime / str0m concrete type / browser/native WebRTC API as driver-owned. This chapter does not claim concrete SDP grammar, ICE agent, DTLS/SRTP runtime, codec implementation, transcoding, or media engine runtime as implemented.
+This chapter internalizes the current complete specification of the pure transport contract owned by `core/transport` of arcRTC v0.2 Kernel, together with SDP/ICE negotiation, ICE candidate policy / connectivity lifecycle, media codec/track/layer negotiation, packet rewrite / media transform boundary, and secure media session lifecycle, at a granularity sufficient for re-implementation from this chapter alone. This chapter makes the Sans-IO semantics core-owned and separates I/O implementations such as socket / runtime / str0m concrete type / browser/native WebRTC API as driver-owned. This chapter does not claim concrete SDP grammar, ICE agent, DTLS/SRTP runtime, codec implementation, transcoding, or media engine runtime as implemented.
 
 Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of Signaling / SFU / TURN are owned by core and separated from I/O.
 

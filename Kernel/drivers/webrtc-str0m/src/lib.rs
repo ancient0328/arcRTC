@@ -340,3 +340,130 @@ impl Str0mDrainReport {
         self.dropped_over_bound
     }
 }
+
+/// multi-datagram outbound polling の入力です。
+pub struct Str0mOutboundBatchInput<'session> {
+    session: &'session mut Str0mMediaEngine,
+}
+
+impl<'session> Str0mOutboundBatchInput<'session> {
+    /// driver-owned str0m session wrapper を batch polling 対象にします。
+    pub const fn new(session: &'session mut Str0mMediaEngine) -> Self {
+        Self { session }
+    }
+}
+
+/// outbound datagram collection の安定 digest です。
+pub type Str0mOutboundBatchDigest = u64;
+
+/// driver-owned outbound datagram batch です。
+pub struct Str0mOutboundBatch {
+    datagrams: Vec<Str0mOutboundDatagram>,
+    digest: Str0mOutboundBatchDigest,
+}
+
+impl Str0mOutboundBatch {
+    /// collected datagrams と digest を保持します。
+    pub fn new(datagrams: Vec<Str0mOutboundDatagram>, digest: Str0mOutboundBatchDigest) -> Self {
+        Self { datagrams, digest }
+    }
+
+    /// entrypoint が実送信する datagram collection です。
+    pub fn datagrams(&self) -> &[Str0mOutboundDatagram] {
+        &self.datagrams
+    }
+
+    /// collection 内容から計算した driver-local digest です。
+    pub const fn digest(&self) -> Str0mOutboundBatchDigest {
+        self.digest
+    }
+}
+
+/// str0m session polling failure の閉集合です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Str0mDriverSessionFailure {
+    /// str0m polling が core-owned transport failure に写像されました。
+    PollFailed(TransportDriverFailure),
+    /// driver-owned outbound collection が bound を超過しました。
+    OutboundBoundExceeded {
+        dropped_over_bound: usize,
+        transport_failure: TransportDriverFailure,
+    },
+}
+
+impl Str0mDriverSessionFailure {
+    /// driver-local failure を core-facing transport failure へ戻します。
+    pub const fn transport_failure(self) -> TransportDriverFailure {
+        match self {
+            Self::PollFailed(failure) => failure,
+            Self::OutboundBoundExceeded {
+                transport_failure, ..
+            } => transport_failure,
+        }
+    }
+
+    /// bound 超過で drop された datagram 件数です。
+    pub const fn dropped_over_bound(self) -> usize {
+        match self {
+            Self::PollFailed(_) => 0,
+            Self::OutboundBoundExceeded {
+                dropped_over_bound, ..
+            } => dropped_over_bound,
+        }
+    }
+}
+
+/// str0m session から複数 outbound datagram を一括 polling する driver contract です。
+pub struct Str0mMultiDatagramSessionDriver;
+
+impl Str0mMultiDatagramSessionDriver {
+    /// outbound datagram batch を取得し、bound 超過や polling 失敗を core transport failure に写像します。
+    ///
+    /// driver は datagram 収集だけを担当し、media authorization / participant admission / route selection は判断しません。
+    pub fn poll_outbound_batch(
+        input: Str0mOutboundBatchInput<'_>,
+    ) -> Result<Str0mOutboundBatch, Str0mDriverSessionFailure> {
+        let report = input
+            .session
+            .drain_outbound()
+            .map_err(Str0mDriverSessionFailure::PollFailed)?;
+
+        if report.dropped_over_bound() > 0 {
+            return Err(Str0mDriverSessionFailure::OutboundBoundExceeded {
+                dropped_over_bound: report.dropped_over_bound(),
+                transport_failure: TransportDriverFailure::from_kind(
+                    arcrtc_core_transport::TransportDriverFailureKind::MediaPayloadMappingInvalid,
+                ),
+            });
+        }
+
+        let digest = calculate_outbound_batch_digest(&report.outbound);
+        Ok(Str0mOutboundBatch::new(report.outbound, digest))
+    }
+}
+
+fn calculate_outbound_batch_digest(
+    datagrams: &[Str0mOutboundDatagram],
+) -> Str0mOutboundBatchDigest {
+    let mut digest = 0xcbf2_9ce4_8422_2325_u64;
+    digest = mix_outbound_digest(digest, &(datagrams.len() as u64).to_be_bytes());
+
+    for datagram in datagrams {
+        digest = match datagram.destination.ip() {
+            std::net::IpAddr::V4(addr) => mix_outbound_digest(digest, &addr.octets()),
+            std::net::IpAddr::V6(addr) => mix_outbound_digest(digest, &addr.octets()),
+        };
+        digest = mix_outbound_digest(digest, &datagram.destination.port().to_be_bytes());
+        digest = mix_outbound_digest(digest, &datagram.payload);
+    }
+
+    digest
+}
+
+fn mix_outbound_digest(mut digest: Str0mOutboundBatchDigest, bytes: &[u8]) -> u64 {
+    for byte in bytes {
+        digest ^= u64::from(*byte);
+        digest = digest.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    digest
+}

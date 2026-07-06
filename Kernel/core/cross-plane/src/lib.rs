@@ -4,8 +4,8 @@
 //! core-owned binding decision に必要な参照、lifecycle、audit 境界だけを定義します。
 
 use arcrtc_core_identity::{
-    AllocationId, ChannelBindId, CorrelationId, CredentialRef, EndpointId, ParticipantId,
-    PermissionId, RoomId, SessionId, StreamId,
+    AllocationId, ChannelBindId, CorrelationId, CredentialRef, EndpointId, OpaqueReference,
+    ParticipantId, PermissionId, RoomId, SessionId, StreamId,
 };
 use arcrtc_core_security::AuthorizationContextClass;
 
@@ -315,28 +315,136 @@ impl CrossPlaneBindingFailureKind {
     }
 }
 
-/// cross-plane binding decision の audit projection 形状です。
+/// cross-plane binding materialization の入力です。
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CrossPlaneBindingDecision {
-    correlation_id: CorrelationId,
-    policy: CrossPlaneBindingPolicy,
+pub struct CrossPlaneBindingMaterializationInput {
+    source_plane_ref: CrossPlaneReference,
+    target_plane_ref: CrossPlaneReference,
+    binding_class: CrossPlaneBindingClass,
+    authorization_ref: Option<AuthorizationContextClass>,
+}
+
+impl CrossPlaneBindingMaterializationInput {
+    /// source/target plane reference と binding class を束ねます。
+    pub fn new(
+        source_plane_ref: CrossPlaneReference,
+        target_plane_ref: CrossPlaneReference,
+        binding_class: CrossPlaneBindingClass,
+        authorization_ref: Option<AuthorizationContextClass>,
+    ) -> Self {
+        Self {
+            source_plane_ref,
+            target_plane_ref,
+            binding_class,
+            authorization_ref,
+        }
+    }
+
+    /// binding class です。
+    pub const fn binding_class(&self) -> CrossPlaneBindingClass {
+        self.binding_class
+    }
+
+    /// source plane reference です。
+    pub const fn source_plane_ref(&self) -> &CrossPlaneReference {
+        &self.source_plane_ref
+    }
+
+    /// target plane reference です。
+    pub const fn target_plane_ref(&self) -> &CrossPlaneReference {
+        &self.target_plane_ref
+    }
+
+    /// authorization reference です。
+    pub const fn authorization_ref(&self) -> Option<AuthorizationContextClass> {
+        self.authorization_ref
+    }
+}
+
+/// cross-plane binding decision の payload です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossPlaneBindingDecisionRecord {
+    correlation_id: Option<CorrelationId>,
+    policy: Option<CrossPlaneBindingPolicy>,
+    materialization_input: Option<CrossPlaneBindingMaterializationInput>,
     outcome: CrossPlaneBindingOutcome,
     reason: Option<CrossPlaneBindingFailureKind>,
 }
 
-impl CrossPlaneBindingDecision {
-    /// cross_plane_binding_decision に投影できる decision を作ります。
-    pub const fn new(
-        correlation_id: CorrelationId,
-        policy: CrossPlaneBindingPolicy,
+impl CrossPlaneBindingDecisionRecord {
+    /// legacy audit projection と materialization projection の共通 payload を作ります。
+    pub fn new(
+        correlation_id: Option<CorrelationId>,
+        policy: Option<CrossPlaneBindingPolicy>,
+        materialization_input: Option<CrossPlaneBindingMaterializationInput>,
         outcome: CrossPlaneBindingOutcome,
         reason: Option<CrossPlaneBindingFailureKind>,
     ) -> Self {
         Self {
             correlation_id,
             policy,
+            materialization_input,
             outcome,
             reason,
+        }
+    }
+
+    /// outcome です。
+    pub const fn outcome(&self) -> CrossPlaneBindingOutcome {
+        self.outcome
+    }
+
+    /// rejected/failed reason です。
+    pub const fn reason(&self) -> Option<CrossPlaneBindingFailureKind> {
+        self.reason
+    }
+
+    /// legacy audit projection correlation id です。
+    pub const fn correlation_id(&self) -> Option<&CorrelationId> {
+        self.correlation_id.as_ref()
+    }
+
+    /// legacy binding policy です。
+    pub const fn policy(&self) -> Option<&CrossPlaneBindingPolicy> {
+        self.policy.as_ref()
+    }
+
+    /// materialization input です。
+    pub const fn materialization_input(&self) -> Option<&CrossPlaneBindingMaterializationInput> {
+        self.materialization_input.as_ref()
+    }
+}
+
+/// cross-plane binding decision の閉集合です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CrossPlaneBindingDecision {
+    /// explicit binding materialization が成立しました。
+    Materialized(CrossPlaneBindingDecisionRecord),
+    /// binding materialization は閉じた failure reason で拒否されました。
+    Rejected(CrossPlaneBindingDecisionRecord),
+}
+
+impl CrossPlaneBindingDecision {
+    /// cross_plane_binding_decision に投影できる decision を作ります。
+    pub fn new(
+        correlation_id: CorrelationId,
+        policy: CrossPlaneBindingPolicy,
+        outcome: CrossPlaneBindingOutcome,
+        reason: Option<CrossPlaneBindingFailureKind>,
+    ) -> Self {
+        let record = CrossPlaneBindingDecisionRecord::new(
+            Some(correlation_id),
+            Some(policy),
+            None,
+            outcome,
+            reason,
+        );
+        match outcome {
+            CrossPlaneBindingOutcome::Accepted => Self::Materialized(record),
+            CrossPlaneBindingOutcome::Rejected
+            | CrossPlaneBindingOutcome::Expired
+            | CrossPlaneBindingOutcome::Failed
+            | CrossPlaneBindingOutcome::CloseNotClaimed => Self::Rejected(record),
         }
     }
 
@@ -344,6 +452,135 @@ impl CrossPlaneBindingDecision {
     pub const fn audit_event_type(&self) -> &'static str {
         "cross_plane_binding_decision"
     }
+
+    /// decision payload です。
+    pub const fn record(&self) -> &CrossPlaneBindingDecisionRecord {
+        match self {
+            Self::Materialized(record) | Self::Rejected(record) => record,
+        }
+    }
+}
+
+/// explicit binding だけを materialize し、implicit binding は fail-closed で拒否します。
+///
+/// この関数は cross-plane relation の決定だけを返し、各 plane の state machine は変更しません。
+pub fn materialize_cross_plane_binding(
+    input: CrossPlaneBindingMaterializationInput,
+) -> CrossPlaneBindingDecision {
+    if input.binding_class.is_rejected_class() {
+        return CrossPlaneBindingDecision::Rejected(CrossPlaneBindingDecisionRecord::new(
+            None,
+            None,
+            Some(input),
+            CrossPlaneBindingOutcome::Rejected,
+            Some(CrossPlaneBindingFailureKind::BindingClassNotAdmitted),
+        ));
+    }
+
+    CrossPlaneBindingDecision::Materialized(CrossPlaneBindingDecisionRecord::new(
+        None,
+        None,
+        Some(input),
+        CrossPlaneBindingOutcome::Accepted,
+        None,
+    ))
+}
+
+/// cross-plane audit relation の opaque typed reference です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossPlaneAuditRelationRef(OpaqueReference);
+
+impl CrossPlaneAuditRelationRef {
+    /// accepted opaque reference から audit relation reference を作ります。
+    pub fn new(value: OpaqueReference) -> Self {
+        Self(value)
+    }
+
+    /// opaque value です。document path ではありません。
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+/// cross-plane evidence relation の opaque typed reference です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossPlaneEvidenceRelationRef(OpaqueReference);
+
+impl CrossPlaneEvidenceRelationRef {
+    /// accepted opaque reference から evidence relation reference を作ります。
+    pub fn new(value: OpaqueReference) -> Self {
+        Self(value)
+    }
+
+    /// opaque value です。document path ではありません。
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+/// cross-plane decision event の opaque typed reference です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossPlaneDecisionEventRef(OpaqueReference);
+
+impl CrossPlaneDecisionEventRef {
+    /// accepted opaque reference から decision event reference を作ります。
+    pub fn new(value: OpaqueReference) -> Self {
+        Self(value)
+    }
+
+    /// opaque value です。document path ではありません。
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+/// cross-plane binding に attach できる relation reference の閉集合です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CrossPlaneRelationRef {
+    /// audit relation reference です。
+    Audit(CrossPlaneAuditRelationRef),
+    /// evidence relation reference です。
+    Evidence(CrossPlaneEvidenceRelationRef),
+    /// decision event reference です。
+    DecisionEvent(CrossPlaneDecisionEventRef),
+}
+
+/// cross-plane binding relation attachment です。
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossPlaneRelationAttachment {
+    binding_ref: CrossPlaneEvidenceRelationRef,
+    relation_ref: CrossPlaneRelationRef,
+}
+
+impl CrossPlaneRelationAttachment {
+    /// binding reference と attached relation を保持します。
+    pub fn new(
+        binding_ref: CrossPlaneEvidenceRelationRef,
+        relation_ref: CrossPlaneRelationRef,
+    ) -> Self {
+        Self {
+            binding_ref,
+            relation_ref,
+        }
+    }
+
+    /// binding reference です。
+    pub const fn binding_ref(&self) -> &CrossPlaneEvidenceRelationRef {
+        &self.binding_ref
+    }
+
+    /// relation reference です。
+    pub const fn relation_ref(&self) -> &CrossPlaneRelationRef {
+        &self.relation_ref
+    }
+}
+
+/// cross-plane binding と audit/evidence/decision relation を opaque ref だけで接続します。
+pub fn attach_cross_plane_relation(
+    binding_ref: CrossPlaneEvidenceRelationRef,
+    relation_ref: CrossPlaneRelationRef,
+) -> CrossPlaneRelationAttachment {
+    CrossPlaneRelationAttachment::new(binding_ref, relation_ref)
 }
 
 /// cross-plane evidence に必要な採用 class です。

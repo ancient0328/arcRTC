@@ -16,5 +16,6 @@ dependency_class = "core_semantic_dependency"
 path = "src/lib.rs"
 
 [dependencies]
+arcrtc-core-audit = { path = "../audit" }
 arcrtc-core-command = { path = "../command" }
 arcrtc-core-identity = { path = "../identity" }

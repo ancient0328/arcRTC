@@ -9,6 +9,12 @@ export const arcrtcTypeScriptSdkPlatform = "typescript" as const;
 
 export const arcrtcSignalingContractVersion = "v0.2" as const;
 
+export const ARCRTC_SIGNALING_PROTOCOL_VERSION = "v0.2" as const;
+
+export const ARCRTC_SDK_SEMVER: string = "0.2.0";
+
+export const ARCRTC_SDK_PACKAGE_NAME: string = "@arcrtc/sdk-typescript";
+
 export type ArcRtcSdkPlatform = typeof arcrtcTypeScriptSdkPlatform;
 
 export type SignalingContractVersion = typeof arcrtcSignalingContractVersion;
@@ -18,6 +24,110 @@ export type CorrelationId = string & { readonly __brand: "CorrelationId" };
 export type OpaqueReference = string & { readonly __brand: "OpaqueReference" };
 
 export type OpaqueSignalingPayload = Readonly<Record<string, unknown>>;
+
+// SDK は core reason の権威を持たず、公開 failure code を閉集合で示すだけです。
+export type ArcRtcSdkFailureCode =
+  | "CredentialRejected"
+  | "JoinRejected"
+  | "MembershipConflict"
+  | "NegotiationRejected"
+  | "IceCandidateRejected"
+  | "Timeout"
+  | "TransportUnavailable"
+  | "ProtocolViolation"
+  | "VersionMismatch"
+  | "InternalInvariantViolation";
+
+export type ArcRtcJoinCommand = {
+  readonly type: "ArcRtcJoinCommand";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly credentialRef: string;
+  readonly sessionRef?: string;
+};
+
+export type ArcRtcLeaveCommand = {
+  readonly type: "ArcRtcLeaveCommand";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sessionRef?: string;
+};
+
+export type ArcRtcOfferCommand = {
+  readonly type: "ArcRtcOfferCommand";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sdpRef: string;
+  readonly sessionRef?: string;
+};
+
+export type ArcRtcAnswerCommand = {
+  readonly type: "ArcRtcAnswerCommand";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sdpRef: string;
+  readonly sessionRef?: string;
+};
+
+export type ArcRtcIceCandidateCommand = {
+  readonly type: "ArcRtcIceCandidateCommand";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly candidateRef: string;
+  readonly sessionRef?: string;
+};
+
+export type ArcRtcReconnectCommand = {
+  readonly type: "ArcRtcReconnectCommand";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sessionRef: string;
+};
+
+export type ArcRtcJoinAcceptedEvent = {
+  readonly type: "ArcRtcJoinAcceptedEvent";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sessionRef: string;
+};
+
+export type ArcRtcJoinRejectedEvent = {
+  readonly type: "ArcRtcJoinRejectedEvent";
+  readonly roomId: string;
+  readonly participantId?: string;
+  readonly reasonCode: string;
+};
+
+export type ArcRtcParticipantLeftEvent = {
+  readonly type: "ArcRtcParticipantLeftEvent";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sessionRef?: string;
+};
+
+export type ArcRtcNegotiationRequiredEvent = {
+  readonly type: "ArcRtcNegotiationRequiredEvent";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sdpRef?: string;
+  readonly sessionRef: string;
+};
+
+export type ArcRtcIceCandidateReceivedEvent = {
+  readonly type: "ArcRtcIceCandidateReceivedEvent";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly candidateRef: string;
+  readonly sessionRef: string;
+};
+
+export type ArcRtcSessionTimedOutEvent = {
+  readonly type: "ArcRtcSessionTimedOutEvent";
+  readonly roomId: string;
+  readonly participantId: string;
+  readonly sessionRef: string;
+  readonly reasonCode: string;
+};
 
 declare const serverDecodedReasonBrand: unique symbol;
 

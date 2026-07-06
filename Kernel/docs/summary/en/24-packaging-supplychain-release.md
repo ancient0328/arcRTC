@@ -1,11 +1,11 @@
 # Packaging / supply-chain / release: dependency, license, toolchain gate, and release artifact, distribution, provenance
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), the supply chain and release boundaries of the arcRTC v0.2 Kernel. It covers two areas: supply chain / dependency / license / toolchain gate; and release artifact / distribution / provenance. The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), the supply chain and release boundaries of the arcRTC v0.2 Kernel. It covers two areas: supply chain / dependency / license / toolchain gate; and release artifact / distribution / provenance. The granularity is sufficient for re-implementation from this chapter alone.
 
 The detail of the crate / package boundary is owned by Chapter 02. Taking that as given, this chapter internalizes supply chain and release. It fixes, as owners and fail-closed conditions, the conditions under which crate / npm / Gradle / SwiftPM / toolchain dependencies do not break the architecture boundary, security posture, or evidence claim, and under which a generated binary / crate / package / image / SDK package / docs bundle is treated as a distributable artifact.
 

@@ -1,0 +1,36 @@
+[package]
+name = "arcrtc-distro-benchmark-tests"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.96"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[dependencies]
+arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
+arcrtc-core-sfu = { path = "../../../Kernel/core/sfu" }
+arcrtc-core-signaling = { path = "../../../Kernel/core/signaling" }
+arcrtc-core-turn = { path = "../../../Kernel/core/turn" }
+arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
+arcrtc-product-deployment = { path = "../../product-distro/deployment" }
+arcrtc-product-persistence-topology = { path = "../../product-distro/persistence-topology" }
+arcrtc-product-policy = { path = "../../product-distro/product-policy" }
+arcrtc-product-rollback = { path = "../../product-distro/rollback" }
+arcrtc-reference-composition = { path = "../../reference-distro/composition" }
+arcrtc-reference-ops = { path = "../../reference-distro/ops" }
+arcrtc-reference-sfu = { path = "../../reference-distro/sfu" }
+arcrtc-reference-signaling = { path = "../../reference-distro/signaling" }
+arcrtc-reference-turn = { path = "../../reference-distro/turn" }
+criterion = "0.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bench]]
+name = "benchmark_scenarios"
+harness = false

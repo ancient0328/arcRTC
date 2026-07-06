@@ -1,7 +1,7 @@
 # core-runtime-time-concurrency
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 

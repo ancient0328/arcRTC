@@ -1,13 +1,13 @@
 # core-turn-plane
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the TURN contract and TURN lifecycle owned by `core/turn` of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone. This chapter makes TURN allocation / permission / channel bind / relay semantics core-owned and separates wire driver execution such as UDP/TCP/socket I/O, tokio, SIMD backend, and HMAC/crypto concrete implementation as driver-owned. This chapter internalizes all states and all transitions of allocation / permission / channel bind, guards, reject/deny conditions, expiry/refresh/release rules, credential verification boundary, and fail-closed conditions.
+This chapter internalizes the current complete specification of the TURN contract and TURN lifecycle owned by `core/turn` of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone. This chapter makes TURN allocation / permission / channel bind / relay semantics core-owned and separates wire driver execution such as UDP/TCP/socket I/O, tokio, SIMD backend, and HMAC/crypto concrete implementation as driver-owned. This chapter internalizes all states and all transitions of allocation / permission / channel bind, guards, reject/deny conditions, expiry/refresh/release rules, credential verification boundary, and fail-closed conditions.
 
-Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of TURN are owned by core and separated from I/O. v0.2 Kernel does not own the TURN product system; the reference implementation / product implementation is placed in implementations outside the Kernel. arcRTC does not own credential issuance and holds only the verification boundary of externally issued credential / token.
+Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of TURN are owned by core and separated from I/O. v0.2 Kernel does not own the TURN product system; the reference distro / product distro is placed in distro outside the Kernel. arcRTC does not own credential issuance and holds only the verification boundary of externally issued credential / token.
 
 ---
 

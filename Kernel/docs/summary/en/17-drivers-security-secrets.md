@@ -1,11 +1,11 @@
 # drivers-security-secrets
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the security / secrets driver family of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone. This chapter internalizes the security key source / verifier driver boundary (key fetch / cache / refresh / cryptographic backend / failure mapping), the transport security configuration (TLS/mTLS, DTLS/SRTP backend, certificate/key source, allowed cipher/profile, secret handling, startup failure), and all states and procedures of the secret rotation lifecycle, down to owners, closed-set vocabulary, state machines, failure mapping, prohibitions/permissions, and fail-closed conditions, omitting none.
+This chapter internalizes the current complete specification of the security / secrets driver family of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone. This chapter internalizes the security key source / verifier driver boundary (key fetch / cache / refresh / cryptographic backend / failure mapping), the transport security configuration (TLS/mTLS, DTLS/SRTP backend, certificate/key source, allowed cipher/profile, secret handling, startup failure), and all states and procedures of the secret rotation lifecycle, down to owners, closed-set vocabulary, state machines, failure mapping, prohibitions/permissions, and fail-closed conditions, omitting none.
 
 Dependency direction notation: `A <- B` means "B depends on A". Token verification semantics and issuer/audience/claim policy are owned by core, and key fetch / cache / refresh / concrete crypto backend are owned by the driver. Entrypoints pass typed configuration / typed reference, and the driver implements it. arcRTC does not own token issuance / credential issuance and holds only the verification boundary of externally issued token / credential. This chapter does not claim secret manager implementation, certificate deployment, cryptographic certification, or runtime rotation / security verification success. There is no insecure fallback when a required secure mode fails (fail-closed).
 

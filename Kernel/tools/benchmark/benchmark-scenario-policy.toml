@@ -1,0 +1,49 @@
+# benchmark lane の source policy です。測定実行・結果採用・readiness proof は行いません。
+
+[scenario_matrix.load]
+owner = "tools/benchmark"
+scenario_id = "kernel-load"
+command_id = "benchmark-load-check"
+workload_class = "load"
+target_surface = "kernel-resident-runtime"
+
+[scenario_matrix.soak]
+owner = "tools/benchmark"
+scenario_id = "kernel-soak"
+command_id = "benchmark-soak-check"
+workload_class = "soak"
+target_surface = "kernel-resident-runtime"
+
+[scenario_matrix.concurrency]
+owner = "tools/benchmark"
+scenario_id = "kernel-concurrency"
+command_id = "benchmark-concurrency-check"
+workload_class = "concurrency"
+target_surface = "kernel-resident-runtime"
+
+[measurement_window]
+owner = "tools/benchmark"
+warmup_seconds = 30
+sample_seconds = 300
+cooldown_seconds = 30
+non_adoption = "measurement window policy is not benchmark output"
+
+[resource_units]
+owner = "tools/benchmark"
+latency_unit = "milliseconds"
+throughput_unit = "operations-per-second"
+memory_unit = "mebibytes"
+cpu_unit = "core-percent"
+
+[threshold_policy]
+owner = "tools/benchmark"
+threshold_mode = "closed-scenario-threshold"
+required_threshold_fields = ["latency_p95", "throughput_min", "error_rate_max", "memory_max"]
+non_adoption = "threshold policy is not correctness proof"
+
+[non_adoption]
+owner = "tools/benchmark"
+benchmark_result_is_correctness_proof = false
+benchmark_result_is_readiness_proof = false
+benchmark_result_is_release_gate_evidence = false
+adoption_boundary = "benchmark results require Evidence Roadmap records before use"

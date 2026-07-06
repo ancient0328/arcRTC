@@ -1,6 +1,6 @@
 # Troubleshooting (cross-cutting)
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
@@ -68,7 +68,7 @@ CI is a guardrail and does not by itself establish close / complete / ready. CI 
 | Symptom | Suspected boundary / cause | Fail-closed default behavior | Remediation |
 |---|---|---|---|
 | a required gate cannot run / times out / reports unknown state | gate execution failure | do not treat the target scope as close/complete/ready; `UNKNOWN` is not a success state | Make the gate runnable, and obtain a reproducible result before judging |
-| CI success is claimed as production readiness | a close-like claim bypasses the verification scope | close / complete / ready is not claimed for an unperformed verification scope | CI success is a guardrail, not sole grounds for readiness. Production / live readiness is a separate implementations-side claim |
+| CI success is claimed as production readiness | a close-like claim bypasses the verification scope | close / complete / ready is not claimed for an unperformed verification scope | CI success is a guardrail, not sole grounds for readiness. Production / live readiness is a separate distro-side claim |
 | enterprise code coverage passes with core line `<90%` / overall `<85%` / core crate floor `<80%` / missing denominator scope | coverage gate fail-open | fail-closed when core line<90% / overall<85% / core crate floor<80% / denominator missing / diagnostic-only coverage is adopted | Obtain threshold-meeting coverage. Do not adopt import-only·smoke-only·text-inspection-only·generated-output-only coverage as enterprise coverage |
 | v0.2 completion is claimed from CI success alone | completion claimed for an unperformed verification scope | completion is not claimed for an unperformed verification scope | Limit CI success to its scope. Kernel completion is a separate claim and is not derived from CI success alone |
 | JS/TS evidence is generated with npm/yarn | tooling violation | npm/yarn are not adopted as v0.2 CI evidence | Use `pnpm` for JS/TS commands |
@@ -77,12 +77,12 @@ CI is a guardrail and does not by itself establish close / complete / ready. CI 
 
 ## 6. Detecting and remediating claim scope repurposing
 
-Kernel evidence and implementations readiness are separate claims and MUST NOT substitute for one another. The following are representative symptoms of claim scope repurposing.
+Kernel evidence and distro readiness are separate claims and MUST NOT substitute for one another. The following are representative symptoms of claim scope repurposing.
 
 | Symptom | Suspected boundary / cause | Fail-closed default behavior | Remediation |
 |---|---|---|---|
-| Kernel evidence is repurposed into implementations production/live readiness | Kernel / implementations boundary violation | the presence/absence of implementations is not adopted into the Kernel completion claim | Keep Kernel evidence closed to the Kernel claim. Treat implementations readiness as separate evidence and a separate claim |
-| benchmark·coverage·native command success is repurposed as proof of readiness | crossing of evidence scope | benchmark/coverage/native command success is Kernel evidence and not proof of production/live/native application readiness | Limit each evidence to its scope (measurement·diagnostic·command success). Claim readiness separately on the implementations side |
+| Kernel evidence is repurposed into distro production/live readiness | Kernel / distro boundary violation | the presence/absence of distro is not adopted into the Kernel completion claim | Keep Kernel evidence closed to the Kernel claim. Treat distro readiness as separate evidence and a separate claim |
+| benchmark·coverage·native command success is repurposed as proof of readiness | crossing of evidence scope | benchmark/coverage/native command success is Kernel evidence and not proof of production/live/native application readiness | Limit each evidence to its scope (measurement·diagnostic·command success). Claim readiness separately on the distro side |
 | an unperformed verification scope is treated as performed | scope repurposing | an unperformed verification scope is not treated as performed; `UNKNOWN` is not a success state | Perform the verification within its scope, or do not claim close / complete / ready for it |
 | a present artifact is treated as a completion proof | confusion of presence with proof | artifact existence is not a completion proof | Do not use artifact existence as proof. An out-of-scope artifact is managed separately and is not adopted into the Kernel completion claim |
 
@@ -91,4 +91,4 @@ Kernel evidence and implementations readiness are separate claims and MUST NOT s
 - Ambiguous, out-of-closed-set, unknown, diagnostic-only, mixed-scope, or readiness-smuggled inputs fall to the rejecting side. `UNKNOWN` is not a success state.
 - reason, process failure class, and CI gate class are all closed sets. Expansion of a closed set is adopted only after an explicit rule update.
 - close / complete / ready / freeze is not claimed for an unperformed verification scope.
-- When a boundary violation or claim scope repurposing is suspected, remediation is always in the direction of "returning to the authoritative owner (core semantics / core reason / core port)" and does not move semantic authority to the driver·entrypoint·SDK·regulated·implementations side.
+- When a boundary violation or claim scope repurposing is suspected, remediation is always in the direction of "returning to the authoritative owner (core semantics / core reason / core port)" and does not move semantic authority to the driver·entrypoint·SDK·regulated·distro side.

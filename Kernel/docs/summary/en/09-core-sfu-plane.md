@@ -1,13 +1,13 @@
 # core-sfu-plane
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the SFU contract, SFU state machine, the field boundary of the packet semantic view, and the policy/execution boundary of congestion/pacing/retransmission owned by `core/sfu` of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone. This chapter makes routing / quality decision / backpressure semantics core-owned and separates execution such as RTP/RTCP byte I/O, str0m, socket, runtime worker, and metrics exporter as driver-owned. Ownership, lifetime, and copy admission of packet bytes (all packet buffer lifecycle states) are defined in Chapter 07 §7. This chapter internalizes the field boundary of the packet semantic view and the SFU-specific routing/state/congestion semantics.
+This chapter internalizes the current complete specification of the SFU contract, SFU state machine, the field boundary of the packet semantic view, and the policy/execution boundary of congestion/pacing/retransmission owned by `core/sfu` of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone. This chapter makes routing / quality decision / backpressure semantics core-owned and separates execution such as RTP/RTCP byte I/O, str0m, socket, runtime worker, and metrics exporter as driver-owned. Ownership, lifetime, and copy admission of packet bytes (all packet buffer lifecycle states) are defined in Chapter 07 §7. This chapter internalizes the field boundary of the packet semantic view and the SFU-specific routing/state/congestion semantics.
 
-Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of SFU are owned by core and separated from I/O. v0.2 Kernel does not own the SFU product system; the reference implementation / product implementation is placed in implementations outside the Kernel.
+Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of SFU are owned by core and separated from I/O. v0.2 Kernel does not own the SFU product system; the reference distro / product distro is placed in distro outside the Kernel.
 
 ---
 
@@ -60,7 +60,7 @@ driver MUST own the following. RTP/RTCP byte I/O, raw packet bytes, buffer lease
 
 ### 1.5 Prohibited semantics (MUST NOT be included in SFU core)
 
-medical workflow priority, application-specific room policy, UI state, recording policy, chat semantics, screen share workflow, DataChannel application semantics, UI / end-user workflow, regulated data classification, concrete worker thread strategy, packet bytes ownership, packet cache, transmit queue, codec implementation / transcoding backend, SFU reference implementation / product implementation.
+medical workflow priority, application-specific room policy, UI state, recording policy, chat semantics, screen share workflow, DataChannel application semantics, UI / end-user workflow, regulated data classification, concrete worker thread strategy, packet bytes ownership, packet cache, transmit queue, codec implementation / transcoding backend, SFU reference distro / product distro.
 
 ### 1.6 Fail-Closed Rule (decision handling and reason code closed set)
 

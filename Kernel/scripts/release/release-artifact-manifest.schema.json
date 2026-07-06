@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arcrtc.local/kernel/release-artifact-manifest.schema.json",
+  "title": "arcRTC Kernel release artifact manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_name",
+    "artifact_digest",
+    "digest_algorithm",
+    "signature_ref",
+    "source_snapshot",
+    "provenance_ref"
+  ],
+  "properties": {
+    "artifact_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Release artifact logical name. This schema does not generate artifacts."
+    },
+    "artifact_digest": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque digest value for a separately produced artifact."
+    },
+    "digest_algorithm": {
+      "type": "string",
+      "enum": ["sha256"]
+    },
+    "signature_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque reference to signature material; not signature verification evidence."
+    },
+    "source_snapshot": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque source snapshot reference; not provenance evidence."
+    },
+    "provenance_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque provenance reference; not release readiness proof."
+    }
+  }
+}

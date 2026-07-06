@@ -39,6 +39,20 @@ public struct OpaqueSignalingPayload: Equatable, Sendable {
     }
 }
 
+// SDK は core reason の権威を持たず、公開 failure code を閉集合で示すだけです。
+public enum ArcRtcSdkFailureCode: String, CaseIterable, Hashable, Sendable {
+    case CredentialRejected = "CredentialRejected"
+    case JoinRejected = "JoinRejected"
+    case MembershipConflict = "MembershipConflict"
+    case NegotiationRejected = "NegotiationRejected"
+    case IceCandidateRejected = "IceCandidateRejected"
+    case Timeout = "Timeout"
+    case TransportUnavailable = "TransportUnavailable"
+    case ProtocolViolation = "ProtocolViolation"
+    case VersionMismatch = "VersionMismatch"
+    case InternalInvariantViolation = "InternalInvariantViolation"
+}
+
 public enum SignalingCommandKind: String, CaseIterable, Hashable, Sendable {
     case joinRoom = "JoinRoom"
     case leaveRoom = "LeaveRoom"
@@ -102,4 +116,3 @@ public protocol SignalingCommandProtocol: Sendable {
     var correlationId: CorrelationId { get }
     var contractVersion: SignalingContractVersion { get }
 }
-

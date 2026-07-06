@@ -274,6 +274,121 @@ impl RegulatedEnrichmentRecord {
     }
 }
 
+/// regulated boundary が扱う opaque reference です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RegulatedOpaqueReference {
+    /// regulated-local reference id です。
+    pub reference_id: &'static str,
+    /// regulated-local scope ref です。
+    pub scope_ref: &'static str,
+}
+
+impl RegulatedOpaqueReference {
+    /// regulated opaque reference を作ります。
+    pub const fn new(reference_id: &'static str, scope_ref: &'static str) -> Self {
+        Self {
+            reference_id,
+            scope_ref,
+        }
+    }
+}
+
+/// core/security redaction result を指す regulated-local projection reference です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RegulatedRedactionProjectionRef {
+    /// redaction projection の opaque value です。
+    pub value: &'static str,
+}
+
+impl RegulatedRedactionProjectionRef {
+    /// redaction projection ref を作ります。
+    pub const fn new(value: &'static str) -> Self {
+        Self { value }
+    }
+}
+
+/// regulated redaction request の source model です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RegulatedRedactionRequest {
+    /// regulated opaque reference id です。
+    pub reference_id: &'static str,
+    /// redaction boundary projection ref です。
+    pub redaction_boundary_ref: RegulatedRedactionProjectionRef,
+}
+
+impl RegulatedRedactionRequest {
+    /// regulated redaction request を束ねます。
+    pub const fn new(
+        reference_id: &'static str,
+        redaction_boundary_ref: RegulatedRedactionProjectionRef,
+    ) -> Self {
+        Self {
+            reference_id,
+            redaction_boundary_ref,
+        }
+    }
+}
+
+/// regulated export pointer です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RegulatedExportPointer {
+    /// export reference です。
+    pub export_ref: &'static str,
+    /// audit pointer reference です。
+    pub audit_pointer_ref: &'static str,
+}
+
+impl RegulatedExportPointer {
+    /// audit pointer integrity は pointer 作成後に accepted として観測できます。
+    pub const fn audit_pointer_integrity(&self) -> RegulatedAuditPointerIntegrity {
+        RegulatedAuditPointerIntegrity::Accepted
+    }
+}
+
+/// regulated audit pointer integrity の閉集合です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum RegulatedAuditPointerIntegrity {
+    /// audit pointer integrity を受理します。
+    Accepted,
+    /// audit pointer integrity を拒否します。
+    Rejected,
+}
+
+/// regulated export pointer build input です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RegulatedExportPointerInput {
+    /// export reference です。
+    pub export_ref: &'static str,
+    /// audit pointer reference です。
+    pub audit_pointer_ref: &'static str,
+}
+
+impl RegulatedExportPointerInput {
+    /// regulated export pointer input を束ねます。
+    pub const fn new(export_ref: &'static str, audit_pointer_ref: &'static str) -> Self {
+        Self {
+            export_ref,
+            audit_pointer_ref,
+        }
+    }
+}
+
+/// regulated export pointer を build します。
+///
+/// redaction decision authority は持たず、generic communication core へ domain payload を出しません。
+pub fn build_regulated_export_pointer(
+    input: RegulatedExportPointerInput,
+) -> Result<RegulatedExportPointer, RegulatedAuditPointerIntegrity> {
+    if input.export_ref.is_empty() || input.audit_pointer_ref.is_empty() {
+        return Err(RegulatedAuditPointerIntegrity::Rejected);
+    }
+
+    Ok(RegulatedExportPointer {
+        export_ref: input.export_ref,
+        audit_pointer_ref: input.audit_pointer_ref,
+    })
+}
+
 /// regulated enrichment admission guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RegulatedEnrichmentGuard;

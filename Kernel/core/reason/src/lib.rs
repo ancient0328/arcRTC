@@ -2,3 +2,4 @@
 // REASON_DEFINITIONS の型と意味論は維持し、catalog 本体だけを専用 shard に分離します。
 include!("lib_parts/reason_model.rs");
 include!("lib_parts/reason_definitions.rs");
+include!("lib_parts/reason_adversarial_registry.rs");

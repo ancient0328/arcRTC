@@ -874,8 +874,8 @@ fn ce2_cov3_command_protocol_and_runtime_catalogs_are_asserted() {
     }
     for (concern, owner) in [
         (
-            runtime_core::RuntimeTaskConcern::DomainStateTransition,
-            runtime_core::RuntimeTaskOwner::Core,
+            runtime_core::RuntimeTaskConcern::PriorDomainDecisionReference,
+            runtime_core::RuntimeTaskOwner::CoreRuntimePortContract,
         ),
         (
             runtime_core::RuntimeTaskConcern::RuntimePortTaskContract,

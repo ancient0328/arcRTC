@@ -1,11 +1,11 @@
 # drivers-observability-privacy
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the observability / privacy driver family of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone. This chapter internalizes the observability boundary (tracing / metrics exporter / log sink), the closed set of observability signal taxonomy / cardinality / sampling, and the privacy / redaction / retention rules (the owner and data classes that prevent raw secret / token / media / regulated payload from mixing into core / audit / log / report), down to owners, closed-set vocabulary, failure mapping, prohibitions/permissions, and fail-closed conditions, omitting none.
+This chapter internalizes the current complete specification of the observability / privacy driver family of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone. This chapter internalizes the observability boundary (tracing / metrics exporter / log sink), the closed set of observability signal taxonomy / cardinality / sampling, and the privacy / redaction / retention rules (the owner and data classes that prevent raw secret / token / media / regulated payload from mixing into core / audit / log / report), down to owners, closed-set vocabulary, failure mapping, prohibitions/permissions, and fail-closed conditions, omitting none.
 
 Dependency direction notation: `A <- B` means "B depends on A". Observability is a driver family that implements core-owned ports and does not own the authority of audit event meaning / quality decision / domain decision. An observability signal is not an audit event by default. This chapter does not claim exporter implementation, dashboard, alert runtime, production monitoring, legal compliance, production privacy certification, or that operational retention is already configured.
 

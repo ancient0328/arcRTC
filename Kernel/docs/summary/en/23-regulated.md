@@ -1,11 +1,11 @@
 # Regulated: independent boundary, enrichment lifecycle, out-of-scope feature admission
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), the regulated boundary of the arcRTC v0.2 Kernel. It covers three areas: the regulated independent boundary (optional domain support); the full states of the enrichment lifecycle when referencing core event / audit pointer / non-sensitive tag; and the out-of-scope feature admission / exclusion mechanism (admission decision rules, the handling of every non-goal, and future adoption conditions). The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), the regulated boundary of the arcRTC v0.2 Kernel. It covers three areas: the regulated independent boundary (optional domain support); the full states of the enrichment lifecycle when referencing core event / audit pointer / non-sensitive tag; and the out-of-scope feature admission / exclusion mechanism (admission decision rules, the handling of every non-goal, and future adoption conditions). The granularity is sufficient for re-implementation from this chapter alone.
 
 arcRTC v0.2 is a generic WebRTC communication foundation. Regulated is optional domain support and is not part of the generic communication foundation. Regulated support (audit enrichment, HIPAA/GDPR helpers, etc.) MUST NOT be mixed into the generic communication core. This chapter fixes the exclusion conditions and future adoption conditions so that chat, recording, screen share, DataChannel application semantics, UI/end-user workflow, media capture workflow, and regulated workflow do not implicitly leak into Signaling / SFU / SDK / entrypoints.
 

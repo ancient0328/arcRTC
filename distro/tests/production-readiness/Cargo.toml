@@ -1,0 +1,23 @@
+[package]
+name = "arcrtc-distro-production-readiness-tests"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.96"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[dependencies]
+arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
+arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
+arcrtc-product-deployment = { path = "../../product-distro/deployment" }
+arcrtc-product-monitoring = { path = "../../product-distro/monitoring" }
+arcrtc-product-persistence-topology = { path = "../../product-distro/persistence-topology" }
+arcrtc-product-policy = { path = "../../product-distro/product-policy" }
+arcrtc-product-rollback = { path = "../../product-distro/rollback" }
+serde_json = "1"

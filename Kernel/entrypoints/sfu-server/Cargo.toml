@@ -17,11 +17,4 @@ name = "arcrtc-sfu-server"
 path = "src/main.rs"
 
 [dependencies]
-arcrtc-driver-network = { path = "../../drivers/network" }
-arcrtc-driver-observability = { path = "../../drivers/observability" }
-arcrtc-driver-persistence = { path = "../../drivers/persistence" }
-arcrtc-driver-webrtc-str0m = { path = "../../drivers/webrtc-str0m" }
-arcrtc-core-quality = { path = "../../core/quality" }
-arcrtc-core-reason = { path = "../../core/reason" }
-arcrtc-core-sfu = { path = "../../core/sfu" }
-arcrtc-core-transport = { path = "../../core/transport" }
+arcrtc-entrypoint-composition-root = { path = "../composition-root" }

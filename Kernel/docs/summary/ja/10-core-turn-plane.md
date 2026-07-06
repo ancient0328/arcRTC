@@ -1,13 +1,13 @@
 # core-turn-plane
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
 本章は arcRTC v0.2 Kernel の `core/turn` が所有する TURN contract と TURN lifecycle の現行完全仕様を、本章のみで再現実装可能な粒度で内在化することを目的とします。本章は TURN allocation / permission / channel bind / relay semantics を core 所有とし、UDP/TCP/socket I/O、tokio、SIMD backend、HMAC/crypto concrete implementation などの wire driver execution を driver 所有として分離します。本章は allocation / permission / channel bind の全 state と全遷移、guard、reject/deny 条件、expiry/refresh/release 規則、credential verification boundary、fail-closed 条件を内在化します。
 
-依存方向の表記: `A <- B` は「B が A に依存」を意味します。TURN の pure semantics は core が所有し、I/O と分離されます。v0.2 Kernel は TURN product system を所有せず、reference implementation / product implementation は Kernel 外 implementations に置きます。arcRTC は credential issuance を所有せず、externally issued credential / token の verification boundary のみを持ちます。
+依存方向の表記: `A <- B` は「B が A に依存」を意味します。TURN の pure semantics は core が所有し、I/O と分離されます。v0.2 Kernel は TURN product system を所有せず、reference distro / product distro は Kernel 外 distro に置きます。arcRTC は credential issuance を所有せず、externally issued credential / token の verification boundary のみを持ちます。
 
 ---
 

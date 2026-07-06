@@ -1,11 +1,11 @@
 # Entrypoints Public Endpoint and Edge/Proxy Trust Boundary
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), all states and transitions of the public endpoint surface and connection lifecycle of the arcRTC v0.2 Kernel, and the trust boundary of edge / reverse proxy / load balancer / gateway / trusted header / origin-host trust. The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), all states and transitions of the public endpoint surface and connection lifecycle of the arcRTC v0.2 Kernel, and the trust boundary of edge / reverse proxy / load balancer / gateway / trusted header / origin-host trust. The granularity is sufficient for re-implementation from this chapter alone.
 
 The public endpoint boundary fixes the endpoint classes permitted as an externally exposed surface, the public/internal separation, and the fail-closed conditions of the connection lifecycle. The domain semantics of Signaling / SFU / TURN follow their respective core contracts, and the public endpoint does not own them directly. Edge/proxy-derived metadata and trusted header policy are fixed in the second half of this chapter.
 

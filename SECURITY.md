@@ -10,7 +10,7 @@ vulnerability reporting, not through public issues or pull requests:
 
 When reporting, include where possible:
 
-- the affected component (`Kernel/` or `implementations/`) and version/commit,
+- the affected component (`Kernel/` or `distro/`) and version/commit,
 - a description of the issue and its impact,
 - reproduction steps or a proof of concept,
 - any suggested remediation.
@@ -22,7 +22,7 @@ and coordinated through the advisory.
 
 In scope:
 
-- the published source under `Kernel/` and `implementations/`.
+- the published source under `Kernel/` and `distro/`.
 
 Out of scope:
 
@@ -43,8 +43,8 @@ reporting** で**非公開**にご報告ください。
 
 - 報告先: https://github.com/ancient0328/arcRTC/security/advisories/new
 
-可能な範囲で、対象コンポーネント（`Kernel/` または `implementations/`）・バージョン
+可能な範囲で、対象コンポーネント（`Kernel/` または `distro/`）・バージョン
 ／コミット・影響・再現手順（PoC）・想定される修正案を添えてください。修正が公開され、
 アドバイザリで調整されるまでは公開を控えてください。
 
-対象は公開ソース（`Kernel/` / `implementations/`）です。第三者依存は各上流へご報告ください。
+対象は公開ソース（`Kernel/` / `distro/`）です。第三者依存は各上流へご報告ください。

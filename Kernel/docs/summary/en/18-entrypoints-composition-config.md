@@ -1,13 +1,13 @@
 # Entrypoints Composition Root and Configuration Boundary
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), the composition root (dependency injection / wiring) boundary of `entrypoints/` in the arcRTC v0.2 Kernel, the core-owned configuration boundary types, the configuration profile / policy bundle, and the complete procedures and prohibitions for runtime reconfiguration / policy hot-swap. The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), the composition root (dependency injection / wiring) boundary of `entrypoints/` in the arcRTC v0.2 Kernel, the core-owned configuration boundary types, the configuration profile / policy bundle, and the complete procedures and prohibitions for runtime reconfiguration / policy hot-swap. The granularity is sufficient for re-implementation from this chapter alone.
 
-entrypoints own the Kernel executable contract, CLI, demo, dependency wiring, and composition evidence surface, but MUST NOT own domain rule, protocol semantics, port contract, or the SFU / TURN / Signaling product implementation.
+entrypoints own the Kernel executable contract, CLI, demo, dependency wiring, and composition evidence surface, but MUST NOT own domain rule, protocol semantics, port contract, or the SFU / TURN / Signaling product distro.
 
 ## Section 1. Entrypoint Set (closed set)
 
@@ -38,7 +38,7 @@ entrypoints MAY perform the following actions.
 - expose CLI/demo commands that call core use cases through allowed boundaries.
 
 entrypoints MUST NOT define an alternate domain decision, reason vocabulary, port trait, or state transition.
-entrypoints MUST NOT be treated as reference implementation, product implementation, production readiness, or live readiness evidence.
+entrypoints MUST NOT be treated as reference distro, product distro, production readiness, or live readiness evidence.
 
 ## Section 3. Wiring Rule (dependency direction)
 
@@ -275,7 +275,7 @@ CLI and demo MAY expose convenient flows, but they are not an alternate domain a
 
 - entrypoints define port traits.
 - entrypoints own Signaling join acceptance, SFU route selection, or TURN permission decision.
-- entrypoints own SFU / TURN / Signaling reference implementation or product implementation.
+- entrypoints own SFU / TURN / Signaling reference distro or product distro.
 - entrypoints implement retry/backpressure/resource policy outside core/drivers contract boundaries.
 - entrypoints silently substitute defaults for required policy or runtime configuration.
 - entrypoints spawn detached workers outside admitted task supervision.
@@ -301,7 +301,7 @@ CLI and demo MAY expose convenient flows, but they are not an alternate domain a
 ## Section 13. Collapse Conditions
 
 - executable entrypoint owns domain rule.
-- executable entrypoint is treated as product implementation.
+- executable entrypoint is treated as product distro.
 - composition root defines a second reason catalog.
 - entrypoints bypass core-owned ports to call driver internals as domain authority.
 - startup failure is hidden while claiming close / complete / ready.

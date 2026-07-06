@@ -1,11 +1,11 @@
 # Entrypoints Operations Lifecycle: health/admin, shutdown/drain, crash, authorization
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), the operations lifecycle boundaries of the arcRTC v0.2 Kernel. It covers four areas: health / readiness / liveness / admin / maintenance; cross-plane shutdown / drain (separation of process lifecycle and domain lifecycle); crash / panic / supervisor restart classification (all classes and restart rules); and operator / admin authorization. The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), the operations lifecycle boundaries of the arcRTC v0.2 Kernel. It covers four areas: health / readiness / liveness / admin / maintenance; cross-plane shutdown / drain (separation of process lifecycle and domain lifecycle); crash / panic / supervisor restart classification (all classes and restart rules); and operator / admin authorization. The granularity is sufficient for re-implementation from this chapter alone.
 
 It fixes the owner and evidence-acceptance conditions so that operator-facing endpoint / CLI / probe / maintenance action is not confused with domain readiness, runtime readiness, or closeout evidence. Process lifecycle and domain lifecycle are separated.
 

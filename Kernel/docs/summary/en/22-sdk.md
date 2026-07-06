@@ -1,11 +1,11 @@
 # SDK: Signaling-only boundary, platform parity, reconnect/resumption, public API contract generation, native command evidence
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), the SDK boundary of the arcRTC v0.2 Kernel. It covers five areas: the SDK Signaling-only boundary; TypeScript / Android / iOS platform parity; the full states and procedures for reconnect / session resumption; public API contract generation / projection; and the native SDK command evidence boundary. The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), the SDK boundary of the arcRTC v0.2 Kernel. It covers five areas: the SDK Signaling-only boundary; TypeScript / Android / iOS platform parity; the full states and procedures for reconnect / session resumption; public API contract generation / projection; and the native SDK command evidence boundary. The granularity is sufficient for re-implementation from this chapter alone.
 
 The SDK is a client boundary by which a consumer connects to the Signaling contract. It is neither a media framework nor a regulated workflow SDK. This chapter fixes that the SDK does not own media, auth issuance, or regulated domain support. It internalizes all owners and failure mappings so that SDK-local behavior (reconnect, threading, lifecycle, error wrapper, public API shape) is not implicitly promoted to server-side semantics.
 

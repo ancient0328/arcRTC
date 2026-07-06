@@ -869,7 +869,7 @@ fn runtime_task_lifecycle_and_time_policy_fail_closed_paths_execute() {
     }
 
     for concern in [
-        runtime::RuntimeTaskConcern::DomainStateTransition,
+        runtime::RuntimeTaskConcern::PriorDomainDecisionReference,
         runtime::RuntimeTaskConcern::RuntimePortTaskContract,
         runtime::RuntimeTaskConcern::ConcreteTaskHandle,
         runtime::RuntimeTaskConcern::DriverIoWorker,

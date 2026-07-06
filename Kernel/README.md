@@ -2,9 +2,9 @@
 
 arcRTC v0.2 Kernel is a WebRTC communication-semantics repository.
 
-It defines and reviews the responsibility boundaries for Signaling, SFU, TURN, SDK public API projection, and regulated support before production implementations are built.
+It defines, implements, and verifies the Kernel-owned responsibility boundaries for Signaling, SFU, TURN, SDK public API projection, and regulated support.
 
-This repository is a Kernel completion / freeze surface. In this README, "Kernel completion / freeze" means that it is evaluated as a stable semantic boundary, not as a production deployment target.
+This repository is evaluated as a Kernel-owned communication semantics and runtime evidence surface, not as a production deployment target.
 
 It is not a bundled WebRTC service, production Signaling server, SFU, TURN server, or native SDK release.
 
@@ -27,7 +27,7 @@ It focuses on:
 - Signaling-only SDK projection,
 - evidence-scoped verification.
 
-The repository presents the Kernel's semantic boundary and verification scope. Product implementations belong outside this Kernel claim. The Kernel's implementability — that these contracts can be realized into executable WebRTC communication paths — is validated separately by the out-of-Kernel implementations track (a reference SFU / TURN / Signaling built on the frozen contract, plus benchmarks), which consumes the contract without owning Kernel authority and is not itself a product.
+The repository presents the Kernel's semantic boundary and verification scope. Product-distro output is outside Kernel authority and is not used as Kernel completion evidence. Kernel implementability is evaluated inside this tree through Kernel-owned drivers, entrypoints, real socket or datagram exchanges, and reports under `dev-docs/90-reports/`.
 
 ## Design Rationale
 
@@ -38,9 +38,9 @@ arcRTC v0.2 Kernel exists to make the communication model reviewable before prod
 ## Intended Audience
 
 - Engineers reviewing WebRTC Signaling, SFU, TURN, and SDK boundary design.
-- Engineers planning reference or product implementations outside the Kernel claim.
+- Engineers consuming Kernel contracts from reference or product distro without owning Kernel authority.
 - Maintainers checking whether a change preserves semantic ownership.
-- Reviewers who need a public entrypoint into the Kernel completion / freeze scope.
+- Reviewers who need a public entrypoint into the current Kernel evidence and scope.
 
 ## Quick Check
 
@@ -62,10 +62,10 @@ These commands verify the Kernel scope only.
 |---|---|---|
 | Core semantics | Owns protocol meaning, domain rules, commands, results, reasons, states, and ports | Does not own concrete I/O, runtime libraries, platform APIs, databases, or deployment policy |
 | Driver boundary | Converts external observations into Kernel-owned commands, observations, intents, or closed failures | Does not define domain meaning or product policy |
-| Entrypoint composition | Wires dependencies and exposes executable contract surfaces | Does not become production server proof |
+| Entrypoint composition | Wires dependencies and exposes executable Kernel contract surfaces | Does not become product deployment proof |
 | SDK projection | Exposes the Signaling-only public API shape | Does not own media, auth issuance, regulated workflow, or driver internals |
 | Regulated support | Provides optional support projection and non-sensitive enrichment | Does not become the generic communication core |
-| External implementations | Build reference or product behavior outside the Kernel claim | Do not override Kernel semantic authority |
+| External distro | Builds reference or product behavior outside Kernel authority | Does not supply Kernel completion evidence |
 
 The conceptual dependency direction is:
 
@@ -77,11 +77,11 @@ Drivers <- Entrypoints
 
 ## Evaluation Scope
 
-The complete, self-contained specification (SSOT) lives under `docs/summary/`, with an English edition in `en/` and a Japanese edition in `ja/`. Reading the index alone, then the chapters it lists, conveys the entire Kernel — intent, structure, contracts, operations, verification, and troubleshooting — without consulting the source tree or the code.
+The public summary projection lives under `docs/summary/`, with an English edition in `en/` and a Japanese edition in `ja/`. Reading the index alone, then the chapters it lists, gives an overview of the Kernel intent, structure, contracts, operations, verification, and troubleshooting. Current authority for completion and evidence remains in `dev-docs/`.
 
-| Evaluation target | What to check | Specification (SSOT) |
+| Evaluation target | What to check | Public summary |
 |---|---|---|
-| Full specification index | Chapter map, SSOT principles, terminology, claim / non-claim scope | [Summary index (EN)](docs/summary/en/00-INDEX.md) · [日本語](docs/summary/ja/00-INDEX.md) |
+| Full summary index | Chapter map, summary principles, terminology, claim / non-claim scope | [Summary index (EN)](docs/summary/en/00-INDEX.md) · [日本語](docs/summary/ja/00-INDEX.md) |
 | Scope and boundaries | Mission, System Boundary, Non-goals, layer model, dependency direction | [01 Overview](docs/summary/en/01-overview-and-scope.md) · [02 Architecture](docs/summary/en/02-architecture-and-boundaries.md) |
 | Core semantics | Domain, command/reason, ports, protocol, transport/media, Signaling/SFU/TURN | [03–13](docs/summary/en/00-INDEX.md) |
 | Drivers / entrypoints | Port implementations, conversion, composition, operations, topology | [14–21](docs/summary/en/00-INDEX.md) |
@@ -91,22 +91,22 @@ The complete, self-contained specification (SSOT) lives under `docs/summary/`, w
 
 ## Scope Limits
 
-The current claim is limited to Kernel completion / freeze scope.
+The current claim is limited to Kernel-owned semantics and Kernel-owned evidence that has a matching report.
 
 This repository does not claim:
 
 - production readiness,
 - live readiness,
 - native application readiness,
-- completed SFU, TURN, or Signaling product implementation,
+- completed SFU, TURN, or Signaling product-distro build,
 - benchmark acceptance threshold satisfaction,
 - automatic inheritance of v0.1 behavior.
 
 Benchmark scenarios are measurement and reportability surfaces. Treat benchmark output as scoped measurement unless a separate threshold rule is explicitly provided.
 
-## Specification (SSOT)
+## Summary Projection
 
-The complete specification is under `docs/summary/`, as a self-contained Single Source of Truth: English in `en/`, Japanese in `ja/` (identical chapter structure). It is the current, complete specification — not a development history — and is written so an engineer can re-implement an equivalent Kernel from it without reading the source tree.
+The public summary projection is under `docs/summary/`: English in `en/`, Japanese in `ja/` (identical chapter structure). It is an orientation surface for the current Kernel structure and evidence scope, not a substitute for `dev-docs/` authority or source-level verification.
 
 Recommended reading order (English; the Japanese edition mirrors it):
 

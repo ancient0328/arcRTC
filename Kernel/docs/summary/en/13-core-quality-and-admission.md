@@ -1,11 +1,11 @@
 # core-quality-and-admission
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the quality metrics model and quality decision, and the identity-neutral resource policy boundary of rate limit / quota / admission, owned by the core of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone.
+This chapter internalizes the current complete specification of the quality metrics model and quality decision, and the identity-neutral resource policy boundary of rate limit / quota / admission, owned by the core of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone.
 
 Dependency direction notation: `A <- B` means "B depends on A". The core is free of external I/O dependencies. Quality is a state judgment of the communication infrastructure, not a regulated workflow priority. Admission is a bound decision over active room, participant, endpoint, allocation, connection, and similar, and MUST NOT mix tenant/user/application identity into the generic core. The core owns metric model, threshold, decision, closed reason, and admission policy semantics; the driver owns measurement source, exporter, runtime observation, external metric format, and enforcement execution. This chapter internalizes all quality decisions and admission decisions, closed-set reasons, and fail-closed conditions.
 

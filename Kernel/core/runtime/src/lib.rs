@@ -2,3 +2,4 @@
 // 各 shard は同じ Rust module scope に include され、意味論上の owner はこの crate/file root に残します。
 include!("lib_parts/part_001.rs");
 include!("lib_parts/part_002.rs");
+include!("lib_parts/part_003.rs");

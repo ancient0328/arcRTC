@@ -17,9 +17,4 @@ name = "arcrtc-turn-server"
 path = "src/main.rs"
 
 [dependencies]
-arcrtc-driver-network = { path = "../../drivers/network" }
-arcrtc-driver-observability = { path = "../../drivers/observability" }
-arcrtc-driver-persistence = { path = "../../drivers/persistence" }
-arcrtc-driver-security = { path = "../../drivers/security" }
-arcrtc-core-reason = { path = "../../core/reason" }
-arcrtc-core-turn = { path = "../../core/turn" }
+arcrtc-entrypoint-composition-root = { path = "../composition-root" }

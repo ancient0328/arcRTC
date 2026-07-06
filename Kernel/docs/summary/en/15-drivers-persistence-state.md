@@ -1,11 +1,11 @@
 # drivers-persistence-state
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the persistence / state driver family of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone. This chapter internalizes the persistence boundary (PostgreSQL/Redis/S3/filesystem/in-memory), the state persistence policy (the division between state class and checkpoint/audit-only/driver-local), the durable recovery / restore / replay full recovery classes / state family policy / restore preconditions / replay rule / failure mapping, the schema / migration lifecycle, the export / backup artifact boundary, and the distributed state / replication / failover policy, down to owners, closed-set vocabulary, state machines, failure mapping, prohibitions/permissions, and fail-closed conditions, omitting none.
+This chapter internalizes the current complete specification of the persistence / state driver family of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone. This chapter internalizes the persistence boundary (PostgreSQL/Redis/S3/filesystem/in-memory), the state persistence policy (the division between state class and checkpoint/audit-only/driver-local), the durable recovery / restore / replay full recovery classes / state family policy / restore preconditions / replay rule / failure mapping, the schema / migration lifecycle, the export / backup artifact boundary, and the distributed state / replication / failover policy, down to owners, closed-set vocabulary, state machines, failure mapping, prohibitions/permissions, and fail-closed conditions, omitting none.
 
 Dependency direction notation: `A <- B` means "B depends on A". Persistence is separated into a core-owned port contract and a driver-owned storage implementation. The driver implements a core-owned port, and external storage types stop at the driver boundary. `drivers -> entrypoints` and `drivers -> regulated` are prohibited. The v0.2 initial architecture has no implicit durable domain source-of-truth for room / SFU route / TURN allocation state. This chapter does not claim implemented recovery behavior, runtime readiness, production readiness, a replication engine, consensus, leader election, or automatic failover.
 

@@ -43,6 +43,8 @@ node_modules/
 **/node_modules/
 dist/
 coverage/
+!Kernel/tools/coverage/
+!Kernel/tools/coverage/**
 .pnpm-store/
 
 # Python helper cache
@@ -52,6 +54,10 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# dev-docs: internal canonical/decision records, never published, never cited by product/test code
+Kernel/dev-docs/
+distro/dev-docs/
 
 # Local environment / secrets
 .env

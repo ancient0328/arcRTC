@@ -222,21 +222,20 @@ fn ce4_server_composition_sources_remain_core_driver_wiring_only() {
     ] {
         let source = read_impl(path);
         assert!(
-            source.contains("CompositionSurface")
-                && source.contains("WiringSet")
-                && source.contains("StartupFailureKind")
-                && source.contains("CompositionGuard"),
-            "{path} must expose composition, wiring, startup failure, and guard surfaces"
-        );
-        assert!(source.contains("arcrtc_core_"), "{path} must wire core");
-        assert!(
-            source.contains("arcrtc_driver_"),
-            "{path} must wire drivers"
+            source.contains("ResidentServerLoopConfig::new")
+                && source.contains("run_resident_loop(config)"),
+            "{path} must construct resident loop config and delegate to composition root"
         );
         assert_not_contains(
             path,
             &source,
             &[
+                "CompositionSurface",
+                "WiringSet",
+                "StartupFailureKind",
+                "CompositionGuard",
+                "arcrtc_core_",
+                "arcrtc_driver_",
                 "arcrtc_regulated",
                 "arcrtc_sdk",
                 "SdkSurface",

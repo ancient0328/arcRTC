@@ -262,8 +262,6 @@ pub enum ProhibitedRuntimeClockRandomnessBehavior {
 /// runtime task / worker lifecycle concern の owner です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RuntimeTaskOwner {
-    /// core owns domain state transition semantics.
-    Core,
     /// core owns RuntimePort task contract.
     CoreRuntimePortContract,
     /// driver/entrypoints runtime owns concrete task/join handles.
@@ -281,8 +279,8 @@ pub enum RuntimeTaskOwner {
 /// runtime task / worker lifecycle concern です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RuntimeTaskConcern {
-    /// domain state transition.
-    DomainStateTransition,
+    /// prior domain decision reference used as opaque task input.
+    PriorDomainDecisionReference,
     /// RuntimePort task contract.
     RuntimePortTaskContract,
     /// concrete task handle / join handle.
@@ -303,7 +301,7 @@ impl RuntimeTaskConcern {
     /// concern owner です。
     pub const fn owner(self) -> RuntimeTaskOwner {
         match self {
-            Self::DomainStateTransition => RuntimeTaskOwner::Core,
+            Self::PriorDomainDecisionReference => RuntimeTaskOwner::CoreRuntimePortContract,
             Self::RuntimePortTaskContract => RuntimeTaskOwner::CoreRuntimePortContract,
             Self::ConcreteTaskHandle => RuntimeTaskOwner::DriverEntrypointsRuntime,
             Self::DriverIoWorker => RuntimeTaskOwner::Driver,
@@ -499,4 +497,3 @@ impl RuntimeTaskLifecyclePolicy {
         })
     }
 }
-

@@ -66,6 +66,10 @@ object ArcRtcAndroidSdkSurface {
   }
 }
 
+const val ARCRTC_SIGNALING_PROTOCOL_VERSION: String = "v0.2"
+const val ARCRTC_SDK_SEMVER: String = "0.2.0"
+const val ARCRTC_SDK_PACKAGE_NAME: String = "dev.arcrtc.sdk"
+
 enum class SdkPlatform {
   Android,
 }
@@ -89,6 +93,99 @@ value class CorrelationId(val value: String)
 value class OpaqueReference(val value: String)
 
 typealias OpaqueSignalingPayload = Map<String, Any?>
+
+// SDK は core reason の権威を持たず、公開 failure code を閉集合で示すだけです。
+enum class ArcRtcSdkFailureCode {
+  CredentialRejected,
+  JoinRejected,
+  MembershipConflict,
+  NegotiationRejected,
+  IceCandidateRejected,
+  Timeout,
+  TransportUnavailable,
+  ProtocolViolation,
+  VersionMismatch,
+  InternalInvariantViolation,
+}
+
+data class ArcRtcJoinCommand(
+  val roomId: String,
+  val participantId: String,
+  val credentialRef: String,
+  val sessionRef: String? = null,
+)
+
+data class ArcRtcLeaveCommand(
+  val roomId: String,
+  val participantId: String,
+  val sessionRef: String? = null,
+)
+
+data class ArcRtcOfferCommand(
+  val roomId: String,
+  val participantId: String,
+  val sdpRef: String,
+  val sessionRef: String? = null,
+)
+
+data class ArcRtcAnswerCommand(
+  val roomId: String,
+  val participantId: String,
+  val sdpRef: String,
+  val sessionRef: String? = null,
+)
+
+data class ArcRtcIceCandidateCommand(
+  val roomId: String,
+  val participantId: String,
+  val candidateRef: String,
+  val sessionRef: String? = null,
+)
+
+data class ArcRtcReconnectCommand(
+  val roomId: String,
+  val participantId: String,
+  val sessionRef: String,
+)
+
+data class ArcRtcJoinAcceptedEvent(
+  val roomId: String,
+  val participantId: String,
+  val sessionRef: String,
+)
+
+data class ArcRtcJoinRejectedEvent(
+  val roomId: String,
+  val reasonCode: String,
+  val participantId: String? = null,
+)
+
+data class ArcRtcParticipantLeftEvent(
+  val roomId: String,
+  val participantId: String,
+  val sessionRef: String? = null,
+)
+
+data class ArcRtcNegotiationRequiredEvent(
+  val roomId: String,
+  val participantId: String,
+  val sessionRef: String,
+  val sdpRef: String? = null,
+)
+
+data class ArcRtcIceCandidateReceivedEvent(
+  val roomId: String,
+  val participantId: String,
+  val candidateRef: String,
+  val sessionRef: String,
+)
+
+data class ArcRtcSessionTimedOutEvent(
+  val roomId: String,
+  val participantId: String,
+  val sessionRef: String,
+  val reasonCode: String,
+)
 
 enum class SignalingCommandKind {
   JoinRoom,

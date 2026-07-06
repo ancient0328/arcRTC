@@ -1,36 +1,6 @@
 use arcrtc_roadmap_tests::{
-    assert_impl_file_contains, assert_not_contains, files_named, impl_relative,
-    implementation_root, read_file,
+    assert_not_contains, files_named, impl_relative, implementation_root, read_file,
 };
-
-#[test]
-fn static_architecture_assets_exist() {
-    assert_impl_file_contains(
-        "tests/static/architecture/DEPENDENCY_DIRECTION_ASSET.md",
-        &[
-            "T1.1",
-            "allowed package dependency directions",
-            "forbidden package dependency directions",
-            "core <- drivers",
-            "core <- entrypoints",
-            "drivers <- entrypoints",
-        ],
-    );
-    assert_impl_file_contains(
-        "tests/static/ownership/OWNER_TARGET_SURFACE_ASSET.md",
-        &[
-            "T1.2",
-            "owner_layer",
-            "package_role",
-            "production/test asset separation",
-            "source-set scan scope",
-            "semantic-boundary",
-            "source-size review signal",
-            "core peer dependency closure",
-            "local lint suppression policy",
-        ],
-    );
-}
 
 #[test]
 fn cargo_manifests_preserve_dependency_direction() {

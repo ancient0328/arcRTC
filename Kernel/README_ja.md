@@ -2,9 +2,9 @@
 
 arcRTC v0.2 Kernel は、WebRTC 通信意味論を確認するための Kernel リポジトリです。
 
-Signaling、SFU、TURN、SDK public API projection、regulated support の責務境界を、本番実装に入る前に確認できる形で整理しています。
+Signaling、SFU、TURN、SDK public API projection、regulated support の Kernel-owned な責務境界を定義し、実装し、検証します。
 
-このリポジトリは Kernel completion / freeze surface です。この README では、Kernel completion / freeze を、本番デプロイ対象ではなく、安定した意味論上の境界として評価することを指します。
+このリポジトリは、本番デプロイ対象ではなく、Kernel-owned な通信意味論と runtime evidence の surface として評価します。
 
 完成済みの WebRTC サービス、production Signaling server、SFU、TURN server、native SDK release として提示するものではありません。
 
@@ -27,7 +27,7 @@ arcRTC v0.2 Kernel は、DDD とヘキサゴナルアーキテクチャに基づ
 - Signaling-only SDK 投影、
 - evidence-scoped verification。
 
-このリポジトリは、Kernel の意味論上の境界と verification scope を提示します。製品実装は、この Kernel claim の外側に属します。Kernel の実装可能性（これらの契約が実通信経路へ構成可能であること）は、Kernel 外の implementations トラック（凍結 contract 上に構築した reference の SFU / TURN / Signaling と benchmark）で別途検証されます。implementations は contract を消費するだけで Kernel の権威を所有せず、それ自体は製品ではありません。
+このリポジトリは、Kernel の意味論上の境界と verification scope を提示します。product-distro の出力は Kernel authority の外側にあり、Kernel completion evidence としては採用しません。Kernel の実装可能性は、この tree 内の Kernel-owned drivers、entrypoints、実 socket/datagram 交換、`dev-docs/90-reports/` 配下の report によって評価します。
 
 ## 設計方針
 
@@ -38,9 +38,9 @@ arcRTC v0.2 Kernel は、本番実装に入る前に通信モデルを確認で�
 ## 想定読者
 
 - WebRTC Signaling、SFU、TURN、SDK の境界設計を確認するエンジニア。
-- Kernel claim の外側で参照実装または製品実装を計画するエンジニア。
+- Kernel authority を所有せずに reference distro または product distro から Kernel contract を利用するエンジニア。
 - 意味論の所有関係が保たれているか確認する maintainer。
-- Kernel completion / freeze scope への公開入口が必要な reviewer。
+- 現在の Kernel evidence と scope への公開入口が必要な reviewer。
 
 ## クイックチェック
 
@@ -62,10 +62,10 @@ cargo test --workspace --all-targets
 |---|---|---|
 | 中核意味論 | プロトコル上の意味、domain rule、command、result、reason、state、port を所有する | concrete I/O、runtime library、platform API、database、deployment policy は所有しない |
 | ドライバ境界 | 外部観測を Kernel-owned command、observation、intent、closed failure へ変換する | domain meaning や product policy は定義しない |
-| エントリポイント構成 | dependency を組み立て、executable contract surface を公開する | production server proof にはならない |
+| エントリポイント構成 | dependency を組み立て、executable Kernel contract surface を公開する | product deployment proof にはならない |
 | SDK 投影 | Signaling-only public API shape を公開する | media、auth issuance、regulated workflow、driver internals は所有しない |
 | Regulated support | optional support projection と non-sensitive enrichment を提供する | generic communication core にはならない |
-| 外部実装 | Kernel claim の外側で参照挙動または製品挙動を構築する | Kernel semantic authority を上書きしない |
+| External distro | Kernel authority の外側で参照挙動または製品挙動を構築する | Kernel completion evidence を供給しない |
 
 概念上の依存方向:
 
@@ -77,11 +77,11 @@ Drivers <- Entrypoints
 
 ## 評価範囲
 
-完全かつ自己完結な仕様書（SSOT）は `docs/summary/` 以下にあり、英語版が `en/`、日本語版が `ja/` です。索引とそこに挙がる各章を読むだけで、ソースツリーや実コードを参照せずに Kernel の全体（意図・構造・契約・運用・検証・トラブルシューティング）を把握できます。
+公開 summary projection は `docs/summary/` 以下にあり、英語版が `en/`、日本語版が `ja/` です。索引とそこに挙がる各章を読むことで、Kernel の意図・構造・契約・運用・検証・トラブルシューティングの概要を把握できます。completion と evidence の現在の authority は `dev-docs/` にあります。
 
-| 評価対象 | 確認する内容 | 仕様書（SSOT） |
+| 評価対象 | 確認する内容 | 公開 summary |
 |---|---|---|
-| 仕様書索引 | 章構成、SSOT 原則、用語、claim / non-claim 範囲 | [サマリー索引（日本語）](docs/summary/ja/00-INDEX.md) · [English](docs/summary/en/00-INDEX.md) |
+| summary 索引 | 章構成、summary 原則、用語、claim / non-claim 範囲 | [サマリー索引（日本語）](docs/summary/ja/00-INDEX.md) · [English](docs/summary/en/00-INDEX.md) |
 | 範囲と境界 | Mission、System Boundary、Non-goals、層モデル、依存方向 | [01 概観](docs/summary/ja/01-overview-and-scope.md) · [02 アーキテクチャ](docs/summary/ja/02-architecture-and-boundaries.md) |
 | Core 意味論 | domain、command/reason、ports、protocol、transport/media、Signaling/SFU/TURN | [03〜13](docs/summary/ja/00-INDEX.md) |
 | Drivers / entrypoints | port 実装、変換、composition、運用、topology | [14〜21](docs/summary/ja/00-INDEX.md) |
@@ -91,22 +91,22 @@ Drivers <- Entrypoints
 
 ## 対象外の範囲
 
-現在の claim は Kernel completion / freeze scope に限定されます。
+現在の claim は、対応する report を持つ Kernel-owned semantics と Kernel-owned evidence に限定されます。
 
 このリポジトリは次を主張しません。
 
 - production readiness、
 - live readiness、
 - native application readiness、
-- 完成済みの SFU、TURN、Signaling product implementation、
+- 完成済みの SFU、TURN、Signaling product-distro build、
 - benchmark acceptance threshold satisfaction、
 - v0.1 behavior の自動継承。
 
 benchmark scenario は measurement と reportability の surface です。別途 threshold rule が明示されていない限り、benchmark output は scoped measurement として扱います。
 
-## 仕様書（SSOT）
+## Summary Projection
 
-完全な仕様書は `docs/summary/` 以下にあり、自己完結の Single Source of Truth として、英語版を `en/`、日本語版を `ja/` に置いています（章構成は同一）。これは開発の歴史ではなく現在の完全な仕様書であり、ソースツリーを読まずとも同等の Kernel を再実装できる粒度で記述しています。
+公開 summary projection は `docs/summary/` 以下にあり、英語版を `en/`、日本語版を `ja/` に置いています（章構成は同一）。これは現在の Kernel 構造と evidence scope への orientation surface であり、`dev-docs/` authority や source-level verification の代替ではありません。
 
 推奨読順（日本語版。英語版も同一構成です）:
 

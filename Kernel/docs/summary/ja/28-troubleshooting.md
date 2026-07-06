@@ -1,7 +1,7 @@
 # トラブルシューティング（横断）
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
@@ -69,7 +69,7 @@ CI は guardrail であり、それ単独では close/complete/ready を成立�
 | 症状 | 疑うべき境界／原因 | fail-closed 既定挙動 | 是正手順 |
 |---|---|---|---|
 | 必要 gate が run できない／timeout／unknown state | gate execution 不能 | target scope を close/complete/ready として扱わない。`UNKNOWN` は成功 state ではない | gate を実行可能にし、再現可能な結果を得てから判定する |
-| CI success を production readiness と主張 | close-like claim が検証範囲を bypass | close/complete/ready は未実施の検証範囲に対して主張しない | CI success は guardrail であり readiness の単独根拠ではない。production / live readiness は別の implementations 側 claim |
+| CI success を production readiness と主張 | close-like claim が検証範囲を bypass | close/complete/ready は未実施の検証範囲に対して主張しない | CI success は guardrail であり readiness の単独根拠ではない。production / live readiness は別の distro 側 claim |
 | enterprise code coverage が core line `<90%`／overall `<85%`／core crate floor `<80%`／denominator scope 欠落で pass している | coverage gate fail-open | core line<90% / overall<85% / core crate floor<80% / denominator 欠落 / diagnostic-only coverage 採用で fail-closed | threshold を満たす coverage を取得する。import-only・smoke-only・text-inspection-only・generated-output-only coverage を enterprise coverage として採用しない |
 | v0.2 completion を CI success だけで主張 | 未実施の検証範囲に対する completion 主張 | completion は未実施の検証範囲に対して主張しない | CI success を当該 scope に限定する。Kernel completion は別 claim であり CI success 単独から導かない |
 | npm／yarn で JS/TS evidence を生成 | tooling 違反 | npm/yarn は v0.2 CI evidence として不採用 | JS/TS command は `pnpm` を使う |
@@ -78,12 +78,12 @@ CI は guardrail であり、それ単独では close/complete/ready を成立�
 
 ## 6. claim scope 転用の検知と是正
 
-Kernel evidence と implementations readiness は別 claim であり、相互に代替してはなりません。次は claim scope 転用の代表症状です。
+Kernel evidence と distro readiness は別 claim であり、相互に代替してはなりません。次は claim scope 転用の代表症状です。
 
 | 症状 | 疑うべき境界／原因 | fail-closed 既定挙動 | 是正手順 |
 |---|---|---|---|
-| Kernel evidence を implementations production／live readiness へ転用 | Kernel / implementations 境界違反 | implementations の存在/不在は Kernel completion claim に不採用 | Kernel evidence は Kernel claim に閉じる。implementations の readiness は別 evidence・別 claim とする |
-| benchmark・coverage・native command success を readiness の証明として転用 | evidence scope の越境 | benchmark/coverage/native command success は Kernel evidence であり production/live/native application readiness の証明ではない | 各 evidence を当該 scope（measurement・diagnostic・command success）に限定する。readiness は別途 implementations 側で claim する |
+| Kernel evidence を distro production／live readiness へ転用 | Kernel / distro 境界違反 | distro の存在/不在は Kernel completion claim に不採用 | Kernel evidence は Kernel claim に閉じる。distro の readiness は別 evidence・別 claim とする |
+| benchmark・coverage・native command success を readiness の証明として転用 | evidence scope の越境 | benchmark/coverage/native command success は Kernel evidence であり production/live/native application readiness の証明ではない | 各 evidence を当該 scope（measurement・diagnostic・command success）に限定する。readiness は別途 distro 側で claim する |
 | 未実施の検証範囲を実施済みとして扱う | scope 転用 | 未実施の検証範囲を実施済みとして扱わない。`UNKNOWN` は成功 state ではない | 検証を当該 scope で実施するか、close / complete / ready を主張しない |
 | 存在する artifact を completion proof として扱う | 存在と proof の混同 | artifact 存在は completion proof ではない | artifact 存在を proof にしない。scope 外の artifact は別管理とし Kernel completion claim に採用しない |
 
@@ -92,4 +92,4 @@ Kernel evidence と implementations readiness は別 claim であり、相互に
 - 曖昧・閉集合外・unknown・diagnostic-only・mixed-scope・readiness-smuggled の入力は、拒否側に倒します。`UNKNOWN` は成功 state ではありません。
 - reason・process failure class・CI gate class は、すべて閉集合です。閉集合の拡張は明示的な規則更新を経てからのみ採用します。
 - close/complete/ready/freeze は、未実施の検証範囲に対して主張しません。
-- 境界違反・claim scope 転用が疑われる場合、是正は常に「正の owner（core semantics／core reason／core port）へ戻す」方向で行い、driver・entrypoint・SDK・regulated・implementations 側へ semantic authority を移しません。
+- 境界違反・claim scope 転用が疑われる場合、是正は常に「正の owner（core semantics／core reason／core port）へ戻す」方向で行い、driver・entrypoint・SDK・regulated・distro 側へ semantic authority を移しません。

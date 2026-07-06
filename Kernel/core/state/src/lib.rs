@@ -2,6 +2,7 @@
 //!
 //! driver schema、DB transaction、file/object layout はここに置かず、
 //! state class、checkpoint intent、audit-only relation、source-of-truth 境界だけを定義します。
+include!("lib_parts/part_002.rs");
 
 /// core state package の所有境界を示す marker です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

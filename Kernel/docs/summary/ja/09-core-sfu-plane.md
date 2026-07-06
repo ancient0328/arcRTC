@@ -1,13 +1,13 @@
 # core-sfu-plane
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
 本章は arcRTC v0.2 Kernel の `core/sfu` が所有する SFU contract、SFU state machine、packet semantic view の field boundary、congestion/pacing/retransmission の policy/execution 境界の現行完全仕様を、本章のみで再現実装可能な粒度で内在化することを目的とします。本章は routing / quality decision / backpressure semantics を core 所有とし、RTP/RTCP byte I/O、str0m、socket、runtime worker、metrics exporter などの execution を driver 所有として分離します。packet bytes の所有権・寿命・copy 許可（packet buffer lifecycle 全状態）は第07章 §7 が定義します。本章は packet semantic view の field boundary と SFU 固有の routing/state/congestion semantics を内在化します。
 
-依存方向の表記: `A <- B` は「B が A に依存」を意味します。SFU の pure semantics は core が所有し、I/O と分離されます。v0.2 Kernel は SFU product system を所有せず、reference implementation / product implementation は Kernel 外 implementations に置きます。
+依存方向の表記: `A <- B` は「B が A に依存」を意味します。SFU の pure semantics は core が所有し、I/O と分離されます。v0.2 Kernel は SFU product system を所有せず、reference distro / product distro は Kernel 外 distro に置きます。
 
 ---
 
@@ -60,7 +60,7 @@ driver は次を所有します（必須）。RTP/RTCP byte I/O、raw packet byt
 
 ### 1.5 禁止 semantics（SFU core に含めてはならない）
 
-medical workflow priority、application-specific room policy、UI state、recording policy、chat semantics、screen share workflow、DataChannel application semantics、UI / end-user workflow、regulated data classification、concrete worker thread strategy、packet bytes ownership、packet cache、transmit queue、codec implementation / transcoding backend、SFU reference implementation / product implementation。
+medical workflow priority、application-specific room policy、UI state、recording policy、chat semantics、screen share workflow、DataChannel application semantics、UI / end-user workflow、regulated data classification、concrete worker thread strategy、packet bytes ownership、packet cache、transmit queue、codec implementation / transcoding backend、SFU reference distro / product distro。
 
 ### 1.6 Fail-Closed 規則（decision handling と reason code 閉集合）
 

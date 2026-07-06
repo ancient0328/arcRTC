@@ -1,0 +1,25 @@
+[package]
+name = "arcrtc-reference-composition"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+arcrtc-core-cross-plane = { path = "../../../Kernel/core/cross-plane" }
+arcrtc-core-operation = { path = "../../../Kernel/core/operation" }
+arcrtc-core-runtime = { path = "../../../Kernel/core/runtime" }
+arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
+arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
+arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
+arcrtc-reference-output = { path = "../output" }
+arcrtc-reference-signaling = { path = "../signaling" }
+arcrtc-reference-turn = { path = "../turn" }
+arcrtc-reference-sfu = { path = "../sfu" }

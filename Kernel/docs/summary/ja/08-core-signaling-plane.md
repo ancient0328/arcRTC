@@ -1,13 +1,13 @@
 # core-signaling-plane
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
 本章は arcRTC v0.2 Kernel の `core/signaling` が所有する Signaling contract と Signaling state machine の現行完全仕様を、本章のみで再現実装可能な粒度で内在化することを目的とします。Signaling は SDK と server が共有する protocol contract であり、network framework の都合で定義されません。本章は room state、command/event semantics、accept/reject boundary、全 state と全遷移、guard、reject 条件、idempotency/ordering/correlation 規則、fail-closed 条件、ならびに driver/entrypoint/SDK との境界を内在化します。
 
-依存方向の表記: `A <- B` は「B が A に依存」を意味します。Signaling の pure semantics は core が所有し、I/O（WebSocket/HTTP/encoding/runtime）と分離されます。v0.2 Kernel は Signaling product system を所有せず、reference implementation / product implementation は Kernel 外 implementations に置きます。
+依存方向の表記: `A <- B` は「B が A に依存」を意味します。Signaling の pure semantics は core が所有し、I/O（WebSocket/HTTP/encoding/runtime）と分離されます。v0.2 Kernel は Signaling product system を所有せず、reference distro / product distro は Kernel 外 distro に置きます。
 
 ---
 

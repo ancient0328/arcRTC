@@ -1,4 +1,8 @@
 // iOS SDK signaling-only surface の責務別 source shard です。
+public let ARCRTC_SIGNALING_PROTOCOL_VERSION = "v0.2"
+public let ARCRTC_SDK_SEMVER: String = "0.2.0"
+public let ARCRTC_SDK_PACKAGE_NAME: String = "ArcRtcSdkIos"
+
 public enum SdkOutOfScopeFeature: String, CaseIterable, Hashable, Sendable {
     case peerConnection = "PeerConnection"
     case mediaCapture = "media_capture"

@@ -32,6 +32,7 @@ members = [
   "drivers/browser",
   "drivers/native",
   "entrypoints/signaling-server",
+  "entrypoints/composition-root",
   "entrypoints/sfu-server",
   "entrypoints/turn-server",
   "entrypoints/cli",
@@ -69,6 +70,6 @@ dependency_class = "build_tool_dependency"
 [workspace.metadata.arcrtc.layers]
 core = ["core/transport", "core/signaling", "core/sfu", "core/turn", "core/security", "core/audit", "core/quality", "core/ports", "core/domain", "core/identity", "core/command", "core/reason", "core/protocol", "core/configuration", "core/features", "core/cross-plane", "core/operation", "core/runtime", "core/time", "core/state", "core/recovery"]
 drivers = ["drivers/webrtc-str0m", "drivers/network", "drivers/persistence", "drivers/observability", "drivers/security", "drivers/browser", "drivers/native"]
-entrypoints = ["entrypoints/signaling-server", "entrypoints/sfu-server", "entrypoints/turn-server", "entrypoints/cli", "entrypoints/demo", "entrypoints/configuration", "entrypoints/endpoints", "entrypoints/topology", "entrypoints/internal-control", "entrypoints/admin"]
+entrypoints = ["entrypoints/signaling-server", "entrypoints/composition-root", "entrypoints/sfu-server", "entrypoints/turn-server", "entrypoints/cli", "entrypoints/demo", "entrypoints/configuration", "entrypoints/endpoints", "entrypoints/topology", "entrypoints/internal-control", "entrypoints/admin"]
 sdk = ["sdk/typescript", "sdk/android", "sdk/ios"]
 regulated = ["regulated"]

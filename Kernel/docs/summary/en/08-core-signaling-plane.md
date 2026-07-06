@@ -1,13 +1,13 @@
 # core-signaling-plane
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the Signaling contract and Signaling state machine owned by `core/signaling` of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone. Signaling is a protocol contract shared by SDK and server, and is not defined for the convenience of a network framework. This chapter internalizes room state, command/event semantics, accept/reject boundary, all states and all transitions, guards, reject conditions, idempotency/ordering/correlation rules, fail-closed conditions, and the boundaries with driver/entrypoint/SDK.
+This chapter internalizes the current complete specification of the Signaling contract and Signaling state machine owned by `core/signaling` of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone. Signaling is a protocol contract shared by SDK and server, and is not defined for the convenience of a network framework. This chapter internalizes room state, command/event semantics, accept/reject boundary, all states and all transitions, guards, reject conditions, idempotency/ordering/correlation rules, fail-closed conditions, and the boundaries with driver/entrypoint/SDK.
 
-Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of Signaling are owned by core and separated from I/O (WebSocket/HTTP/encoding/runtime). v0.2 Kernel does not own the Signaling product system; the reference implementation / product implementation is placed in implementations outside the Kernel.
+Dependency direction notation: `A <- B` means "B depends on A". The pure semantics of Signaling are owned by core and separated from I/O (WebSocket/HTTP/encoding/runtime). v0.2 Kernel does not own the Signaling product system; the reference distro / product distro is placed in distro outside the Kernel.
 
 ---
 

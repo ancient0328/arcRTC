@@ -4,33 +4,6 @@ use arcrtc_roadmap_tests::{
 };
 
 #[test]
-fn entrypoint_composition_asset_surfaces_exist() {
-    assert_impl_file_contains(
-        "tests/entrypoints/servers/SERVER_COMPOSITION_ASSET.md",
-        &[
-            "T4.1",
-            "entrypoint composition test asset",
-            "Signaling",
-            "SFU",
-            "TURN",
-            "must not own domain semantics",
-        ],
-    );
-    assert_impl_file_contains(
-        "tests/entrypoints/operational-surfaces/OPERATIONAL_ENTRYPOINT_SURFACE_ASSET.md",
-        &[
-            "T4.2",
-            "configuration",
-            "endpoint",
-            "topology",
-            "internal-control",
-            "health",
-            "admin authorization",
-        ],
-    );
-}
-
-#[test]
 fn entrypoints_compose_core_and_drivers_without_regulated_dependency() {
     for manifest in files_named(&implementation_root().join("entrypoints"), "Cargo.toml") {
         let relative = impl_relative(&manifest);

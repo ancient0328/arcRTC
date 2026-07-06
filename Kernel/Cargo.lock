@@ -73,6 +73,7 @@ dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
  "arcrtc-core-reason",
+ "arcrtc-core-security",
 ]
 
 [[package]]
@@ -113,6 +114,7 @@ version = "0.0.0"
 name = "arcrtc-core-operation"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-audit",
  "arcrtc-core-command",
  "arcrtc-core-identity",
 ]
@@ -122,6 +124,7 @@ name = "arcrtc-core-ports"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-identity",
+ "arcrtc-core-operation",
  "arcrtc-core-protocol",
  "arcrtc-core-quality",
  "arcrtc-core-reason",
@@ -185,6 +188,8 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-security",
+ "arcrtc-core-transport",
 ]
 
 [[package]]
@@ -212,6 +217,7 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-security",
 ]
 
 [[package]]
@@ -257,6 +263,7 @@ name = "arcrtc-driver-observability"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-ports",
+ "arcrtc-core-quality",
  "arcrtc-core-reason",
 ]
 
@@ -294,6 +301,14 @@ name = "arcrtc-entrypoint-admin"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-reason",
+]
+
+[[package]]
+name = "arcrtc-entrypoint-composition-root"
+version = "0.0.0"
+dependencies = [
+ "arcrtc-entrypoint-admin",
+ "arcrtc-entrypoint-configuration",
 ]
 
 [[package]]
@@ -381,6 +396,7 @@ dependencies = [
  "arcrtc-driver-security",
  "arcrtc-driver-webrtc-str0m",
  "arcrtc-entrypoint-admin",
+ "arcrtc-entrypoint-composition-root",
  "arcrtc-entrypoint-configuration",
  "arcrtc-entrypoint-endpoints",
  "arcrtc-entrypoint-internal-control",
@@ -395,41 +411,21 @@ dependencies = [
 name = "arcrtc-sfu-server"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-quality",
- "arcrtc-core-reason",
- "arcrtc-core-sfu",
- "arcrtc-core-transport",
- "arcrtc-driver-network",
- "arcrtc-driver-observability",
- "arcrtc-driver-persistence",
- "arcrtc-driver-webrtc-str0m",
+ "arcrtc-entrypoint-composition-root",
 ]
 
 [[package]]
 name = "arcrtc-signaling-server"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-identity",
- "arcrtc-core-reason",
- "arcrtc-core-recovery",
- "arcrtc-core-signaling",
- "arcrtc-core-state",
- "arcrtc-driver-network",
- "arcrtc-driver-observability",
- "arcrtc-driver-persistence",
- "arcrtc-driver-security",
+ "arcrtc-entrypoint-composition-root",
 ]
 
 [[package]]
 name = "arcrtc-turn-server"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-reason",
- "arcrtc-core-turn",
- "arcrtc-driver-network",
- "arcrtc-driver-observability",
- "arcrtc-driver-persistence",
- "arcrtc-driver-security",
+ "arcrtc-entrypoint-composition-root",
 ]
 
 [[package]]

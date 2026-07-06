@@ -3,7 +3,7 @@
 // ここでは socket、runtime、str0m などの具象実装を持たず、core が扱う
 // transport 境界の語彙だけを段階的に配置します。
 
-use arcrtc_core_identity::{PacketId, SessionId};
+use arcrtc_core_identity::{OpaqueReference, PacketId, SessionId};
 use arcrtc_core_reason::CatalogedReasonRef;
 
 /// core transport package の所有境界を示す marker です。
@@ -506,4 +506,3 @@ pub enum IceFailureKind {
     /// network send failed.
     NetworkSendFailed,
 }
-

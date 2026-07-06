@@ -4,7 +4,9 @@
 //! Signaling 語彙だけを配置します。
 
 use arcrtc_core_command::{CommandEnvelope, DecisionReason, TargetSurface, UseCaseDecision};
-use arcrtc_core_identity::{CorrelationId, ParticipantId, RoomId};
+use arcrtc_core_identity::{CorrelationId, OpaqueReference, ParticipantId, RoomId};
+use arcrtc_core_security::VerifiedCredentialRef;
+use arcrtc_core_transport::TransportIceRelationRef;
 
 /// core signaling package の所有境界を示す marker です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -307,6 +309,10 @@ impl SignalingContractError {
         }
     }
 }
+
+include!("lib_parts/part_004.rs");
+include!("lib_parts/part_005.rs");
+include!("lib_parts/part_006.rs");
 
 /// Signaling room state の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

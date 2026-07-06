@@ -1,0 +1,16 @@
+[package]
+name = "arcrtc-distro-boundary-tests"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.96"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[dependencies]
+arcrtc-distro-evidence = { path = "../../distro-support/evidence" }

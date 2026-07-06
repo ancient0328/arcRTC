@@ -1,11 +1,11 @@
 # Entrypoints Topology and Control-Plane: deployment, internal control, service identity, discovery
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or implementation code), the deployment topology and control-plane boundaries of the arcRTC v0.2 Kernel. It covers four areas: deployment topology / service boundary; internal control-plane / service-to-service contract; internal service identity / trust; and service discovery / endpoint resolution. The granularity is sufficient for reimplementation from this chapter alone.
+This chapter specifies, in a fully self-contained form (understandable without opening any other file, source dev-doc, or the actual code), the deployment topology and control-plane boundaries of the arcRTC v0.2 Kernel. It covers four areas: deployment topology / service boundary; internal control-plane / service-to-service contract; internal service identity / trust; and service discovery / endpoint resolution. The granularity is sufficient for re-implementation from this chapter alone.
 
 It fixes the owner and evidence boundaries so that single process, split service, multi-node, service discovery, node affinity, node-local state, and service-to-service identity do not implicitly change core semantics. Topology selection MUST NOT silently change Signaling / SFU / TURN / SDK / audit semantics.
 

@@ -24,6 +24,7 @@ arcrtc-driver-persistence = { path = "../drivers/persistence" }
 arcrtc-driver-security = { path = "../drivers/security" }
 arcrtc-driver-webrtc-str0m = { path = "../drivers/webrtc-str0m" }
 arcrtc-entrypoint-admin = { path = "../entrypoints/admin" }
+arcrtc-entrypoint-composition-root = { path = "../entrypoints/composition-root" }
 arcrtc-entrypoint-configuration = { path = "../entrypoints/configuration" }
 arcrtc-entrypoint-endpoints = { path = "../entrypoints/endpoints" }
 arcrtc-entrypoint-internal-control = { path = "../entrypoints/internal-control" }

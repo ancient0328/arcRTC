@@ -1,21 +1,21 @@
-# arcRTC v0.2 Kernel — System & Development Summary (SSOT, English)
+# arcRTC v0.2 Kernel — System & Development Summary (English)
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 Scope: `Kernel/`
 
 ## Purpose of this summary
 
-This summary (all chapters under `docs/summary/en/`) is the **Single Source of Truth (SSOT)** for the arcRTC v0.2 Kernel: a self-contained specification and reference. Reading this summary alone — without consulting any other file or the source code — is intended to convey everything about the v0.2 Kernel: its intent, purpose, philosophy, structure, paths, properties, operations, verification, and troubleshooting.
+This summary (all chapters under `docs/summary/en/`) is a public projection of the arcRTC v0.2 Kernel structure and evidence scope. Reading this summary is intended to orient reviewers to the v0.2 Kernel intent, purpose, philosophy, structure, paths, properties, operations, verification, and troubleshooting.
 
-This is not a "history of how it was built"; it is the "complete present-day specification". It does not record dead ends, course corrections, or retired documents. Every statement describes the current authoritative state.
+This is not a "history of how it was built", and it is not a replacement for the current `dev-docs/` authority or source-level verification. Completion, evidence, and closure claims are governed by `dev-docs/` and matching reports.
 
-The Kernel's implementability — that these contracts can be realized into executable communication paths — is validated separately by the out-of-Kernel implementations track, which consumes the frozen contract without owning Kernel authority and is not itself a product.
+The Kernel's implementability — that these contracts can be realized into executable communication paths — is evaluated inside the Kernel tree through Kernel-owned drivers, entrypoints, real socket or datagram exchanges, and reports under `dev-docs/90-reports/`. Out-of-Kernel distro may consume Kernel contracts, but it does not supply Kernel completion evidence.
 
-### SSOT principles (apply to all chapters)
+### Summary principles (apply to all chapters)
 
-- This summary does not depend on redirection to, or citation of, external documents (the source tree, source code, or v0.1 material). All required normative content is internalized in the chapter bodies.
-- Cross-references between chapters are navigation within the same SSOT (by chapter number) only. Each chapter stays self-contained so the reader never needs to jump elsewhere to understand it.
+- This summary is an orientation surface. It does not override `dev-docs/`, source code, tests, or reports.
+- Cross-references between chapters are navigation within this summary (by chapter number) only. Each chapter stays self-contained enough for review orientation.
 - Normative keywords: "MUST", "MUST NOT", "MAY", and "fail-closed" (anything ambiguous or outside a closed set is not admitted — it fails toward rejection) are used consistently.
 - Terminology: technical proper nouns (core / drivers / entrypoints / sdk / regulated / port / Sans-IO / SFU / TURN / Signaling, etc.) are kept in their original form; explanation is in plain English.
 
@@ -46,7 +46,7 @@ Only `regulated -> core` MAY be allowed, and only for references to opaque commu
 
 | Chapter | Content |
 |---|---|
-| 00-INDEX | This index, SSOT principles, terminology, notation |
+| 00-INDEX | This index, summary principles, terminology, notation |
 | 01-overview-and-scope | Mission, value, definition of the Kernel, System Boundary, Non-goals, glossary |
 | 02-architecture-and-boundaries | Layer model, dependency direction, crate/package boundary, semantic modular monolith, source shard |
 | 03-core-domain-and-identity | DDD domain model, aggregate, use case, identity/reference, cross-plane identity/session binding |
@@ -78,10 +78,10 @@ Only `regulated -> core` MAY be allowed, and only for references to opaque commu
 
 ## Current acceptance scope (claim / non-claim)
 
-The acceptance scope this summary fixes is below.
+The acceptance scope this summary projects is below.
 
-- claim (adopted): fixed boundaries of core / drivers / entrypoints / sdk / regulated; placement of Signaling/SFU/TURN semantics in core; establishment of the Kernel completion / freeze scope.
-- non-claim (not asserted): production readiness, live readiness, native application readiness, completion of (out-of-Kernel) implementations reference/product systems, satisfaction of benchmark acceptance thresholds, inheritance of v0.1 behavior.
+- claim (adopted only when backed by current `dev-docs/90-reports/` evidence): fixed boundaries of core / drivers / entrypoints / sdk / regulated; placement of Signaling/SFU/TURN semantics in core; Kernel-owned runtime evidence for the explicitly reported scope.
+- non-claim (not asserted): production readiness, live readiness, native application readiness, completion of (out-of-Kernel) distro reference/product systems, satisfaction of benchmark acceptance thresholds, inheritance of v0.1 behavior.
 
 ## Japanese edition
 

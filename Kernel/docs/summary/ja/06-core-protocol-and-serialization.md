@@ -1,7 +1,7 @@
 # 第06章 core-protocol-and-serialization
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
@@ -221,7 +221,7 @@ stage 名は documentation classification であり runtime success 主張では
 |---|---|---|
 | `draft_documented` | draft 仕様が存在 | scope と owner が確定 |
 | `gated_scaffold` | 明示的 gate の背後に scaffold が存在 | dependency direction evidence |
-| `gated_implemented` | 明示的 gate の背後に implementation が存在 | unit/contract evidence |
+| `gated_implemented` | 明示的 gate の背後に実装が存在 | unit/contract evidence |
 | `controlled_integration` | selected integration evidence が存在 | integration report |
 | `adopted_contract` | 通常 contract に promote | 仕様の更新と compatibility rule |
 | `removed` | support 削除 | compatibility/deprecation lifecycle 充足 |

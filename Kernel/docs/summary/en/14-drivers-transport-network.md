@@ -1,11 +1,11 @@
 # drivers-transport-network
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the transport / network driver family of arcRTC v0.2 Kernel (`drivers/network`, `drivers/webrtc-str0m`, `drivers/browser`, `drivers/native`, and the TURN/STUN wire driver), at a granularity sufficient for reimplementation from this chapter alone. This chapter internalizes driver conversion (the conversion rules between external types and core-owned types), the network I/O boundary (tokio UDP/TCP/HTTP/WebSocket/socket), the transport driver (the WebRTC transport port implementation including str0m), the browser/native driver boundary, and the TURN wire driver (the STUN/TURN decode/encode boundary), down to owners, rules, failure mapping, closed-set vocabulary, prohibitions/permissions, and fail-closed conditions, omitting none.
+This chapter internalizes the current complete specification of the transport / network driver family of arcRTC v0.2 Kernel (`drivers/network`, `drivers/webrtc-str0m`, `drivers/browser`, `drivers/native`, and the TURN/STUN wire driver), at a granularity sufficient for re-implementation from this chapter alone. This chapter internalizes driver conversion (the conversion rules between external types and core-owned types), the network I/O boundary (tokio UDP/TCP/HTTP/WebSocket/socket), the transport driver (the WebRTC transport port implementation including str0m), the browser/native driver boundary, and the TURN wire driver (the STUN/TURN decode/encode boundary), down to owners, rules, failure mapping, closed-set vocabulary, prohibitions/permissions, and fail-closed conditions, omitting none.
 
 Dependency direction notation: `A <- B` means "B depends on A". A driver implements a core-owned port, and external types are converted into core-owned types at the driver boundary. `drivers -> entrypoints`, `drivers -> regulated`, and `driver -> driver` (direct dependency) are prohibited. A driver performs only syntax / transport / framework conversion and does not perform a domain decision. Cross-driver composition is performed by entrypoints through core-owned ports.
 

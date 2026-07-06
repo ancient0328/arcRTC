@@ -1,11 +1,11 @@
 # core-security-and-audit
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the security token verification boundary, authorization context / communication policy, audit event model, and audit hash-chain contract owned by the core of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone.
+This chapter internalizes the current complete specification of the security token verification boundary, authorization context / communication policy, audit event model, and audit hash-chain contract owned by the core of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone.
 
 Dependency direction notation: `A <- B` means "B depends on A". The core is free of external I/O dependencies. arcRTC is not an authentication platform; it is a communication infrastructure that holds a verification boundary for externally issued tokens. arcRTC does not issue tokens and does not own user accounts. This chapter makes identity-neutral primitives, verification request / result / decision semantics, authorization context mapping, all fields / types / closed sets of audit events, and hash-chain structure / verification rules / tamper detection core-owned, and separates JWT / JWK / cryptographic library / key fetch / cache / concrete sink as driver-owned. Token verification success, communication authorization success, and operator/admin authorization success are distinct and MUST NOT be conflated.
 

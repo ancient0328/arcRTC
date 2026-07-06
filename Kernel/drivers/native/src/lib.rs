@@ -341,6 +341,121 @@ impl NativeDriverFailure {
     }
 }
 
+/// native runtime command surface です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NativeRuntimeCommand {
+    command_ref: &'static str,
+    lifecycle_ref: &'static str,
+}
+
+impl NativeRuntimeCommand {
+    /// native runtime command ref と lifecycle ref を束ねます。
+    pub const fn new(command_ref: &'static str, lifecycle_ref: &'static str) -> Self {
+        Self {
+            command_ref,
+            lifecycle_ref,
+        }
+    }
+}
+
+/// native lifecycle surface です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NativeLifecycleSurface {
+    lifecycle_ref: &'static str,
+}
+
+impl NativeLifecycleSurface {
+    /// lifecycle ref を保持します。domain lifecycle decision ではありません。
+    pub const fn new(lifecycle_ref: &'static str) -> Self {
+        Self { lifecycle_ref }
+    }
+}
+
+/// native media bridge surface です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NativeMediaBridgeSurface {
+    media_bridge_ref: &'static str,
+}
+
+impl NativeMediaBridgeSurface {
+    /// media bridge ref を保持します。media session admission は所有しません。
+    pub const fn new(media_bridge_ref: &'static str) -> Self {
+        Self { media_bridge_ref }
+    }
+}
+
+/// native platform error mapping の閉集合です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NativePlatformErrorMapping {
+    /// network runtime が利用できません。
+    NetworkUnavailable,
+    /// media bridge 変換に失敗しました。
+    MediaBridgeFailed,
+    /// platform config が拒否されました。
+    ConfigRejected,
+    /// lifecycle ref が拒否されました。
+    LifecycleRejected,
+}
+
+/// native platform error input です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NativePlatformError {
+    command: NativeRuntimeCommand,
+    lifecycle: NativeLifecycleSurface,
+    media_bridge: NativeMediaBridgeSurface,
+    network_available: bool,
+    media_bridge_available: bool,
+    config_valid: bool,
+    lifecycle_ref_valid: bool,
+}
+
+impl NativePlatformError {
+    /// native platform error mapping の材料を束ねます。
+    pub const fn new(
+        command: NativeRuntimeCommand,
+        lifecycle: NativeLifecycleSurface,
+        media_bridge: NativeMediaBridgeSurface,
+        network_available: bool,
+        media_bridge_available: bool,
+        config_valid: bool,
+        lifecycle_ref_valid: bool,
+    ) -> Self {
+        Self {
+            command,
+            lifecycle,
+            media_bridge,
+            network_available,
+            media_bridge_available,
+            config_valid,
+            lifecycle_ref_valid,
+        }
+    }
+}
+
+/// native platform error の failure 条件を driver-local closed enum へ写像します。
+///
+/// native driver は domain acceptance/rejection semantics を所有しません。
+pub const fn map_native_platform_error(
+    error: NativePlatformError,
+) -> Result<(), NativePlatformErrorMapping> {
+    if error.command.command_ref.is_empty() || !error.network_available {
+        return Err(NativePlatformErrorMapping::NetworkUnavailable);
+    }
+    if error.media_bridge.media_bridge_ref.is_empty() || !error.media_bridge_available {
+        return Err(NativePlatformErrorMapping::MediaBridgeFailed);
+    }
+    if error.command.lifecycle_ref.is_empty() || error.lifecycle.lifecycle_ref.is_empty() {
+        return Err(NativePlatformErrorMapping::LifecycleRejected);
+    }
+    if !error.config_valid {
+        return Err(NativePlatformErrorMapping::ConfigRejected);
+    }
+    if !error.lifecycle_ref_valid {
+        return Err(NativePlatformErrorMapping::LifecycleRejected);
+    }
+    Ok(())
+}
+
 /// 実行 OS の platform clock から UNIX epoch milliseconds を読み取ります。
 pub fn native_clock_unix_epoch_millis_now() -> Result<u128, NativeDriverFailure> {
     match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {

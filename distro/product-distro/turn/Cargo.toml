@@ -1,0 +1,23 @@
+[package]
+name = "arcrtc-product-turn"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+arcrtc-core-turn = { path = "../../../Kernel/core/turn" }
+arcrtc-core-transport = { path = "../../../Kernel/core/transport" }
+arcrtc-core-security = { path = "../../../Kernel/core/security" }
+arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
+arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
+arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
+arcrtc-reference-output = { path = "../../reference-distro/output" }
+arcrtc-product-policy = { path = "../product-policy" }

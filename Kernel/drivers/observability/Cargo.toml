@@ -17,4 +17,5 @@ path = "src/lib.rs"
 
 [dependencies]
 arcrtc-core-ports = { path = "../../core/ports" }
+arcrtc-core-quality = { path = "../../core/quality" }
 arcrtc-core-reason = { path = "../../core/reason" }

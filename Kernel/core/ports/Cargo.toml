@@ -17,6 +17,7 @@ path = "src/lib.rs"
 
 [dependencies]
 arcrtc-core-identity = { path = "../identity" }
+arcrtc-core-operation = { path = "../operation" }
 arcrtc-core-protocol = { path = "../protocol" }
 arcrtc-core-quality = { path = "../quality" }
 arcrtc-core-reason = { path = "../reason" }

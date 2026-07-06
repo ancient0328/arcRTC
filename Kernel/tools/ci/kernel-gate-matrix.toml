@@ -1,0 +1,113 @@
+# CI gate matrix の source です。job result・evidence 採用・readiness proof は定義しません。
+
+[closed_sets]
+job_ids = ["kernel-rust", "sdk-typescript", "sdk-android", "sdk-ios", "supply-chain", "coverage", "benchmark", "security"]
+command_families = [
+  "cargo-fmt-check",
+  "cargo-clippy-workspace",
+  "cargo-test-workspace",
+  "typescript-sdk-test",
+  "android-sdk-test",
+  "ios-sdk-test",
+  "supply-chain-policy-check",
+  "coverage-denominator-check",
+  "benchmark-scenario-check",
+  "security-adversarial-check",
+]
+gate_classes = ["source-shape", "build", "test", "runtime-in-test", "benchmark", "live/operational"]
+
+[[commands]]
+job_id = "kernel-rust"
+command_family = "cargo-fmt-check"
+command_id = "cargo-fmt-check"
+gate_class = "build"
+working_directory = "."
+command_line = "cargo fmt --all -- --check"
+
+[[commands]]
+job_id = "kernel-rust"
+command_family = "cargo-clippy-workspace"
+command_id = "cargo-clippy-workspace"
+gate_class = "build"
+working_directory = "."
+command_line = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+
+[[commands]]
+job_id = "kernel-rust"
+command_family = "cargo-test-workspace"
+command_id = "cargo-test-workspace"
+gate_class = "test"
+working_directory = "."
+command_line = "cargo test --workspace"
+
+[[commands]]
+job_id = "sdk-typescript"
+command_family = "typescript-sdk-test"
+command_id = "typescript-sdk-test"
+gate_class = "test"
+working_directory = "sdk/typescript"
+command_line = "pnpm test"
+
+[[commands]]
+job_id = "sdk-android"
+command_family = "android-sdk-test"
+command_id = "android-sdk-test"
+gate_class = "test"
+working_directory = "sdk/android"
+command_line = "./gradlew :sdk:testDebugUnitTest"
+
+[[commands]]
+job_id = "sdk-ios"
+command_family = "ios-sdk-test"
+command_id = "ios-sdk-test"
+gate_class = "test"
+working_directory = "sdk/ios"
+command_line = "swift test"
+
+[[commands]]
+job_id = "supply-chain"
+command_family = "supply-chain-policy-check"
+command_id = "supply-chain-policy-check"
+gate_class = "source-shape"
+working_directory = "."
+command_line = "cargo test -p arcrtc-roadmap-tests --test release_supply_chain_policy"
+
+[[commands]]
+job_id = "coverage"
+command_family = "coverage-denominator-check"
+command_id = "coverage-denominator-check"
+gate_class = "test"
+working_directory = "."
+command_line = "cargo test -p arcrtc-roadmap-tests --test coverage_denominator_policy"
+
+[[commands]]
+job_id = "benchmark"
+command_family = "benchmark-scenario-check"
+command_id = "benchmark-load-check"
+gate_class = "benchmark"
+working_directory = "."
+command_line = "cargo bench -p arcrtc-benchmarks --bench kernel_load"
+
+[[commands]]
+job_id = "benchmark"
+command_family = "benchmark-scenario-check"
+command_id = "benchmark-soak-check"
+gate_class = "benchmark"
+working_directory = "."
+command_line = "cargo bench -p arcrtc-benchmarks --bench kernel_soak"
+
+[[commands]]
+job_id = "benchmark"
+command_family = "benchmark-scenario-check"
+command_id = "benchmark-concurrency-check"
+gate_class = "benchmark"
+working_directory = "."
+command_line = "cargo bench -p arcrtc-benchmarks --bench kernel_concurrency"
+
+[[commands]]
+job_id = "security"
+command_family = "security-adversarial-check"
+command_id = "security-adversarial-check"
+gate_class = "runtime-in-test"
+working_directory = "."
+command_line = "cargo test --manifest-path tests/Cargo.toml --test security_adversarial_scan"

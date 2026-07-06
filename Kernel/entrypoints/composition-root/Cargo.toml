@@ -1,0 +1,20 @@
+[package]
+name = "arcrtc-entrypoint-composition-root"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.arcrtc]
+owner_layer = "entrypoints"
+package_role = "resident loop composition root"
+allowed_dependency_direction = "composition root may depend on entrypoint observation surfaces"
+dependency_class = "entrypoint_composition_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-entrypoint-admin = { path = "../admin" }
+arcrtc-entrypoint-configuration = { path = "../configuration" }

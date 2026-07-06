@@ -1,7 +1,7 @@
 # core-command-and-reason
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
@@ -56,7 +56,7 @@ A success outcome MUST NOT carry a fake reason. A non-success outcome MUST carry
 
 ## 4. Construction Input Rule
 
-A result shape such as `UseCaseDecision` MUST NOT receive correlation, command type, target surface, outcome, reason, state transition, port intent, audit projection, and evidence class as a naked multi-argument constructor. Implementations bundle the unchecked materials into a named input type such as `UseCaseDecisionInput` and pass that input type into fail-closed checks. This rule is the boundary that prevents field-order swaps, fake reason injection, and missing audit/evidence class.
+A result shape such as `UseCaseDecision` MUST NOT receive correlation, command type, target surface, outcome, reason, state transition, port intent, audit projection, and evidence class as a naked multi-argument constructor. Distro bundle the unchecked materials into a named input type such as `UseCaseDecisionInput` and pass that input type into fail-closed checks. This rule is the boundary that prevents field-order swaps, fake reason injection, and missing audit/evidence class.
 
 ## 5. Outcome Rule
 
@@ -667,7 +667,7 @@ When mapping core reason category/code to HTTP, WebSocket, STUN/TURN, SDK error 
 
 ### 11.2 Mapping Fields
 
-Every external non-success response that can be emitted MUST define: external surface; external status/wrapper class; correlation reference when safe and available; exposed reason category/code when `safe_to_expose = true`; redacted opaque error reference when `safe_to_expose = false`; audit event relation when audit is required; retry hint only if reason metadata allows retry. Implementation MUST pass these fields through a named input type such as `ExternalErrorProjectionInput`. If the reason is not safe to expose, the external response MUST NOT leak secret/key/token/backend detail.
+Every external non-success response that can be emitted MUST define: external surface; external status/wrapper class; correlation reference when safe and available; exposed reason category/code when `safe_to_expose = true`; redacted opaque error reference when `safe_to_expose = false`; audit event relation when audit is required; retry hint only if reason metadata allows retry. Distro MUST pass these fields through a named input type such as `ExternalErrorProjectionInput`. If the reason is not safe to expose, the external response MUST NOT leak secret/key/token/backend detail.
 
 ### 11.3 Surface Mapping
 

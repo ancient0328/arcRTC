@@ -1,11 +1,11 @@
 # core-runtime-time-concurrency
 
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter internalizes the current complete specification of the runtime / clock / randomness abstraction boundary, runtime task / worker lifecycle, retry / timeout / cancellation, concurrency / ordering / lock ownership, atomicity / transaction / compensation, unit / measurement / time normalization, time synchronization / clock skew / timestamp trust, and resource bounds / backpressure owned by the core of arcRTC v0.2 Kernel, at a granularity sufficient for reimplementation from this chapter alone.
+This chapter internalizes the current complete specification of the runtime / clock / randomness abstraction boundary, runtime task / worker lifecycle, retry / timeout / cancellation, concurrency / ordering / lock ownership, atomicity / transaction / compensation, unit / measurement / time normalization, time synchronization / clock skew / timestamp trust, and resource bounds / backpressure owned by the core of arcRTC v0.2 Kernel, at a granularity sufficient for re-implementation from this chapter alone.
 
 Dependency direction notation: `A <- B` means "B depends on A". The core is free of external I/O dependencies. time, entropy, spawn, timer, and cancellation separate core policy (decision) from driver execution. The driver owns time observation and physical execution; the core owns expiry / deadline / ordering / bound policy. entrypoints only wire selected implementations and MUST NOT own time policy, entropy semantics, runtime retry semantics, bound policy, or enforcement. This chapter internalizes all state transitions and closed-set vocabulary of each lifecycle, fail-closed conditions, and failure mapping.
 

@@ -1,14 +1,14 @@
 # Architecture and Boundaries
-Status: SSOT consolidated edition
-Date: 2026-06-28 JST
+Status: public summary projection
+Date: 2026-07-06 JST
 
 ## Purpose
 
-This chapter fixes the layer model of the arcRTC v0.2 Kernel, the dependency directions (all permitted/forbidden directions), what each layer owns and does not own, the crate / package boundary and package roles, the semantic modular monolith principle, source shard modularity, and the no-copy / selective extraction policy. It presents, self-contained, the list and responsibilities of the core submodules, the boundary decision order, and the collapse conditions. From this chapter alone, the v0.2 architecture boundary can be understood at a granularity sufficient for re-implementation.
+This chapter summarizes the layer model of the arcRTC v0.2 Kernel, the dependency directions (all permitted/forbidden directions), what each layer owns and does not own, the crate / package boundary and package roles, the semantic modular monolith principle, source shard modularity, and the no-copy / selective extraction policy. It presents the list and responsibilities of the core submodules, the boundary decision order, and the collapse conditions.
 
 ## Layer Model
 
-arcRTC v0.2 adopts DDD / hexagonal architecture. The design center is to not confuse the Kernel's semantic authority, external drivers, in-Kernel entrypoints, the SDK, regulated support, and out-of-Kernel implementations.
+arcRTC v0.2 adopts DDD / hexagonal architecture. The design center is to not confuse the Kernel's semantic authority, external drivers, in-Kernel entrypoints, the SDK, regulated support, and out-of-Kernel distro.
 
 ```text
 core <- drivers
@@ -19,11 +19,11 @@ sdk: independent Signaling-only boundary
 regulated: optional domain support
 ```
 
-The dependency-direction notation `A <- B` means "B depends on A (B may reference A)." `Kernel/` is the Kernel root. The in-Kernel `core` is the semantic nucleus, center, and highest authority, and is not an alias for the whole Kernel. Out-of-Kernel implementations are consumers of the Kernel contract and own SFU / TURN / Signaling reference or product implementations. The in-Kernel `entrypoints/*-server` are not product systems; they are limited to executable contract / composition evidence surfaces.
+The dependency-direction notation `A <- B` means "B depends on A (B may reference A)." `Kernel/` is the Kernel root. The in-Kernel `core` is the semantic nucleus, center, and highest authority, and is not an alias for the whole Kernel. Out-of-Kernel distro is a consumer of the Kernel contract and owns SFU / TURN / Signaling reference or product distro. The in-Kernel `entrypoints/*-server` are not product systems; they are limited to executable contract / composition evidence surfaces.
 
-## Freeze Scope
+## Contract Change Scope
 
-After Kernel completion, the Kernel contract, semantic vocabulary, port ownership, and dependency direction are freeze targets. A post-freeze change to any of these requires a new versioned contract and a compatibility / deprecation rule (the protocol versioning / deprecation rules of Chapter 06). Freeze does not mean production / live / native application readiness; those are separate claims owned by out-of-Kernel implementations.
+Kernel contract, semantic vocabulary, port ownership, and dependency direction are protected change surfaces. A change to any of these requires a versioned contract and a compatibility / deprecation rule (the protocol versioning / deprecation rules of Chapter 06). Protection of these surfaces does not mean production / live / native application readiness; those are separate distro-owned claims and are not Kernel completion evidence.
 
 ## Dependency Directions (all permitted/forbidden directions)
 
@@ -65,16 +65,16 @@ In addition, the following concrete contaminations are forbidden.
 - Placing PostgreSQL / Redis / S3 / filesystem sink concrete implementations in core.
 - Placing environment variable parsing in core.
 - Placing protocol decisions in entrypoints.
-- Treating entrypoints as SFU / TURN / Signaling product implementations.
-- Adopting implementations product policy as a Kernel contract.
+- Treating entrypoints as SFU / TURN / Signaling product distro.
+- Adopting distro product policy as a Kernel contract.
 
 ## What Each Layer Owns / Does Not Own
 
 | Layer | Owns | Does not own |
 |---|---|---|
-| core | Kernel semantic nucleus, domain semantics, use case, port, contract, state, decision | I/O, runtime, framework, DB, cloud SDK, browser/native types, implementations product policy |
+| core | Kernel semantic nucleus, domain semantics, use case, port, contract, state, decision | I/O, runtime, framework, DB, cloud SDK, browser/native types, distro product policy |
 | drivers | port implementation, external type conversion, I/O | domain rule, accept/reject rule |
-| entrypoints | executable contract evidence, CLI, demo, composition root | domain rule, protocol semantics, SFU / TURN / Signaling product implementation |
+| entrypoints | executable contract evidence, CLI, demo, composition root | domain rule, protocol semantics, SFU / TURN / Signaling product distro |
 | sdk | Signaling-only public client contract | media, auth issuance, regulated workflow |
 | regulated | optional domain support, enrichment, pointer mapping | the authority of the generic communication protocol |
 
@@ -321,7 +321,7 @@ The architecture boundary judgment of this chapter collapses if any of the follo
 - core depends on an external concrete implementation.
 - drivers own a domain rule.
 - entrypoints own protocol semantics beyond the composition root.
-- entrypoints are treated as an implementations product implementation.
+- entrypoints are treated as a product-distro deliverable.
 - the SDK exceeds the Signaling-only boundary.
 - regulated becomes a required dependency of the generic communication core.
 - regulated depends on sdk / drivers / entrypoints.

@@ -1,14 +1,14 @@
 # アーキテクチャと境界
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
-本章は arcRTC v0.2 Kernel の層モデル、依存方向（許可/禁止の全方向）、各層が所有/非所有するもの、crate / package 境界と package 役割、semantic modular monolith の原則、source shard modularity、no-copy / selective extraction 方針を確定します。core 内サブモジュールの一覧と責務、境界判断順序、崩壊条件をその場で完結して提示します。本章だけで、v0.2 の architecture 境界を再現実装可能な粒度で把握できます。
+本章は arcRTC v0.2 Kernel の層モデル、依存方向（許可/禁止の全方向）、各層が所有/非所有するもの、crate / package 境界と package 役割、semantic modular monolith の原則、source shard modularity、no-copy / selective extraction 方針を要約します。core 内サブモジュールの一覧と責務、境界判断順序、崩壊条件を提示します。
 
 ## 層モデル
 
-arcRTC v0.2 は DDD / ヘキサゴナルアーキテクチャを採用します。設計の中心は、Kernel の semantic authority、external driver、Kernel 内 entrypoint、SDK、regulated support、Kernel 外 implementations を混同しないことです。
+arcRTC v0.2 は DDD / ヘキサゴナルアーキテクチャを採用します。設計の中心は、Kernel の semantic authority、external driver、Kernel 内 entrypoint、SDK、regulated support、Kernel 外 distro を混同しないことです。
 
 ```text
 core <- drivers
@@ -19,11 +19,11 @@ sdk: independent Signaling-only boundary
 regulated: optional domain support
 ```
 
-依存方向記法 `A <- B` は「B が A に依存する（B から A を参照可）」を意味します。`Kernel/` は Kernel root です。Kernel 内の `core` は semantic nucleus、中枢、最高権威であり、Kernel 全体の別名ではありません。Kernel 外 implementations は Kernel contract を利用する側であり、SFU / TURN / Signaling reference implementation または product implementation を所有します。Kernel 内の `entrypoints/*-server` は product system ではなく、executable contract / composition evidence surface に限定されます。
+依存方向記法 `A <- B` は「B が A に依存する（B から A を参照可）」を意味します。`Kernel/` は Kernel root です。Kernel 内の `core` は semantic nucleus、中枢、最高権威であり、Kernel 全体の別名ではありません。Kernel 外 distro は Kernel contract を利用する側であり、SFU / TURN / Signaling reference distro または product distro を所有します。Kernel 内の `entrypoints/*-server` は product system ではなく、executable contract / composition evidence surface に限定されます。
 
-## Freeze Scope（凍結対象）
+## Contract Change Scope（契約変更保護対象）
 
-Kernel completion 後、Kernel contract、semantic vocabulary、port ownership、dependency direction は freeze target です。これらの post-freeze な変更には、versioned contract と compatibility / deprecation rule（第06章の protocol versioning / deprecation 規範）が必要です。freeze は production / live / native application readiness を意味せず、それらは Kernel 外 implementations が所有する別 claim です。
+Kernel contract、semantic vocabulary、port ownership、dependency direction は protected change surface です。これらの変更には、versioned contract と compatibility / deprecation rule（第06章の protocol versioning / deprecation 規範）が必要です。これらの surface の保護は production / live / native application readiness を意味せず、それらは distro-owned claim であり、Kernel completion evidence ではありません。
 
 ## 依存方向（許可/禁止の全方向）
 
@@ -65,16 +65,16 @@ regulated -> entrypoints
 - core に PostgreSQL / Redis / S3 / filesystem sink concrete implementation を置く。
 - core に environment variable parsing を置く。
 - entrypoints に protocol decision を置く。
-- entrypoints を SFU / TURN / Signaling product implementation として扱う。
-- implementations product policy を Kernel contract として採用する。
+- entrypoints を SFU / TURN / Signaling product distro として扱う。
+- distro product policy を Kernel contract として採用する。
 
 ## 各層が所有 / 非所有するもの
 
 | Layer | 所有するもの | 所有しないもの |
 |---|---|---|
-| core | Kernel semantic nucleus、domain semantics、use case、port、contract、state、decision | I/O、runtime、framework、DB、cloud SDK、browser/native 型、implementations product policy |
+| core | Kernel semantic nucleus、domain semantics、use case、port、contract、state、decision | I/O、runtime、framework、DB、cloud SDK、browser/native 型、distro product policy |
 | drivers | port implementation、external type conversion、I/O | domain rule、accept/reject rule |
-| entrypoints | executable contract evidence、CLI、demo、composition root | domain rule、protocol semantics、SFU / TURN / Signaling product implementation |
+| entrypoints | executable contract evidence、CLI、demo、composition root | domain rule、protocol semantics、SFU / TURN / Signaling product distro |
 | sdk | Signaling-only public client contract | media、auth issuance、regulated workflow |
 | regulated | optional domain support、enrichment、pointer mapping | generic communication protocol の正 |
 
@@ -321,7 +321,7 @@ v0.1.2 は reference inventory であり、v0.2 current canonical ではあり�
 - core が external concrete implementation に依存する。
 - drivers が domain rule を所有する。
 - entrypoints が composition root を超えて protocol semantics を所有する。
-- entrypoints が implementations product implementation として扱われる。
+- entrypoints が product-distro として扱われる。
 - SDK が Signaling-only 境界を超える。
 - regulated が generic communication core の必須依存になる。
 - regulated が sdk / drivers / entrypoints に依存する。

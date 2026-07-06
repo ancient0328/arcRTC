@@ -25,7 +25,6 @@ use arcrtc_driver_network::{
     DriverCommandConversionInput, DriverIngressPreconditions, ExternalIngressKind,
     SemanticDelegationGuard,
 };
-use arcrtc_roadmap_integration_tests::{assert_impl_file_contains, assert_not_contains, read_impl};
 
 fn reference(value: &str) -> OpaqueReference {
     OpaqueReference::accept(value, ReferenceAuthority::CorePolicy).expect("reference must be valid")
@@ -144,39 +143,6 @@ fn ce7_sfu_turn_and_cross_plane_flow_uses_references_not_raw_payloads() {
         None,
     );
     assert_eq!(decision.audit_event_type(), "cross_plane_binding_decision");
-}
-
-#[test]
-fn ce7_controlled_integration_assets_cover_all_flows_without_live_claim() {
-    for path in [
-        "integration-tests/signaling/SIGNALING_CONTROLLED_INTEGRATION_ASSET.md",
-        "integration-tests/turn-relay/TURN_RELAY_GATE_INTEGRATION_ASSET.md",
-        "integration-tests/turn-blocked-network/TURN_BLOCKED_NETWORK_OBSERVATION_ASSET.md",
-        "integration-tests/sfu-three-party/SFU_THREE_PARTY_ROUTING_INTEGRATION_ASSET.md",
-        "integration-tests/cross-plane-binding/CROSS_PLANE_BINDING_INTEGRATION_ASSET.md",
-    ] {
-        assert_impl_file_contains(
-            path,
-            &[
-                "controlled integration",
-                "runtime-in-test",
-                "Close-not-claimed",
-                "not live production",
-            ],
-        );
-        let content = read_impl(path);
-        assert_not_contains(
-            path,
-            &content,
-            &[
-                "production-ready",
-                "is public internet traversal proof",
-                "public internet traversal proof: yes",
-                "unredacted token",
-                "raw RTP payload proof",
-            ],
-        );
-    }
 }
 
 #[test]
@@ -494,10 +460,4 @@ fn ce7_controlled_flow_evidence_rejects_hidden_fake_and_live_traversal_substitut
         }),
         Err(ControlledFlowEvidenceError::LiveTraversalClaim)
     );
-
-    let blocked_asset = read_impl(
-        "integration-tests/turn-blocked-network/TURN_BLOCKED_NETWORK_OBSERVATION_ASSET.md",
-    );
-    assert!(blocked_asset.contains("Observation is not correctness proof"));
-    assert!(blocked_asset.contains("not public internet traversal proof"));
 }

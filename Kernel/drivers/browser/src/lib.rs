@@ -360,6 +360,97 @@ impl BrowserDriverFailure {
     }
 }
 
+/// browser runtime I/O surface です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BrowserRuntimeIoSurface {
+    runtime_ref: &'static str,
+    event_source_ref: &'static str,
+}
+
+impl BrowserRuntimeIoSurface {
+    /// browser runtime ref と event source ref を束ねます。
+    pub const fn new(runtime_ref: &'static str, event_source_ref: &'static str) -> Self {
+        Self {
+            runtime_ref,
+            event_source_ref,
+        }
+    }
+}
+
+/// browser platform event adapter です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BrowserPlatformEventAdapter {
+    adapter_ref: &'static str,
+}
+
+impl BrowserPlatformEventAdapter {
+    /// adapter ref を保持します。domain command semantics は所有しません。
+    pub const fn new(adapter_ref: &'static str) -> Self {
+        Self { adapter_ref }
+    }
+}
+
+/// browser driver failure mapping の閉集合です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BrowserDriverFailureMapping {
+    /// browser runtime が利用できません。
+    RuntimeUnavailable,
+    /// browser platform event の decode に失敗しました。
+    EventDecodeFailed,
+    /// browser permission が拒否されました。
+    PermissionDenied,
+}
+
+/// browser platform event mapping input です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BrowserPlatformEvent {
+    surface: BrowserRuntimeIoSurface,
+    adapter: BrowserPlatformEventAdapter,
+    runtime_available: bool,
+    event_decoded: bool,
+    permission_granted: bool,
+}
+
+impl BrowserPlatformEvent {
+    /// browser platform event の mapping 材料を束ねます。
+    pub const fn new(
+        surface: BrowserRuntimeIoSurface,
+        adapter: BrowserPlatformEventAdapter,
+        runtime_available: bool,
+        event_decoded: bool,
+        permission_granted: bool,
+    ) -> Self {
+        Self {
+            surface,
+            adapter,
+            runtime_available,
+            event_decoded,
+            permission_granted,
+        }
+    }
+}
+
+/// browser platform event の failure 条件を driver-local closed enum へ写像します。
+///
+/// browser driver は room/session/domain admission や auth issuance を所有しません。
+pub const fn map_browser_platform_event(
+    event: BrowserPlatformEvent,
+) -> Result<(), BrowserDriverFailureMapping> {
+    if event.surface.runtime_ref.is_empty()
+        || event.surface.event_source_ref.is_empty()
+        || !event.runtime_available
+    {
+        return Err(BrowserDriverFailureMapping::RuntimeUnavailable);
+    }
+    if event.adapter.adapter_ref.is_empty() || !event.event_decoded {
+        return Err(BrowserDriverFailureMapping::EventDecodeFailed);
+    }
+    if !event.permission_granted {
+        return Err(BrowserDriverFailureMapping::PermissionDenied);
+    }
+    Ok(())
+}
+
 /// browser driver initial scope 外の feature です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BrowserOutOfScopeFeature {

@@ -1,7 +1,7 @@
 # arcRTC v0.2
 
 arcRTC v0.2 is a WebRTC communication-semantics project in two parts: a **Kernel**
-that defines and freezes the communication contract, and **implementations** that
+that defines and freezes the communication contract, and **distro** that
 build a reference SFU / TURN / Signaling stack on top of that frozen contract.
 
 This repository is organized as a semantic boundary and its constructive evidence —
@@ -17,18 +17,18 @@ native SDK release.
   state and lifecycle boundaries, port ownership and driver conversion, executable
   composition boundaries, Signaling-only SDK projection, and evidence-scoped
   verification. Organized around DDD and hexagonal architecture.
-- [`implementations/`](implementations/README.md) — the out-of-Kernel track that
+- [`distro/`](distro/README.md) — the out-of-Kernel track that
   consumes the frozen Kernel contract and turns it into runnable reference
   Signaling / TURN / SFU paths, a composition example, a benchmark harness, and a
-  product-implementation track. It does not modify or own Kernel semantics.
+  product-distro track. It does not modify or own Kernel semantics.
 
-`implementations` depends on `Kernel`; `Kernel` never depends on `implementations`.
+`distro` depends on `Kernel`; `Kernel` never depends on `distro`.
 
 ## Scope
 
-The Kernel presents a stable semantic boundary; the implementations track is
-experimental and reference-oriented. Reference implementations are not product
-implementations, and benchmark results are not production-readiness claims. This
+The Kernel presents a stable semantic boundary; the distro track is
+experimental and reference-oriented. Reference-distro output is not
+product-distro output, and benchmark results are not production-readiness claims. This
 project does not claim production readiness, clinical / regulated deployment, or a
 managed-RTC-SDK replacement.
 
@@ -45,12 +45,12 @@ cargo build --workspace --all-targets
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace --all-targets
 
-# implementations (reference / product source)
-cd ../implementations
+# distro (reference / product source)
+cd ../distro
 cargo build --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 
-# implementations behavior tests (each area is its own workspace)
+# distro behavior tests (each area is its own workspace)
 for area in reference product benchmark real-device live production-readiness boundary; do
   ( cd tests/"$area" && cargo test )
 done

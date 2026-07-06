@@ -4,7 +4,7 @@
 //! core には検証結果と通信許可判断に必要な語彙だけを配置します。
 
 use arcrtc_core_command::{DecisionReason, TargetSurface, UseCaseOutcome};
-use arcrtc_core_identity::{CorrelationId, CredentialRef};
+use arcrtc_core_identity::{CorrelationId, CredentialRef, OpaqueReference};
 
 /// core security package の所有境界を示す marker です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -467,3 +467,10 @@ impl TokenVerificationFailureKind {
         }
     }
 }
+
+include!("lib_parts/part_004.rs");
+include!("lib_parts/part_005.rs");
+include!("lib_parts/part_006.rs");
+include!("lib_parts/part_007.rs");
+include!("lib_parts/part_008.rs");
+include!("lib_parts/part_009.rs");

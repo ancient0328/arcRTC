@@ -1,13 +1,13 @@
 # entrypoints の composition root と configuration 境界
 
-状態: SSOT 統合版
-日付: 2026-06-28 JST
+状態: public summary projection
+日付: 2026-07-06 JST
 
 ## 目的
 
 本章は arcRTC v0.2 Kernel の `entrypoints/` における composition root（dependency injection / wiring）境界、core が所有する configuration boundary 型、configuration profile / policy bundle、runtime reconfiguration / policy hot-swap の全手順と禁止事項を、他文書・実コードを参照せずに完全自己完結で規定します。本章単独で再現実装が可能な粒度を与えます。
 
-entrypoints は Kernel 内の executable contract、CLI、demo、dependency wiring、composition evidence surface を所有しますが、domain rule、protocol semantics、port contract、SFU / TURN / Signaling の product implementation を所有しません。
+entrypoints は Kernel 内の executable contract、CLI、demo、dependency wiring、composition evidence surface を所有しますが、domain rule、protocol semantics、port contract、SFU / TURN / Signaling の product distro を所有しません。
 
 ## 第1節 Entrypoint Set（閉集合）
 
@@ -38,7 +38,7 @@ entrypoints は次の行為を行うことが許可されます。
 - 許可された境界を通じて core use case を呼ぶ CLI/demo command の expose。
 
 entrypoints は、代替の domain decision、reason vocabulary、port trait、state transition を定義することが禁止です。
-entrypoints は、reference implementation、product implementation、production readiness、live readiness の evidence として扱うことが禁止です。
+entrypoints は、reference distro、product distro、production readiness、live readiness の evidence として扱うことが禁止です。
 
 ## 第3節 Wiring Rule（依存方向）
 
@@ -275,7 +275,7 @@ CLI と demo は便利な flow を expose してよいが、代替の domain aut
 
 - entrypoints が port traits を定義する。
 - entrypoints が Signaling join acceptance、SFU route selection、TURN permission decision を所有する。
-- entrypoints が SFU / TURN / Signaling reference implementation または product implementation を所有する。
+- entrypoints が SFU / TURN / Signaling reference distro または product distro を所有する。
 - entrypoints が core/drivers 契約境界外で retry/backpressure/resource policy を実装する。
 - entrypoints が required policy / runtime configuration の default を silently 代入する。
 - entrypoints が admitted task supervision 外で detached workers を spawn する。
@@ -301,7 +301,7 @@ CLI と demo は便利な flow を expose してよいが、代替の domain aut
 ## 第13節 Collapse Conditions（判断が崩れる条件）
 
 - executable entrypoint が domain rule を所有する。
-- executable entrypoint が product implementation として扱われる。
+- executable entrypoint が product distro として扱われる。
 - composition root が第二の reason catalog を定義する。
 - entrypoints が core が所有する ports を bypass し driver internals を domain authority として呼ぶ。
 - startup failure が隠蔽されつつ close / complete / ready を主張する。

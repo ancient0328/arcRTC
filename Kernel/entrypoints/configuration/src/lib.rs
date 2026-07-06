@@ -4,3 +4,5 @@ include!("lib_parts/part_001.rs");
 include!("lib_parts/part_002.rs");
 include!("lib_parts/part_003.rs");
 include!("lib_parts/part_004.rs");
+include!("lib_parts/part_005.rs");
+include!("lib_parts/part_006.rs");

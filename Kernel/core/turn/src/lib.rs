@@ -7,10 +7,15 @@ use arcrtc_core_command::{TargetSurface, UseCaseDecision};
 use arcrtc_core_identity::{
     AllocationId, ChannelBindId, CredentialRef, OpaqueReference, PacketId, PermissionId,
 };
+use arcrtc_core_security::{MessageIntegrityPolicyRef, VerifiedCredentialRef};
 
 /// core TURN package の所有境界を示す marker です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CoreTurnSurface;
+
+include!("lib_parts/part_002.rs");
+include!("lib_parts/part_003.rs");
+include!("lib_parts/part_004.rs");
 
 /// TURN message semantic class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -4,30 +4,15 @@ mod cli_main;
 #[allow(dead_code)]
 #[path = "../../entrypoints/demo/src/main.rs"]
 mod demo_main;
-#[allow(dead_code)]
-#[path = "../../entrypoints/sfu-server/src/main.rs"]
-mod sfu_server_main;
-#[allow(dead_code)]
-#[path = "../../entrypoints/signaling-server/src/main.rs"]
-mod signaling_server_main;
-#[allow(dead_code)]
-#[path = "../../entrypoints/turn-server/src/main.rs"]
-mod turn_server_main;
 
 use arcrtc_core_command::CoreCommandSurface;
 use arcrtc_core_features::FeatureAdmissionFailureKind;
-use arcrtc_core_quality::CoreQualitySurface;
 use arcrtc_core_reason::CatalogedReasonRef;
-use arcrtc_core_sfu::CoreSfuSurface;
-use arcrtc_core_signaling::CoreSignalingSurface;
-use arcrtc_core_transport::CoreTransportSurface;
-use arcrtc_core_turn::CoreTurnSurface;
-use arcrtc_driver_network::NetworkDriverSurface;
-use arcrtc_driver_observability::ObservabilityDriverSurface;
-use arcrtc_driver_persistence::PersistenceDriverSurface;
-use arcrtc_driver_security::SecurityDriverSurface;
-use arcrtc_driver_webrtc_str0m::Str0mDriverSurface;
 use arcrtc_entrypoint_admin as admin;
+use arcrtc_entrypoint_composition_root::{
+    run_resident_loop, ResidentDriverBindingRef, ResidentServerKind, ResidentServerLoopConfig,
+    RuntimeProfileObservationRef, ShutdownDrainObservationRef,
+};
 use arcrtc_entrypoint_configuration as configuration;
 use arcrtc_entrypoint_endpoints as endpoints;
 use arcrtc_entrypoint_internal_control as internal_control;
@@ -70,59 +55,58 @@ fn binary_composition_roots_expose_wiring_without_domain_authority() {
         let _ = demo_main::DemoCommandWiring::new(CoreCommandSurface, scenario_class);
     }
 
-    let _signaling_surface = signaling_server_main::SignalingServerCompositionSurface;
-    let _ = signaling_server_main::SignalingServerWiringSet::new(
-        CoreSignalingSurface,
-        NetworkDriverSurface,
-        SecurityDriverSurface,
-        PersistenceDriverSurface,
-        ObservabilityDriverSurface,
-    );
-
-    let _sfu_surface = sfu_server_main::SfuServerCompositionSurface;
-    let _ = sfu_server_main::SfuServerWiringSet::new(
-        CoreSfuSurface,
-        CoreQualitySurface,
-        CoreTransportSurface,
-        Str0mDriverSurface,
-        NetworkDriverSurface,
-        PersistenceDriverSurface,
-        ObservabilityDriverSurface,
-    );
-
-    let _turn_surface = turn_server_main::TurnServerCompositionSurface;
-    let _ = turn_server_main::TurnServerWiringSet::new(
-        CoreTurnSurface,
-        NetworkDriverSurface,
-        SecurityDriverSurface,
-        PersistenceDriverSurface,
-        ObservabilityDriverSurface,
-    );
-
-    assert_eq!(
-        format!(
-            "{:?}",
-            signaling_server_main::ProhibitedSignalingServerCompositionBehavior::
-                ListenerStartupAsEndpointReadiness
+    for (server_kind, drivers, runtime_profile, shutdown_ref, supervision_ref) in [
+        (
+            ResidentServerKind::Signaling,
+            vec![
+                ResidentDriverBindingRef::Network,
+                ResidentDriverBindingRef::Persistence,
+                ResidentDriverBindingRef::Observability,
+                ResidentDriverBindingRef::Security,
+            ],
+            "runtime-profile:signaling",
+            "shutdown:signaling",
+            "supervision:signaling",
         ),
-        "ListenerStartupAsEndpointReadiness"
-    );
-    assert_eq!(
-        format!(
-            "{:?}",
-            sfu_server_main::ProhibitedSfuServerCompositionBehavior::
-                ListenerStartupAsSfuMediaReadiness
+        (
+            ResidentServerKind::Turn,
+            vec![
+                ResidentDriverBindingRef::Network,
+                ResidentDriverBindingRef::TurnRelay,
+                ResidentDriverBindingRef::Persistence,
+                ResidentDriverBindingRef::Observability,
+                ResidentDriverBindingRef::Security,
+            ],
+            "runtime-profile:turn",
+            "shutdown:turn",
+            "supervision:turn",
         ),
-        "ListenerStartupAsSfuMediaReadiness"
-    );
-    assert_eq!(
-        format!(
-            "{:?}",
-            turn_server_main::ProhibitedTurnServerCompositionBehavior::
-                RegulatedSupportInGenericCommunicationPath
+        (
+            ResidentServerKind::Sfu,
+            vec![
+                ResidentDriverBindingRef::Network,
+                ResidentDriverBindingRef::SfuTransport,
+                ResidentDriverBindingRef::Persistence,
+                ResidentDriverBindingRef::Observability,
+            ],
+            "runtime-profile:sfu",
+            "shutdown:sfu",
+            "supervision:sfu",
         ),
-        "RegulatedSupportInGenericCommunicationPath"
-    );
+    ] {
+        let config = ResidentServerLoopConfig::new(
+            server_kind,
+            RuntimeProfileObservationRef::new(runtime_profile),
+            drivers,
+            ShutdownDrainObservationRef::new(shutdown_ref),
+            ShutdownDrainObservationRef::new(supervision_ref),
+        );
+        assert_eq!(config.server_kind(), server_kind);
+        assert_eq!(
+            run_resident_loop(config).unwrap().server_kind(),
+            server_kind
+        );
+    }
 }
 
 #[test]

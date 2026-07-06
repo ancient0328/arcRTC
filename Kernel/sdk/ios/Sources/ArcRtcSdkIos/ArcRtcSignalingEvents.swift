@@ -1,4 +1,82 @@
 // iOS SDK signaling-only surface の責務別 source shard です。
+public struct ArcRtcJoinAcceptedEvent: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sessionRef: String
+
+    public init(roomId: String, participantId: String, sessionRef: String) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcJoinRejectedEvent: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String?
+    public let reasonCode: String
+
+    public init(roomId: String, participantId: String? = nil, reasonCode: String) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.reasonCode = reasonCode
+    }
+}
+
+public struct ArcRtcParticipantLeftEvent: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sessionRef: String?
+
+    public init(roomId: String, participantId: String, sessionRef: String? = nil) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcNegotiationRequiredEvent: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sdpRef: String?
+    public let sessionRef: String
+
+    public init(roomId: String, participantId: String, sdpRef: String? = nil, sessionRef: String) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sdpRef = sdpRef
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcIceCandidateReceivedEvent: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let candidateRef: String
+    public let sessionRef: String
+
+    public init(roomId: String, participantId: String, candidateRef: String, sessionRef: String) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.candidateRef = candidateRef
+        self.sessionRef = sessionRef
+    }
+}
+
+public struct ArcRtcSessionTimedOutEvent: Equatable, Sendable {
+    public let roomId: String
+    public let participantId: String
+    public let sessionRef: String
+    public let reasonCode: String
+
+    public init(roomId: String, participantId: String, sessionRef: String, reasonCode: String) {
+        self.roomId = roomId
+        self.participantId = participantId
+        self.sessionRef = sessionRef
+        self.reasonCode = reasonCode
+    }
+}
+
 public enum SignalingEvent: Equatable, Sendable {
     case joined(correlationId: CorrelationId, participantRef: OpaqueReference, roomRef: OpaqueReference, contractVersion: SignalingContractVersion = .v0_2)
     case rejected(correlationId: CorrelationId, serverReason: CatalogedServerReason, contractVersion: SignalingContractVersion = .v0_2)
@@ -98,4 +176,3 @@ public protocol ArcRtcSignalingClient {
     func send(_ command: SignalingCommand, completion: @escaping (SignalingSendOutcome) -> Void)
     func setEventHandler(_ handler: @escaping (SignalingEventCallbackItem) -> Void)
 }
-
