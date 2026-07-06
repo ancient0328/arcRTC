@@ -58,6 +58,26 @@ impl QualityMetric {
             window,
         }
     }
+
+    /// metric kind を返します。
+    pub const fn kind(&self) -> QualityMetricKind {
+        self.kind
+    }
+
+    /// 正規化済み metric value を返します。
+    pub const fn normalized_value(&self) -> i64 {
+        self.normalized_value
+    }
+
+    /// metric unit を返します。
+    pub const fn unit(&self) -> &'static str {
+        self.unit
+    }
+
+    /// metric window を返します。
+    pub const fn window(&self) -> &'static str {
+        self.window
+    }
 }
 
 /// quality threshold です。
@@ -512,4 +532,3 @@ const CORE_DRIVER_CORE_DECISION_OWNER: ResourceOwnerTuple = ResourceOwnerTuple::
     ResourceMeasurementOwner::Driver,
     ResourceExecutionOwner::CoreDecisionDriverExecution,
 );
-

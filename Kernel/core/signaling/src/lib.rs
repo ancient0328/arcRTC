@@ -29,6 +29,21 @@ pub enum SignalingCommandKind {
     AcknowledgeForward,
 }
 
+impl SignalingCommandKind {
+    /// public command に対応する Signaling transition trigger です。
+    pub const fn public_transition_trigger(self) -> SignalingTransitionTrigger {
+        match self {
+            Self::JoinRoom => SignalingTransitionTrigger::JoinRoom,
+            Self::LeaveRoom => SignalingTransitionTrigger::LeaveRoom,
+            Self::SendOffer => SignalingTransitionTrigger::SendOffer,
+            Self::SendAnswer => SignalingTransitionTrigger::SendAnswer,
+            Self::SendIceCandidate => SignalingTransitionTrigger::SendIceCandidate,
+            Self::RequestTurnCredential => SignalingTransitionTrigger::RequestTurnCredential,
+            Self::AcknowledgeForward => SignalingTransitionTrigger::AcknowledgeForward,
+        }
+    }
+}
+
 /// v0.2 initial Signaling public event set です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SignalingEventKind {
@@ -564,3 +579,70 @@ pub const SIGNALING_TRANSITION_RULES: &[SignalingTransitionRule] = &[
         reject_reasons: ACK_REJECTS,
     },
 ];
+
+/// one-shot 評価後に core が返す状態遷移結果です。
+pub struct SignalingTransitionOutcome {
+    /// 遷移後の room state です。変化しない trigger では None です。
+    pub next_room: Option<RoomState>,
+    /// 遷移後の participant state です。変化しない trigger では None です。
+    pub next_participant: Option<ParticipantState>,
+}
+
+/// one-shot 評価で使う初期 room state です。
+pub const INITIAL_SIGNALING_ROOM_STATE: RoomState = RoomState::RoomAbsent;
+
+/// one-shot 評価で使う初期 participant state です。
+pub const INITIAL_SIGNALING_PARTICIPANT_STATE: ParticipantState = ParticipantState::ParticipantNew;
+
+/// Signaling transition table だけを根拠に状態遷移を適用します。
+pub fn apply_signaling_transition(
+    trigger: SignalingTransitionTrigger,
+    room: RoomState,
+    participant: ParticipantState,
+) -> Result<SignalingTransitionOutcome, SignalingFailureKind> {
+    let rule = SIGNALING_TRANSITION_RULES
+        .iter()
+        .find(|rule| rule.trigger() == trigger)
+        .expect("signaling transition table must cover all triggers");
+
+    let room_allowed =
+        rule.allowed_room_states().is_empty() || rule.allowed_room_states().contains(&room);
+    let participant_allowed = rule.allowed_participant_states().is_empty()
+        || rule.allowed_participant_states().contains(&participant);
+
+    if !room_allowed || !participant_allowed {
+        return Err(rule.reject_reasons()[0]);
+    }
+
+    Ok(SignalingTransitionOutcome {
+        next_room: rule.success_room_state(),
+        next_participant: rule.success_participant_state(),
+    })
+}
+
+/// public command kind を one-shot の public transition として適用します。
+pub fn apply_one_shot_signaling_command(
+    kind: SignalingCommandKind,
+    room: RoomState,
+    participant: ParticipantState,
+) -> Result<SignalingTransitionOutcome, SignalingFailureKind> {
+    apply_signaling_transition(kind.public_transition_trigger(), room, participant)
+}
+
+/// one-shot は検証 owner 未接続のため、membership accepted を主張しない応答へ閉じます。
+pub fn one_shot_signaling_response(
+    kind: SignalingCommandKind,
+    result: &Result<SignalingTransitionOutcome, SignalingFailureKind>,
+) -> (SignalingEventKind, Option<&'static str>) {
+    match (kind, result) {
+        (SignalingCommandKind::JoinRoom, Ok(_)) => (
+            SignalingEventKind::Rejected,
+            Some(SignalingFailureKind::TokenVerificationFailed.reason_code()),
+        ),
+        (_, Ok(_)) => (
+            SignalingEventKind::Rejected,
+            Some(SignalingFailureKind::CommandOrderViolation.reason_code()),
+        ),
+        (_, Err(failure)) => (SignalingEventKind::Rejected, Some(failure.reason_code())),
+    }
+}

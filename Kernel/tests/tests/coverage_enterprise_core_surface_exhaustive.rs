@@ -534,7 +534,9 @@ fn protocol_versioning_digest_and_semantic_envelope_fail_closed_paths_execute() 
         protocol::CoreSemanticPayloadClass::OpaqueCoreReference,
         Some(reference("semantic-reference")),
     );
-    assert!(format!("{payload:?}").contains("semantic-reference"));
+    let payload_debug = format!("{payload:?}");
+    assert!(payload_debug.contains("value_len"));
+    assert!(!payload_debug.contains("semantic-reference"));
     let reason = cataloged("room_closed");
     assert_eq!(
         protocol::CoreSemanticEnvelope::try_new(
@@ -1273,5 +1275,7 @@ fn media_identity_symbols_used_by_surface_test_remain_semantically_typed() {
             Some(credential("turn-credential")),
         ),
     );
-    assert!(format!("{:?}", _typed_media_refs).contains("route-id"));
+    let debug_output = format!("{:?}", _typed_media_refs);
+    assert!(debug_output.contains("value_len"));
+    assert!(!debug_output.contains("route-id"));
 }

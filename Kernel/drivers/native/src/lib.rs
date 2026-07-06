@@ -341,6 +341,16 @@ impl NativeDriverFailure {
     }
 }
 
+/// 実行 OS の platform clock から UNIX epoch milliseconds を読み取ります。
+pub fn native_clock_unix_epoch_millis_now() -> Result<u128, NativeDriverFailure> {
+    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        Ok(duration) => Ok(duration.as_millis()),
+        Err(_) => Err(NativeDriverFailure::from_kind(
+            NativeDriverFailureKind::ExternalDecodeFailed,
+        )),
+    }
+}
+
 /// native driver initial scope 外の feature です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NativeOutOfScopeFeature {

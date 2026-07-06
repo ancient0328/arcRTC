@@ -22,4 +22,5 @@ arcrtc-core-ports = { path = "../../core/ports" }
 arcrtc-core-protocol = { path = "../../core/protocol" }
 arcrtc-core-quality = { path = "../../core/quality" }
 arcrtc-core-reason = { path = "../../core/reason" }
+arcrtc-core-signaling = { path = "../../core/signaling" }
 arcrtc-core-turn = { path = "../../core/turn" }

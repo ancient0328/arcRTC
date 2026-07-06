@@ -150,7 +150,7 @@ pub enum ReferenceAuthority {
 }
 
 /// driver / entrypoints / caller から入る、まだ trusted core identity ではない参照です。
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct UntrustedReference {
     value: String,
 }
@@ -169,8 +169,16 @@ impl UntrustedReference {
     }
 }
 
+impl core::fmt::Debug for UntrustedReference {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("UntrustedReference")
+            .field("value_len", &self.value.len())
+            .finish()
+    }
+}
+
 /// core validation または core policy を通過した opaque reference value です。
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct OpaqueReference {
     value: String,
     authority: ReferenceAuthority,
@@ -209,6 +217,15 @@ impl OpaqueReference {
     /// accepted reference の成立 authority です。
     pub const fn authority(&self) -> ReferenceAuthority {
         self.authority
+    }
+}
+
+impl core::fmt::Debug for OpaqueReference {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("OpaqueReference")
+            .field("value_len", &self.value.len())
+            .field("authority", &self.authority)
+            .finish()
     }
 }
 

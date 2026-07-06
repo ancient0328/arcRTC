@@ -97,6 +97,16 @@ impl PersistencePortIntent {
         self.intent_class
     }
 
+    /// persistence operation です。
+    pub const fn operation(&self) -> PersistenceOperationKind {
+        self.operation
+    }
+
+    /// state family です。
+    pub const fn state_family(&self) -> StateFamily {
+        self.state_family
+    }
+
     /// state class です。
     pub const fn state_class(&self) -> StateClass {
         self.state_class
@@ -222,7 +232,7 @@ impl PersistencePortFailureKind {
 pub struct PersistencePortFailure {
     kind: PersistencePortFailureKind,
     reason: CatalogedReasonRef,
-    resource_bound_decision: Option<ResourceBoundDecision>,
+    resource_bound_decision: Option<Box<ResourceBoundDecision>>,
 }
 
 impl PersistencePortFailure {
@@ -232,22 +242,22 @@ impl PersistencePortFailure {
             .expect("persistence port failure reason code must be registered");
         let resource_bound_decision = match kind {
             PersistencePortFailureKind::PersistenceRetryBoundExceeded => {
-                Some(persistence_resource_bound_decision(
+                Some(Box::new(persistence_resource_bound_decision(
                     ResourceBoundKind::PersistenceRetryStore,
                     kind.reason_code(),
-                ))
+                )))
             }
             PersistencePortFailureKind::PersistenceRetryDurationExceeded => {
-                Some(persistence_resource_bound_decision(
+                Some(Box::new(persistence_resource_bound_decision(
                     ResourceBoundKind::PersistenceRetryStore,
                     kind.reason_code(),
-                ))
+                )))
             }
             PersistencePortFailureKind::AuditBacklogBoundExceeded => {
-                Some(persistence_resource_bound_decision(
+                Some(Box::new(persistence_resource_bound_decision(
                     ResourceBoundKind::AuditSinkBacklog,
                     kind.reason_code(),
-                ))
+                )))
             }
             PersistencePortFailureKind::PersistenceUnavailable
             | PersistencePortFailureKind::DriverShutdown => None,
@@ -271,8 +281,8 @@ impl PersistencePortFailure {
     }
 
     /// resource-bound failure の required audit mapping です。
-    pub const fn resource_bound_decision(&self) -> Option<&ResourceBoundDecision> {
-        self.resource_bound_decision.as_ref()
+    pub fn resource_bound_decision(&self) -> Option<&ResourceBoundDecision> {
+        self.resource_bound_decision.as_deref()
     }
 }
 

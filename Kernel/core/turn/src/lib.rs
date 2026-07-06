@@ -532,3 +532,65 @@ pub const TURN_LIFECYCLE_RULES: &[TurnLifecycleRule] = &[
     TurnLifecycleRule { event: "DenyRelayDataPermissionRevoked", allowed_pre_state: "allocation=allocation_active; permission=permission_revoked", success_state: "allocation_active, permission_revoked", failure_state: "allocation_active, permission_revoked", reason_codes: PERMISSION_NOT_FOUND },
     TurnLifecycleRule { event: "DenyRelayDataPermissionRejected", allowed_pre_state: "allocation=allocation_active; permission=permission_rejected", success_state: "allocation_active, permission_rejected", failure_state: "allocation_active, permission_rejected", reason_codes: PERMISSION_NOT_FOUND },
 ];
+
+/// TURN one-shot 評価における allocation 初期状態です。
+pub const INITIAL_TURN_ALLOCATION_STATE: AllocationState = AllocationState::Absent;
+
+/// TURN one-shot 評価における permission 初期状態です。
+pub const INITIAL_TURN_PERMISSION_STATE: PermissionState = PermissionState::Absent;
+
+/// TURN one-shot 評価における channel-bind 初期状態です。
+pub const INITIAL_TURN_CHANNEL_BIND_STATE: ChannelBindState = ChannelBindState::Unbound;
+
+/// 初期状態に対する 1 datagram の TURN command を fail-closed reason へ写像します。
+pub fn apply_initial_turn_command(command: &TurnCommand) -> TurnFailureKind {
+    match command.kind() {
+        TurnCommandKind::Allocate => {
+            let rule = TURN_LIFECYCLE_RULES
+                .iter()
+                .find(|rule| rule.event() == "Allocate")
+                .expect("TURN lifecycle table must contain Allocate row");
+            if command.references().credential_ref.is_none() {
+                rule.reason_codes()[0]
+            } else {
+                rule.reason_codes()[1]
+            }
+        }
+        TurnCommandKind::Refresh => {
+            let rule = TURN_LIFECYCLE_RULES
+                .iter()
+                .find(|rule| rule.event() == "RejectRefreshAbsent")
+                .expect("TURN lifecycle table must contain RejectRefreshAbsent row");
+            rule.reason_codes()[0]
+        }
+        TurnCommandKind::CreatePermission => {
+            let rule = TURN_LIFECYCLE_RULES
+                .iter()
+                .find(|rule| rule.event() == "CreatePermission")
+                .expect("TURN lifecycle table must contain CreatePermission row");
+            rule.reason_codes()
+                .iter()
+                .copied()
+                .find(|kind| *kind == TurnFailureKind::AllocationNotFound)
+                .expect("CreatePermission row must include AllocationNotFound reason")
+        }
+        TurnCommandKind::ChannelBind => {
+            let rule = TURN_LIFECYCLE_RULES
+                .iter()
+                .find(|rule| rule.event() == "ChannelBind")
+                .expect("TURN lifecycle table must contain ChannelBind row");
+            rule.reason_codes()
+                .iter()
+                .copied()
+                .find(|kind| *kind == TurnFailureKind::AllocationNotFound)
+                .expect("ChannelBind row must include AllocationNotFound reason")
+        }
+        TurnCommandKind::RelayData => {
+            let rule = TURN_LIFECYCLE_RULES
+                .iter()
+                .find(|rule| rule.event() == "DenyRelayDataAllocationAbsent")
+                .expect("TURN lifecycle table must contain DenyRelayDataAllocationAbsent row");
+            rule.reason_codes()[0]
+        }
+    }
+}

@@ -63,7 +63,7 @@ impl RegulatedCommunicationReference {
 }
 
 /// regulated-local に保持する audit hash-chain pointer です。
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct RegulatedHashChainRecordPointer {
     value: String,
 }
@@ -89,6 +89,14 @@ impl RegulatedHashChainRecordPointer {
     /// opaque pointer value です。domain payload として解釈してはいけません。
     pub fn as_str(&self) -> &str {
         &self.value
+    }
+}
+
+impl core::fmt::Debug for RegulatedHashChainRecordPointer {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("RegulatedHashChainRecordPointer")
+            .field("value_len", &self.value.len())
+            .finish()
     }
 }
 

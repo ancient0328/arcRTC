@@ -80,6 +80,11 @@ impl Str0mDriverResourceBound {
     pub const fn required_closed_action(&self) -> Option<ResourceBoundClosedAction> {
         self.required_closed_action
     }
+
+    /// この bound が許可する最大 item 数です。
+    pub const fn maximum_items(&self) -> usize {
+        self.maximum_items
+    }
 }
 
 impl Str0mOwnedResourceClass {
@@ -213,4 +218,125 @@ pub enum ProhibitedStr0mDriverBehavior {
     DriverLocalErrorBypassesCatalogReason,
     /// observability/persistence driver is treated as transport driver.
     NonTransportDriverTreatedAsTransport,
+}
+
+/// str0m の Sans I/O engine を driver 境界内に閉じ込める wrapper です。
+pub struct Str0mMediaEngine {
+    rtc: str0m::Rtc,
+    transmit_queue_bound: Str0mDriverResourceBound,
+}
+
+impl Str0mMediaEngine {
+    /// str0m engine と driver-owned transmit queue bound を初期化します。
+    pub fn new(now: std::time::Instant) -> Self {
+        Self {
+            rtc: str0m::Rtc::new(now),
+            transmit_queue_bound: Str0mDriverResourceBound::try_new(
+                Str0mOwnedResourceClass::TransmitQueue,
+                1024,
+                true,
+            )
+            .expect("transmit queue bound arguments are fixed"),
+        }
+    }
+
+    /// UDP datagram を str0m の受信入力へ変換して投入します。
+    pub fn ingest_udp_datagram(
+        &mut self,
+        received_at: std::time::Instant,
+        source: std::net::SocketAddr,
+        local_addr: std::net::SocketAddr,
+        datagram: &[u8],
+    ) -> Result<(), TransportDriverFailure> {
+        let receive =
+            str0m::net::Receive::new(str0m::net::Protocol::Udp, source, local_addr, datagram)
+                .map_err(|_error| {
+                    TransportDriverFailure::from_kind(
+                        arcrtc_core_transport::TransportDriverFailureKind::ExternalDecodeFailed,
+                    )
+                })?;
+
+        self.rtc
+            .handle_input(str0m::Input::Receive(received_at, receive))
+            .map_err(|_error| {
+                TransportDriverFailure::from_kind(
+                    arcrtc_core_transport::TransportDriverFailureKind::ExternalDecodeFailed,
+                )
+            })?;
+
+        Ok(())
+    }
+
+    /// str0m の出力を Timeout まで drain し、送信可能 datagram だけを返します。
+    pub fn drain_outbound(&mut self) -> Result<Str0mDrainReport, TransportDriverFailure> {
+        let mut outbound = Vec::new();
+        let mut dropped_over_bound = 0usize;
+
+        for _ in 0..4096 {
+            match self.rtc.poll_output() {
+                Ok(str0m::Output::Timeout(_timeout)) => {
+                    return Ok(Str0mDrainReport {
+                        outbound,
+                        dropped_over_bound,
+                    });
+                }
+                Ok(str0m::Output::Transmit(transmit)) => {
+                    if outbound.len() < self.transmit_queue_bound.maximum_items() {
+                        outbound.push(Str0mOutboundDatagram {
+                            destination: transmit.destination,
+                            payload: Vec::from(&transmit.contents[..]),
+                        });
+                    } else {
+                        dropped_over_bound += 1;
+                    }
+                }
+                Ok(str0m::Output::Event(_event)) => {}
+                Err(_error) => {
+                    return Err(TransportDriverFailure::from_kind(
+                        arcrtc_core_transport::TransportDriverFailureKind::ExternalEncodeFailed,
+                    ));
+                }
+            }
+        }
+
+        Err(TransportDriverFailure::from_kind(
+            arcrtc_core_transport::TransportDriverFailureKind::DriverShutdown,
+        ))
+    }
+}
+
+/// entrypoint が実送信する driver-owned outbound datagram です。
+pub struct Str0mOutboundDatagram {
+    destination: std::net::SocketAddr,
+    payload: Vec<u8>,
+}
+
+impl Str0mOutboundDatagram {
+    /// 実送信先の socket address です。
+    pub const fn destination(&self) -> std::net::SocketAddr {
+        self.destination
+    }
+
+    /// str0m が生成した送信 payload です。
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+}
+
+/// str0m drain の結果です。payload bytes は driver-owned のまま保持します。
+pub struct Str0mDrainReport {
+    outbound: Vec<Str0mOutboundDatagram>,
+    dropped_over_bound: usize,
+}
+
+impl Str0mDrainReport {
+    /// transmit queue bound 内で収集できた outbound datagram です。
+    pub fn outbound(&self) -> &[Str0mOutboundDatagram] {
+        &self.outbound
+    }
+
+    /// transmit queue bound 超過で enqueue しなかった datagram 件数です。
+    pub const fn dropped_over_bound(&self) -> usize {
+        self.dropped_over_bound
+    }
 }

@@ -13,8 +13,90 @@ use arcrtc_driver_persistence::PersistenceDriverSurface;
 use arcrtc_driver_webrtc_str0m::Str0mDriverSurface;
 
 fn main() {
-    // 実行時の具体起動は後続の runtime wiring で扱い、ここでは composition root を固定します。
-    let _surface = SfuServerCompositionSurface;
+    let addr = match std::env::args().nth(1) {
+        Some(addr) => addr,
+        None => "127.0.0.1:0".to_owned(),
+    };
+
+    let socket = match std::net::UdpSocket::bind(addr) {
+        Ok(socket) => socket,
+        Err(_error) => {
+            eprintln!("bind_failed");
+            std::process::exit(2);
+        }
+    };
+
+    let local_addr = match socket.local_addr() {
+        Ok(local_addr) => local_addr,
+        Err(_error) => {
+            eprintln!("bind_failed");
+            std::process::exit(2);
+        }
+    };
+
+    println!("listening={local_addr}");
+    {
+        let mut stdout = std::io::stdout();
+        let _ = std::io::Write::flush(&mut stdout);
+    }
+
+    // entrypoint は起動と wiring のみを持ち、datagram 解釈は driver へ委譲します。
+    let mut engine = arcrtc_driver_webrtc_str0m::Str0mMediaEngine::new(std::time::Instant::now());
+
+    if socket
+        .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+        .is_err()
+    {
+        eprintln!("read_failed");
+        std::process::exit(4);
+    }
+
+    let mut buf = [0u8; 2000];
+    let (n, source) = match socket.recv_from(&mut buf) {
+        Ok(received) => received,
+        Err(_error) => {
+            eprintln!("read_failed");
+            std::process::exit(4);
+        }
+    };
+
+    if let Err(failure) =
+        engine.ingest_udp_datagram(std::time::Instant::now(), source, local_addr, &buf[..n])
+    {
+        println!("outcome=rejected reason={}", failure.kind().reason_code());
+        let mut stdout = std::io::stdout();
+        let _ = std::io::Write::flush(&mut stdout);
+        std::process::exit(0);
+    }
+
+    let report = match engine.drain_outbound() {
+        Ok(report) => report,
+        Err(failure) => {
+            println!("outcome=rejected reason={}", failure.kind().reason_code());
+            let mut stdout = std::io::stdout();
+            let _ = std::io::Write::flush(&mut stdout);
+            std::process::exit(0);
+        }
+    };
+
+    let mut transmits = 0usize;
+    for outbound in report.outbound() {
+        if socket
+            .send_to(outbound.payload(), outbound.destination())
+            .is_err()
+        {
+            eprintln!("write_failed");
+            std::process::exit(5);
+        }
+        transmits += 1;
+    }
+
+    println!(
+        "outcome=ok transmits={transmits} dropped={}",
+        report.dropped_over_bound()
+    );
+    let mut stdout = std::io::stdout();
+    let _ = std::io::Write::flush(&mut stdout);
 }
 
 /// SFU server entrypoint の composition root marker です。

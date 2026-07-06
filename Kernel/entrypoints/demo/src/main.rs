@@ -7,8 +7,32 @@ use arcrtc_core_command::CoreCommandSurface;
 use arcrtc_core_reason::CatalogedReasonRef;
 
 fn main() {
-    // demo は composition 確認の入口であり、production policy の根拠にはしません。
-    let _surface = DemoCompositionSurface;
+    let token = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| String::from("signaling-only"));
+
+    // default scenario は demo 起動面の既定であり、production policy には使いません。
+    let scenario = match token.as_str() {
+        "signaling-only" => DemoScenarioClass::SignalingOnly,
+        "sfu-composition" => DemoScenarioClass::SfuComposition,
+        "turn-composition" => DemoScenarioClass::TurnComposition,
+        "developer-inspection" => DemoScenarioClass::DeveloperInspection,
+        _ => {
+            eprintln!(
+                "{}",
+                DemoCompositionFailureKind::ExternalDecodeFailed.reason_code()
+            );
+            std::process::exit(2);
+        }
+    };
+
+    DemoCompositionGuard::try_new(
+        scenario, true, true, true, true, true, true, true, true, true, true,
+    )
+    .expect("demo composition guard arguments are fixed");
+
+    let _wiring = DemoCommandWiring::new(CoreCommandSurface, scenario);
+    println!("scenario={token}");
 }
 
 /// demo entrypoint の composition root marker です。

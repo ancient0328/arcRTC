@@ -11,8 +11,65 @@ use arcrtc_driver_persistence::PersistenceDriverSurface;
 use arcrtc_driver_security::SecurityDriverSurface;
 
 fn main() {
-    // 実行時の具体起動は後続の runtime wiring で扱い、ここでは composition root を固定します。
+    use std::io::Write;
+
+    // 既存 public marker の使用を維持しつつ、UDP I/O はこの entrypoint だけで束ねます。
     let _surface = TurnServerCompositionSurface;
+    let addr = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:0".to_owned());
+    let socket = match std::net::UdpSocket::bind(addr) {
+        Ok(socket) => socket,
+        Err(_error) => {
+            eprintln!("bind_failed");
+            std::process::exit(2);
+        }
+    };
+    let local_addr = match socket.local_addr() {
+        Ok(local_addr) => local_addr,
+        Err(_error) => {
+            eprintln!("bind_failed");
+            std::process::exit(2);
+        }
+    };
+    let mut stdout = std::io::stdout();
+    if writeln!(&mut stdout, "listening={}", local_addr)
+        .and_then(|_| stdout.flush())
+        .is_err()
+    {
+        eprintln!("write_failed");
+        std::process::exit(5);
+    }
+
+    if socket
+        .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+        .is_err()
+    {
+        eprintln!("read_failed");
+        std::process::exit(4);
+    }
+    loop {
+        let mut buf = [0u8; 2049];
+        let (len, peer) = match socket.recv_from(&mut buf) {
+            Ok(received) => received,
+            Err(_error) => {
+                eprintln!("read_failed");
+                continue;
+            }
+        };
+
+        // 常駐化後も、TURN 判断は driver / core への既存委譲に閉じます。
+        let decode_input = arcrtc_driver_network::decode_turn_datagram(&buf[..len]);
+        let reason_code = match decode_input.into_core_turn_command() {
+            Err(failure) => failure.kind().reason_code(),
+            Ok(command) => arcrtc_core_turn::apply_initial_turn_command(&command).reason_code(),
+        };
+        let response = arcrtc_driver_network::encode_turn_error_datagram(reason_code);
+        if socket.send_to(&response, peer).is_err() {
+            eprintln!("write_failed");
+            continue;
+        }
+    }
 }
 
 /// TURN server entrypoint の composition root marker です。

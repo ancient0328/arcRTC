@@ -15,6 +15,10 @@ dependency_class = "entrypoint_composition_dependency"
 [lib]
 path = "src/lib.rs"
 
+[[bin]]
+name = "arcrtc-entrypoint-configuration"
+path = "src/main.rs"
+
 [dependencies]
 arcrtc-core-configuration = { path = "../../core/configuration" }
 arcrtc-core-features = { path = "../../core/features" }

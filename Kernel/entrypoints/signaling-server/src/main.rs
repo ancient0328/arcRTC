@@ -3,16 +3,175 @@
 //! Signaling の accept/reject 意味論は core/signaling に置き、この binary は
 //! 起動単位と wiring の入口だけを所有します。
 
+use arcrtc_core_identity::{OpaqueReference, ReferenceAuthority};
 use arcrtc_core_reason::CatalogedReasonRef;
+use arcrtc_core_recovery::{
+    CommandRoutingRule, DistributedAuditRelation, DistributedConflictRule,
+    DistributedStateAdmission, DistributedStateClass, DistributedStatePolicy, OwnerNodeScope,
+    PacketRoutingRule, RecoveryRestoreRelation, RestartReadinessClass, SplitBrainGuard,
+};
 use arcrtc_core_signaling::CoreSignalingSurface;
+use arcrtc_core_state::StateFamily;
 use arcrtc_driver_network::NetworkDriverSurface;
 use arcrtc_driver_observability::ObservabilityDriverSurface;
 use arcrtc_driver_persistence::PersistenceDriverSurface;
-use arcrtc_driver_security::SecurityDriverSurface;
+use arcrtc_driver_security::{
+    SecretRotationExecutionBoundaryGuard, SecurityDriverSurface, TokenVerifierDriverBoundaryGuard,
+};
+
+fn startup_owner_reference() -> OpaqueReference {
+    OpaqueReference::accept(
+        std::process::id().to_string(),
+        ReferenceAuthority::CoreValidatedStartupInput,
+    )
+    .expect("process id string is a non-empty control-free opaque reference")
+}
+
+fn admit_node_local_state(
+    state_family: StateFamily,
+    owner_ref: OpaqueReference,
+) -> DistributedStateAdmission {
+    let policy = DistributedStatePolicy::try_new(
+        state_family,
+        DistributedStateClass::NodeLocalState,
+        OwnerNodeScope::SingleNode,
+        Some(owner_ref),
+        None,
+        CommandRoutingRule::NotCrossNodeRouted,
+        PacketRoutingRule::NotPacketScoped,
+        RecoveryRestoreRelation::NoRestoreRelation,
+        DistributedConflictRule::RejectConflictingOwner,
+        true,
+        DistributedAuditRelation::AuditVerificationOnly,
+    )
+    .expect("node-local distributed state policy arguments are fixed");
+
+    DistributedStateAdmission::admit_initial_v0_2(policy)
+        .expect("node-local state is admitted in initial v0.2")
+}
+
+fn startup_split_brain_guard() -> SplitBrainGuard {
+    SplitBrainGuard::try_new(false, false)
+        .expect("a single accept loop per process cannot accept the same owner scope twice")
+}
+
+fn startup_readiness_class() -> RestartReadinessClass {
+    RestartReadinessClass::ProcessReadinessObservationOnly
+}
+
+fn secret_boundary_guards() -> (
+    TokenVerifierDriverBoundaryGuard,
+    SecretRotationExecutionBoundaryGuard,
+) {
+    let verifier_guard =
+        TokenVerifierDriverBoundaryGuard::try_new(true, true, true, true, true, true, true, true)
+            .expect("verifier boundary arguments are fixed");
+    let rotation_guard = SecretRotationExecutionBoundaryGuard::try_new(
+        true, true, true, true, true, true, true, true,
+    )
+    .expect("rotation boundary arguments are fixed");
+
+    (verifier_guard, rotation_guard)
+}
 
 fn main() {
-    // 実行時の具体起動は後続の runtime wiring で扱い、ここでは composition root を固定します。
+    // 既存 public marker の使用を維持しつつ、実 I/O はこの entrypoint だけで束ねます。
     let _surface = SignalingServerCompositionSurface;
+    // P1 は process 内の node-local 所有境界だけを core/recovery へ接続します。
+    let owner_ref = startup_owner_reference();
+    let _split_brain_guard = startup_split_brain_guard();
+    let _room_admission = admit_node_local_state(StateFamily::SignalingRoom, owner_ref.clone());
+    let _participant_admission =
+        admit_node_local_state(StateFamily::SignalingParticipant, owner_ref);
+    let _readiness_class = startup_readiness_class();
+    let _secret_boundary_guards = secret_boundary_guards();
+
+    let addr = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:0".to_owned());
+    let listener = match std::net::TcpListener::bind(addr) {
+        Ok(listener) => listener,
+        Err(_error) => {
+            eprintln!("bind_failed");
+            std::process::exit(2);
+        }
+    };
+    let local_addr = match listener.local_addr() {
+        Ok(local_addr) => local_addr,
+        Err(_error) => {
+            eprintln!("bind_failed");
+            std::process::exit(2);
+        }
+    };
+    println!("listening={}", local_addr);
+    let mut stdout = std::io::stdout();
+    let _ = std::io::Write::flush(&mut stdout);
+
+    loop {
+        let (mut stream, _peer_addr) = match listener.accept() {
+            Ok(accepted) => accepted,
+            Err(_error) => {
+                eprintln!("accept_failed");
+                continue;
+            }
+        };
+        if stream
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .is_err()
+        {
+            eprintln!("read_failed");
+            continue;
+        }
+
+        let mut received = Vec::new();
+        let read_result = {
+            let mut limited = std::io::Read::take(&mut stream, 65537);
+            std::io::Read::read_to_end(&mut limited, &mut received)
+        };
+        if read_result.is_err() {
+            eprintln!("read_failed");
+            continue;
+        }
+
+        // 常駐化後も、状態判断と wire 変換判断は core / driver への既存委譲に閉じます。
+        let response_frame = if received.len() == 65537 {
+            arcrtc_driver_network::encode_signaling_rejection_frame(
+                arcrtc_driver_network::DriverConversionFailureKind::FrameSizeBoundExceeded,
+            )
+        } else {
+            match arcrtc_driver_network::decode_signaling_command_frame(&received) {
+                Err(failure) => {
+                    arcrtc_driver_network::encode_signaling_rejection_frame(failure.kind())
+                }
+                Ok(decoded) => match arcrtc_driver_network::build_signaling_command(decoded) {
+                    Err(failure) => {
+                        arcrtc_driver_network::encode_signaling_rejection_frame(failure.kind())
+                    }
+                    Ok(command) => {
+                        let command_kind = command.kind();
+                        let result = arcrtc_core_signaling::apply_one_shot_signaling_command(
+                            command_kind,
+                            arcrtc_core_signaling::INITIAL_SIGNALING_ROOM_STATE,
+                            arcrtc_core_signaling::INITIAL_SIGNALING_PARTICIPANT_STATE,
+                        );
+                        let (event, reason) = arcrtc_core_signaling::one_shot_signaling_response(
+                            command_kind,
+                            &result,
+                        );
+                        arcrtc_driver_network::encode_signaling_event_frame(event, reason)
+                    }
+                },
+            }
+        };
+
+        if std::io::Write::write_all(&mut stream, &response_frame).is_err()
+            || std::io::Write::flush(&mut stream).is_err()
+        {
+            eprintln!("write_failed");
+            continue;
+        }
+        drop(stream);
+    }
 }
 
 /// Signaling server entrypoint の composition root marker です。

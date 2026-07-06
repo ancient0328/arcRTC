@@ -7,8 +7,41 @@ use arcrtc_core_command::CoreCommandSurface;
 use arcrtc_core_reason::CatalogedReasonRef;
 
 fn main() {
-    // CLI は command entrypoint であり、domain decision の所有者にはしません。
-    let _surface = CliCompositionSurface;
+    let Some(token) = std::env::args().nth(1) else {
+        eprintln!(
+            "{}",
+            CliCompositionFailureKind::RuntimeConfigMissing.reason_code()
+        );
+        std::process::exit(2);
+    };
+
+    // token は command class 選択子であり、reason 語彙として扱いません。
+    let class = match token.as_str() {
+        "signaling" => CliCommandClass::Signaling,
+        "sfu" => CliCommandClass::Sfu,
+        "turn" => CliCommandClass::Turn,
+        "admin-maintenance" => CliCommandClass::AdminMaintenance,
+        "developer-inspection" => CliCommandClass::DeveloperInspection,
+        _ => {
+            eprintln!(
+                "{}",
+                CliCompositionFailureKind::ExternalDecodeFailed.reason_code()
+            );
+            std::process::exit(2);
+        }
+    };
+
+    if CliCompositionGuard::try_new(class, true, true, true, true, true, true, true, false).is_err()
+    {
+        eprintln!(
+            "{}",
+            CliCompositionFailureKind::AuthorizationPolicyDenied.reason_code()
+        );
+        std::process::exit(3);
+    }
+
+    let _wiring = CliCommandWiring::new(CoreCommandSurface, class);
+    println!("command_class={token}");
 }
 
 /// CLI entrypoint の composition root marker です。

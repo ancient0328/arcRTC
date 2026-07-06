@@ -1,0 +1,67 @@
+name: Kernel CI
+
+on:
+  push:
+    branches:
+      - main
+      - upload
+  pull_request:
+    branches:
+      - main
+      - upload
+
+concurrency:
+  group: kernel-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: Kernel
+
+jobs:
+  kernel-gates:
+    name: Kernel workspace gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+
+      - name: Show Rust toolchain
+        run: rustup show
+
+      - name: Cache Cargo state
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            Kernel/target
+          key: ${{ runner.os }}-kernel-cargo-${{ hashFiles('rust-toolchain.toml', 'Kernel/Cargo.lock', 'Kernel/**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-kernel-cargo-
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Type check
+        run: cargo check --workspace --all-targets --all-features --locked
+
+      - name: Build
+        run: cargo build --workspace --all-targets --all-features --locked
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace --all-targets --all-features --locked

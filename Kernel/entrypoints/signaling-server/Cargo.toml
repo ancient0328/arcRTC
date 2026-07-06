@@ -21,5 +21,8 @@ arcrtc-driver-network = { path = "../../drivers/network" }
 arcrtc-driver-observability = { path = "../../drivers/observability" }
 arcrtc-driver-persistence = { path = "../../drivers/persistence" }
 arcrtc-driver-security = { path = "../../drivers/security" }
+arcrtc-core-identity = { path = "../../core/identity" }
 arcrtc-core-reason = { path = "../../core/reason" }
+arcrtc-core-recovery = { path = "../../core/recovery" }
 arcrtc-core-signaling = { path = "../../core/signaling" }
+arcrtc-core-state = { path = "../../core/state" }

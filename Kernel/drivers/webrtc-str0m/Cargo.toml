@@ -19,3 +19,4 @@ path = "src/lib.rs"
 arcrtc-core-ports = { path = "../../core/ports" }
 arcrtc-core-quality = { path = "../../core/quality" }
 arcrtc-core-transport = { path = "../../core/transport" }
+str0m = { version = "=0.21.0", default-features = false, features = ["rust-crypto"] }

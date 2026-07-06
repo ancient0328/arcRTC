@@ -15,5 +15,9 @@ dependency_class = "entrypoint_composition_dependency"
 [lib]
 path = "src/lib.rs"
 
+[[bin]]
+name = "arcrtc-entrypoint-endpoints"
+path = "src/main.rs"
+
 [dependencies]
 arcrtc-core-reason = { path = "../../core/reason" }

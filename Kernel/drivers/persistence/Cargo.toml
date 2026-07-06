@@ -16,6 +16,7 @@ dependency_class = "driver_implementation_dependency"
 path = "src/lib.rs"
 
 [dependencies]
+arcrtc-core-identity = { path = "../../core/identity" }
 arcrtc-core-ports = { path = "../../core/ports" }
 arcrtc-core-reason = { path = "../../core/reason" }
 arcrtc-core-state = { path = "../../core/state" }

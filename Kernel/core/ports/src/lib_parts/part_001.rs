@@ -226,7 +226,7 @@ impl MetricsSinkFailureKind {
 pub struct MetricsSinkFailure {
     kind: MetricsSinkFailureKind,
     reason: CatalogedReasonRef,
-    resource_bound_decision: Option<ResourceBoundDecision>,
+    resource_bound_decision: Option<Box<ResourceBoundDecision>>,
 }
 
 impl MetricsSinkFailure {
@@ -236,7 +236,7 @@ impl MetricsSinkFailure {
             .expect("metrics sink failure reason code must be registered");
         let resource_bound_decision = match kind {
             MetricsSinkFailureKind::MetricsBacklogBoundExceeded => {
-                Some(metrics_resource_bound_decision(kind.reason_code()))
+                Some(Box::new(metrics_resource_bound_decision(kind.reason_code())))
             }
             MetricsSinkFailureKind::MetricsExportFailed
             | MetricsSinkFailureKind::ObservabilitySignalInvalid
@@ -263,8 +263,8 @@ impl MetricsSinkFailure {
     }
 
     /// resource-bound failure の required audit mapping です。
-    pub const fn resource_bound_decision(&self) -> Option<&ResourceBoundDecision> {
-        self.resource_bound_decision.as_ref()
+    pub fn resource_bound_decision(&self) -> Option<&ResourceBoundDecision> {
+        self.resource_bound_decision.as_deref()
     }
 }
 
@@ -471,4 +471,3 @@ pub enum PersistencePortIntentError {
     /// operation と intent class が一致していません。
     OperationClassMismatch,
 }
-
