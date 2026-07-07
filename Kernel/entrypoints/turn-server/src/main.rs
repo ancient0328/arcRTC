@@ -1,7 +1,7 @@
 //! TURN server main は resident loop config を構築し、composition-root へ委譲します。
 
 use arcrtc_entrypoint_composition_root::{
-    run_resident_loop, ResidentDriverBindingRef, ResidentLoopFailureKind, ResidentServerKind,
+    serve_resident_loop, ResidentDriverBindingRef, ResidentLoopFailureKind, ResidentServerKind,
     ResidentServerLoopConfig, RuntimeProfileObservationRef, ShutdownDrainObservationRef,
 };
 
@@ -21,6 +21,5 @@ fn main() -> Result<(), ResidentLoopFailureKind> {
         ShutdownDrainObservationRef::new("supervision:turn"),
     );
 
-    let _resident_loop = run_resident_loop(config)?;
-    Ok(())
+    serve_resident_loop(config)
 }

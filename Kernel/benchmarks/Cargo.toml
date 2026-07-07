@@ -1,0 +1,37 @@
+[package]
+name = "arcrtc-benchmarks"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[package.metadata.arcrtc]
+owner_layer = "benchmark"
+package_role = "fixed goal benchmark execution surface"
+allowed_dependency_direction = "benchmark may depend on test-side benchmark runner; production source must not depend on benchmark"
+dependency_class = "benchmark_execution_dependency"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+arcrtc-core-identity = { path = "../core/identity" }
+arcrtc-core-sfu = { path = "../core/sfu" }
+arcrtc-core-signaling = { path = "../core/signaling" }
+arcrtc-core-turn = { path = "../core/turn" }
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "kernel_load"
+harness = false
+
+[[bench]]
+name = "kernel_soak"
+harness = false
+
+[[bench]]
+name = "kernel_concurrency"
+harness = false

@@ -599,3 +599,62 @@ pub fn apply_initial_turn_command(command: &TurnCommand) -> TurnFailureKind {
         }
     }
 }
+
+/// resident TURN loop の lifecycle state です。
+///
+/// datagram decode は driver が行い、allocation / permission / channel の状態遷移は core/turn が所有します。
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ResidentTurnState {
+    allocation_active: bool,
+    permission_active: bool,
+    channel_bound: bool,
+}
+
+/// resident TURN loop が外部へ返せる成功形状です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ResidentTurnSuccessKind {
+    /// allocation success response.
+    AllocationSuccessResponse,
+    /// refresh success response.
+    RefreshSuccessResponse,
+    /// permission success response.
+    PermissionSuccessResponse,
+    /// channel bind success response.
+    ChannelBindSuccessResponse,
+    /// relay data forwarding.
+    RelayDataForwarding,
+}
+
+/// resident TURN command を core-owned lifecycle として適用します。
+///
+/// `driver_material_available` は wire attribute が存在したという driver 観測であり、
+/// その観測を success / failure へ写像する権威は core/turn に閉じます。
+pub fn apply_resident_turn_command(
+    command: &TurnCommand,
+    driver_material_available: bool,
+    state: &mut ResidentTurnState,
+) -> Result<ResidentTurnSuccessKind, TurnFailureKind> {
+    match command.kind() {
+        TurnCommandKind::Allocate if driver_material_available => {
+            state.allocation_active = true;
+            Ok(ResidentTurnSuccessKind::AllocationSuccessResponse)
+        }
+        TurnCommandKind::Refresh if state.allocation_active => {
+            Ok(ResidentTurnSuccessKind::RefreshSuccessResponse)
+        }
+        TurnCommandKind::CreatePermission
+            if state.allocation_active && driver_material_available =>
+        {
+            state.permission_active = true;
+            Ok(ResidentTurnSuccessKind::PermissionSuccessResponse)
+        }
+        TurnCommandKind::ChannelBind if state.permission_active && driver_material_available => {
+            state.channel_bound = true;
+            Ok(ResidentTurnSuccessKind::ChannelBindSuccessResponse)
+        }
+        TurnCommandKind::RelayData if state.allocation_active && state.permission_active => {
+            Ok(ResidentTurnSuccessKind::RelayDataForwarding)
+        }
+        _ => Err(apply_initial_turn_command(command)),
+    }
+}

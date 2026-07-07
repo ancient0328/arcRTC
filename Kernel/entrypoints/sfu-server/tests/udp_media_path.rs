@@ -1,4 +1,4 @@
-use std::io::{BufRead, Read};
+use std::io::BufRead;
 use std::net::UdpSocket;
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc;
@@ -21,7 +21,7 @@ impl Drop for ServerProc {
     }
 }
 
-fn run_case(label: &str, input: &[u8]) -> String {
+fn run_sequence(label: &str, inputs: &[&[u8]]) -> Vec<String> {
     let mut child = Command::new(env!("CARGO_BIN_EXE_arcrtc-sfu-server"))
         .stdout(Stdio::piped())
         .spawn()
@@ -40,32 +40,60 @@ fn run_case(label: &str, input: &[u8]) -> String {
     let mut server = ServerProc { child };
 
     let client = UdpSocket::bind("127.0.0.1:0").expect("client UDP socket must bind");
-    client
-        .send_to(input, &addr)
-        .expect("input datagram must be sent");
-
-    // outcome 読み取りは timeout で bounded にし、失敗時も guard で子 process を回収します。
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
-        let mut rest = String::new();
-        let result = reader.read_to_string(&mut rest).map(|_| rest);
-        let _ = tx.send(result);
-    });
-    let rest = match rx.recv_timeout(Duration::from_secs(30)) {
-        Ok(Ok(rest)) => rest,
-        Ok(Err(error)) => panic!("stdout must be readable: {error}"),
-        Err(error) => {
-            server.kill_and_wait();
-            panic!("stdout collection timed out: {error}");
+        for line in reader.lines() {
+            let _ = tx.send(line);
         }
-    };
-    let outcome = rest
-        .lines()
-        .find(|line| line.starts_with("outcome="))
-        .expect("outcome line must be present")
-        .to_owned();
-    println!("case={label} input={input:?} outcome={outcome}");
-    outcome
+    });
+
+    let mut outcomes = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        client
+            .send_to(input, &addr)
+            .expect("input datagram must be sent");
+        // outcome 読み取りは timeout で bounded にし、失敗時も guard で子 process を回収します。
+        let outcome = match rx.recv_timeout(Duration::from_secs(30)) {
+            Ok(Ok(line)) => line,
+            Ok(Err(error)) => panic!("stdout line must be readable: {error}"),
+            Err(error) => {
+                server.kill_and_wait();
+                panic!("stdout collection timed out: {error}");
+            }
+        };
+        assert!(
+            outcome.starts_with("outcome="),
+            "outcome line must be present, got {outcome}"
+        );
+        println!("case={label} input={input:?} outcome={outcome}");
+        outcomes.push(outcome);
+    }
+
+    server.kill_and_wait();
+    outcomes
+}
+
+fn run_case(label: &str, input: &[u8]) -> String {
+    match run_sequence(label, &[input]).pop() {
+        Some(outcome) => outcome,
+        None => panic!("single outcome must be present"),
+    }
+}
+
+fn run_secure_media_sequence(label: &str, input: &[u8]) -> String {
+    let outcomes = run_sequence(
+        label,
+        &[
+            b"ARCRTC-SFU/ICE/CONNECTED",
+            b"ARCRTC-SFU/DTLS/ESTABLISHED",
+            b"ARCRTC-SFU/SRTP/ACTIVE",
+            input,
+        ],
+    );
+    outcomes
+        .last()
+        .expect("final secure media outcome must be present")
+        .to_owned()
 }
 
 fn parse_counter(line: &str, key: &str) -> usize {
@@ -90,7 +118,7 @@ fn accepted_media_datagrams_emit_ok_outcome() {
     ];
 
     for (label, input) in cases {
-        let outcome = run_case(label, input);
+        let outcome = run_secure_media_sequence(label, input);
         assert!(
             outcome.starts_with("outcome=ok "),
             "{label} must be accepted, got {outcome}"

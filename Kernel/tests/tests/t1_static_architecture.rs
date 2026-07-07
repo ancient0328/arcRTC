@@ -99,6 +99,7 @@ fn allowed_core_dependencies(package_path: &str) -> &'static [&'static str] {
             "arcrtc-core-command",
             "arcrtc-core-identity",
             "arcrtc-core-reason",
+            "arcrtc-core-security",
         ],
         "core/command" => &["arcrtc-core-identity"],
         "core/configuration" => &[],
@@ -106,9 +107,14 @@ fn allowed_core_dependencies(package_path: &str) -> &'static [&'static str] {
         "core/domain" => &[],
         "core/features" => &["arcrtc-core-identity"],
         "core/identity" => &[],
-        "core/operation" => &["arcrtc-core-command", "arcrtc-core-identity"],
+        "core/operation" => &[
+            "arcrtc-core-audit",
+            "arcrtc-core-command",
+            "arcrtc-core-identity",
+        ],
         "core/ports" => &[
             "arcrtc-core-identity",
+            "arcrtc-core-operation",
             "arcrtc-core-protocol",
             "arcrtc-core-quality",
             "arcrtc-core-reason",
@@ -124,12 +130,25 @@ fn allowed_core_dependencies(package_path: &str) -> &'static [&'static str] {
         "core/recovery" => &["arcrtc-core-identity", "arcrtc-core-state"],
         "core/runtime" => &["arcrtc-core-identity"],
         "core/security" => &["arcrtc-core-command", "arcrtc-core-identity"],
-        "core/sfu" => &["arcrtc-core-command", "arcrtc-core-identity"],
-        "core/signaling" => &["arcrtc-core-command", "arcrtc-core-identity"],
+        "core/sfu" => &[
+            "arcrtc-core-command",
+            "arcrtc-core-identity",
+            "arcrtc-core-transport",
+        ],
+        "core/signaling" => &[
+            "arcrtc-core-command",
+            "arcrtc-core-identity",
+            "arcrtc-core-security",
+            "arcrtc-core-transport",
+        ],
         "core/state" => &[],
         "core/time" => &["arcrtc-core-identity"],
         "core/transport" => &["arcrtc-core-identity", "arcrtc-core-reason"],
-        "core/turn" => &["arcrtc-core-command", "arcrtc-core-identity"],
+        "core/turn" => &[
+            "arcrtc-core-command",
+            "arcrtc-core-identity",
+            "arcrtc-core-security",
+        ],
         _ => panic!("unmapped core package path: {package_path}"),
     }
 }

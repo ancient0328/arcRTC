@@ -28,6 +28,47 @@ const expectedEvents = [
   "ProtocolViolation",
 ];
 
+const expectedPublicCommandTypes = [
+  "ArcRtcJoinCommand",
+  "ArcRtcLeaveCommand",
+  "ArcRtcOfferCommand",
+  "ArcRtcAnswerCommand",
+  "ArcRtcIceCandidateCommand",
+  "ArcRtcReconnectCommand",
+];
+
+const expectedPublicEventTypes = [
+  "ArcRtcJoinAcceptedEvent",
+  "ArcRtcJoinRejectedEvent",
+  "ArcRtcParticipantLeftEvent",
+  "ArcRtcNegotiationRequiredEvent",
+  "ArcRtcIceCandidateReceivedEvent",
+  "ArcRtcSessionTimedOutEvent",
+];
+
+const expectedSdkFailureCodes = [
+  "CredentialRejected",
+  "JoinRejected",
+  "MembershipConflict",
+  "NegotiationRejected",
+  "IceCandidateRejected",
+  "Timeout",
+  "TransportUnavailable",
+  "ProtocolViolation",
+  "VersionMismatch",
+  "InternalInvariantViolation",
+];
+
+const requiredPublicFields = [
+  "roomId",
+  "participantId",
+  "credentialRef",
+  "sdpRef",
+  "candidateRef",
+  "sessionRef",
+  "reasonCode",
+];
+
 function extractConstArray(name) {
   const start = `export const ${name} = [`;
   const startIndex = source.indexOf(start);
@@ -58,6 +99,16 @@ function extractProjectionEntries() {
       unsupportedSurfaceBehavior: field("unsupportedSurfaceBehavior"),
     };
   });
+}
+
+function extractTypeAliasBody(name) {
+  const match = source.match(new RegExp(`export type ${name} =([\\s\\S]*?);\\n`));
+  assert.ok(match, `${name} type alias must exist`);
+  return match[1];
+}
+
+function extractTypeUnionValues(name) {
+  return [...extractTypeAliasBody(name).matchAll(/"([^"]+)"/g)].map((entry) => entry[1]);
 }
 
 test("TypeScript SDK remains a Signaling-only public surface", () => {
@@ -108,6 +159,27 @@ test("TypeScript SDK projection covers every Signaling command and event exactly
       .map((entry) => entry.sourceSignalingKind),
     expectedEvents,
   );
+});
+
+test("TypeScript SDK exposes the fixed Signaling-only public command and event names", () => {
+  for (const commandName of expectedPublicCommandTypes) {
+    assert.match(source, new RegExp(`export type ${commandName} =`), commandName);
+  }
+  for (const eventName of expectedPublicEventTypes) {
+    assert.match(source, new RegExp(`export type ${eventName} =`), eventName);
+  }
+
+  for (const fieldName of requiredPublicFields) {
+    assert.match(source, new RegExp(`readonly ${fieldName}\\??: string`), fieldName);
+  }
+});
+
+test("TypeScript SDK exposes the fixed failure-code and version constants", () => {
+  assert.deepEqual(extractTypeUnionValues("ArcRtcSdkFailureCode"), expectedSdkFailureCodes);
+  assert.equal(sdk.ARCRTC_SIGNALING_PROTOCOL_VERSION, "v0.2");
+  assert.equal(sdk.ARCRTC_SDK_SEMVER, "0.2.0");
+  assert.equal(sdk.ARCRTC_SDK_PACKAGE_NAME, packageJson.name);
+  assert.equal(sdk.ARCRTC_SDK_PACKAGE_NAME, "@arcrtc/sdk-typescript");
 });
 
 test("SDK reconnect and generated-artifact rules remain fail-closed", () => {

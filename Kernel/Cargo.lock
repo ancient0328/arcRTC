@@ -59,6 +59,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
 
 [[package]]
+name = "arcrtc-benchmarks"
+version = "0.0.0"
+dependencies = [
+ "arcrtc-core-identity",
+ "arcrtc-core-sfu",
+ "arcrtc-core-signaling",
+ "arcrtc-core-turn",
+ "criterion",
+]
+
+[[package]]
 name = "arcrtc-cli"
 version = "0.0.0"
 dependencies = [
@@ -180,6 +191,7 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-transport",
 ]
 
 [[package]]
@@ -254,6 +266,7 @@ dependencies = [
  "arcrtc-core-protocol",
  "arcrtc-core-quality",
  "arcrtc-core-reason",
+ "arcrtc-core-sfu",
  "arcrtc-core-signaling",
  "arcrtc-core-turn",
 ]
@@ -281,6 +294,7 @@ dependencies = [
 name = "arcrtc-driver-security"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-identity",
  "arcrtc-core-ports",
  "arcrtc-core-reason",
  "arcrtc-core-security",
@@ -307,6 +321,10 @@ dependencies = [
 name = "arcrtc-entrypoint-composition-root"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-sfu",
+ "arcrtc-core-signaling",
+ "arcrtc-core-turn",
+ "arcrtc-driver-network",
  "arcrtc-entrypoint-admin",
  "arcrtc-entrypoint-configuration",
 ]
@@ -352,15 +370,20 @@ dependencies = [
 name = "arcrtc-roadmap-integration-tests"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-audit",
  "arcrtc-core-command",
  "arcrtc-core-cross-plane",
  "arcrtc-core-identity",
  "arcrtc-core-reason",
+ "arcrtc-core-recovery",
+ "arcrtc-core-security",
  "arcrtc-core-sfu",
  "arcrtc-core-signaling",
  "arcrtc-core-transport",
  "arcrtc-core-turn",
  "arcrtc-driver-network",
+ "arcrtc-entrypoint-endpoints",
+ "arcrtc-entrypoint-topology",
 ]
 
 [[package]]
@@ -411,6 +434,9 @@ dependencies = [
 name = "arcrtc-sfu-server"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-identity",
+ "arcrtc-core-runtime",
+ "arcrtc-core-sfu",
  "arcrtc-entrypoint-composition-root",
 ]
 
@@ -418,6 +444,8 @@ dependencies = [
 name = "arcrtc-signaling-server"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-identity",
+ "arcrtc-core-runtime",
  "arcrtc-entrypoint-composition-root",
 ]
 
@@ -425,6 +453,10 @@ dependencies = [
 name = "arcrtc-turn-server"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-identity",
+ "arcrtc-core-runtime",
+ "arcrtc-core-security",
+ "arcrtc-core-turn",
  "arcrtc-entrypoint-composition-root",
 ]
 

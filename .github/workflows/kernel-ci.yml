@@ -24,7 +24,7 @@ jobs:
   kernel-rust:
     name: kernel-rust / ${{ matrix.command_id }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -37,9 +37,13 @@ jobs:
             command_id: cargo-test-workspace
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup default stable
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: kernel-rust
           MATRIX_COMMAND_FAMILY: ${{ matrix.command_family }}
@@ -49,15 +53,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -65,9 +65,16 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
+
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
 
   sdk-typescript:
     name: sdk-typescript / typescript-sdk-test
@@ -75,9 +82,18 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable pnpm
+        run: corepack enable
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: sdk-typescript
           MATRIX_COMMAND_FAMILY: typescript-sdk-test
@@ -87,15 +103,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -103,19 +115,33 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
 
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
+
   sdk-android:
     name: sdk-android / android-sdk-test
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: sdk-android
           MATRIX_COMMAND_FAMILY: android-sdk-test
@@ -125,15 +151,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -141,19 +163,27 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
 
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
+
   sdk-ios:
     name: sdk-ios / ios-sdk-test
-    runs-on: macos-26
+    runs-on: macos-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: sdk-ios
           MATRIX_COMMAND_FAMILY: ios-sdk-test
@@ -163,15 +193,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -179,9 +205,16 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
+
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
 
   supply-chain:
     name: supply-chain / supply-chain-policy-check
@@ -189,9 +222,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup default stable
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: supply-chain
           MATRIX_COMMAND_FAMILY: supply-chain-policy-check
@@ -201,15 +238,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -217,9 +250,16 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
+
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
 
   coverage:
     name: coverage / coverage-denominator-check
@@ -227,9 +267,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup default stable
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: coverage
           MATRIX_COMMAND_FAMILY: coverage-denominator-check
@@ -239,15 +283,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -255,14 +295,21 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
 
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
+
   benchmark:
     name: benchmark / ${{ matrix.command_id }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -275,9 +322,13 @@ jobs:
             command_id: benchmark-concurrency-check
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup default stable
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: benchmark
           MATRIX_COMMAND_FAMILY: ${{ matrix.command_family }}
@@ -287,15 +338,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -303,9 +350,16 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
+
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}
 
   security:
     name: security / security-adversarial-check
@@ -313,9 +367,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup default stable
 
       - name: Resolve matrix source reference
+        id: resolve
         env:
           MATRIX_JOB_ID: security
           MATRIX_COMMAND_FAMILY: security-adversarial-check
@@ -325,15 +383,11 @@ jobs:
           import os
           import tomllib
 
-          source = os.environ["KERNEL_GATE_MATRIX_SOURCE"]
-          job_id = os.environ["MATRIX_JOB_ID"]
-          command_id = os.environ["MATRIX_COMMAND_ID"]
-          command_family = os.environ["MATRIX_COMMAND_FAMILY"]
-          with open(source, "rb") as matrix_file:
+          with open(os.environ["KERNEL_GATE_MATRIX_SOURCE"], "rb") as matrix_file:
               matrix = tomllib.load(matrix_file)
           for command in matrix["commands"]:
-              if command["job_id"] == job_id and command["command_id"] == command_id:
-                  if command["command_family"] != command_family:
+              if command["job_id"] == os.environ["MATRIX_JOB_ID"] and command["command_id"] == os.environ["MATRIX_COMMAND_ID"]:
+                  if command["command_family"] != os.environ["MATRIX_COMMAND_FAMILY"]:
                       raise SystemExit("command family mismatch")
                   print(f"job_id={command['job_id']}")
                   print(f"command_family={command['command_family']}")
@@ -341,6 +395,13 @@ jobs:
                   print(f"gate_class={command['gate_class']}")
                   print(f"working_directory={command['working_directory']}")
                   print(f"command_line={command['command_line']}")
+                  with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                      output.write(f"working_directory=Kernel/{command['working_directory']}\n")
+                      output.write(f"command_line={command['command_line']}\n")
                   raise SystemExit(0)
           raise SystemExit("matrix command reference not found")
           PY
+
+      - name: Run matrix command
+        working-directory: ${{ steps.resolve.outputs.working_directory }}
+        run: ${{ steps.resolve.outputs.command_line }}

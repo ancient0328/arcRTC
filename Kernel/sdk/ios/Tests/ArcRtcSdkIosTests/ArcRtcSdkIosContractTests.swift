@@ -163,4 +163,136 @@ final class ArcRtcSdkIosContractTests: XCTestCase {
             }
         }
     }
+
+    func testFixedPublicCommandNamesAndFields() {
+        let commands: [Any] = [
+            ArcRtcJoinCommand(
+                roomId: "room-a",
+                participantId: "participant-a",
+                credentialRef: "credential-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcLeaveCommand(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcOfferCommand(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sdpRef: "sdp-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcAnswerCommand(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sdpRef: "sdp-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcIceCandidateCommand(
+                roomId: "room-a",
+                participantId: "participant-a",
+                candidateRef: "candidate-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcReconnectCommand(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sessionRef: "session-a"
+            )
+        ]
+
+        // SDK は Signaling-only DTO を公開しますが、domain decision の権威は持ちません。
+        XCTAssertEqual(
+            commands.map { String(describing: type(of: $0)) },
+            [
+                "ArcRtcJoinCommand",
+                "ArcRtcLeaveCommand",
+                "ArcRtcOfferCommand",
+                "ArcRtcAnswerCommand",
+                "ArcRtcIceCandidateCommand",
+                "ArcRtcReconnectCommand"
+            ]
+        )
+        XCTAssertEqual((commands[0] as? ArcRtcJoinCommand)?.credentialRef, "credential-a")
+        XCTAssertEqual((commands[2] as? ArcRtcOfferCommand)?.sdpRef, "sdp-a")
+        XCTAssertEqual((commands[3] as? ArcRtcAnswerCommand)?.sdpRef, "sdp-a")
+        XCTAssertEqual((commands[4] as? ArcRtcIceCandidateCommand)?.candidateRef, "candidate-a")
+        XCTAssertEqual((commands[5] as? ArcRtcReconnectCommand)?.sessionRef, "session-a")
+    }
+
+    func testFixedPublicEventNamesAndFields() {
+        let events: [Any] = [
+            ArcRtcJoinAcceptedEvent(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcJoinRejectedEvent(
+                roomId: "room-a",
+                participantId: "participant-a",
+                reasonCode: "join_rejected"
+            ),
+            ArcRtcParticipantLeftEvent(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcNegotiationRequiredEvent(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sdpRef: "sdp-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcIceCandidateReceivedEvent(
+                roomId: "room-a",
+                participantId: "participant-a",
+                candidateRef: "candidate-a",
+                sessionRef: "session-a"
+            ),
+            ArcRtcSessionTimedOutEvent(
+                roomId: "room-a",
+                participantId: "participant-a",
+                sessionRef: "session-a",
+                reasonCode: "session_timed_out"
+            )
+        ]
+
+        XCTAssertEqual(
+            events.map { String(describing: type(of: $0)) },
+            [
+                "ArcRtcJoinAcceptedEvent",
+                "ArcRtcJoinRejectedEvent",
+                "ArcRtcParticipantLeftEvent",
+                "ArcRtcNegotiationRequiredEvent",
+                "ArcRtcIceCandidateReceivedEvent",
+                "ArcRtcSessionTimedOutEvent"
+            ]
+        )
+        XCTAssertEqual((events[1] as? ArcRtcJoinRejectedEvent)?.reasonCode, "join_rejected")
+        XCTAssertEqual((events[3] as? ArcRtcNegotiationRequiredEvent)?.sdpRef, "sdp-a")
+        XCTAssertEqual((events[4] as? ArcRtcIceCandidateReceivedEvent)?.candidateRef, "candidate-a")
+        XCTAssertEqual((events[5] as? ArcRtcSessionTimedOutEvent)?.reasonCode, "session_timed_out")
+    }
+
+    func testFixedFailureCodeAndVersionConstants() {
+        XCTAssertEqual(
+            ArcRtcSdkFailureCode.allCases.map(\.rawValue),
+            [
+                "CredentialRejected",
+                "JoinRejected",
+                "MembershipConflict",
+                "NegotiationRejected",
+                "IceCandidateRejected",
+                "Timeout",
+                "TransportUnavailable",
+                "ProtocolViolation",
+                "VersionMismatch",
+                "InternalInvariantViolation"
+            ]
+        )
+        XCTAssertEqual(ARCRTC_SIGNALING_PROTOCOL_VERSION, "v0.2")
+        XCTAssertEqual(ARCRTC_SDK_SEMVER, "0.2.0")
+        XCTAssertEqual(ARCRTC_SDK_PACKAGE_NAME, "ArcRtcSdkIos")
+    }
 }

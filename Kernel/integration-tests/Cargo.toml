@@ -17,11 +17,16 @@ path = "src/lib.rs"
 
 [dependencies]
 arcrtc-driver-network = { path = "../drivers/network" }
+arcrtc-core-audit = { path = "../core/audit" }
 arcrtc-core-command = { path = "../core/command" }
 arcrtc-core-cross-plane = { path = "../core/cross-plane" }
 arcrtc-core-identity = { path = "../core/identity" }
 arcrtc-core-reason = { path = "../core/reason" }
+arcrtc-core-recovery = { path = "../core/recovery" }
+arcrtc-core-security = { path = "../core/security" }
 arcrtc-core-sfu = { path = "../core/sfu" }
 arcrtc-core-signaling = { path = "../core/signaling" }
 arcrtc-core-transport = { path = "../core/transport" }
 arcrtc-core-turn = { path = "../core/turn" }
+arcrtc-entrypoint-endpoints = { path = "../entrypoints/endpoints" }
+arcrtc-entrypoint-topology = { path = "../entrypoints/topology" }

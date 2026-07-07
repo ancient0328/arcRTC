@@ -4,6 +4,7 @@ use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
 const JOIN_FRAME: &[u8] = &[0x00, 0x00, 0x02, 0x72, 0x31, 0x63, 0x31];
+const JOINED: u8 = 0x00;
 const REJECTED: u8 = 0x01;
 
 struct ServerProc {
@@ -78,8 +79,13 @@ fn assert_rejected_reason(label: &str, input: &[u8], expected_reason: &str) {
 }
 
 #[test]
-fn well_formed_join_is_rejected_with_catalog_reason() {
-    assert_rejected_reason("T1", JOIN_FRAME, "token_verification_failed");
+fn well_formed_join_is_accepted() {
+    let (mut server, addr) = ServerProc::spawn();
+    let response = exchange(&addr, JOIN_FRAME);
+    println!("case=T1 input={JOIN_FRAME:?} response={response:?}");
+    assert_eq!(response.first().copied(), Some(JOINED), "T1 must accept");
+    assert_eq!(response.len(), 1, "accepted join must not expose payload");
+    server.kill_and_wait();
 }
 
 #[test]

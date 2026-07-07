@@ -19,3 +19,6 @@ path = "src/lib.rs"
 arcrtc-core-ports = { path = "../../core/ports" }
 arcrtc-core-reason = { path = "../../core/reason" }
 arcrtc-core-security = { path = "../../core/security" }
+
+[dev-dependencies]
+arcrtc-core-identity = { path = "../../core/identity" }

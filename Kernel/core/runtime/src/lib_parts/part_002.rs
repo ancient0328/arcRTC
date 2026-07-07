@@ -83,6 +83,16 @@ impl RuntimeTaskLifecycleDecision {
     pub const fn audit_event_type(&self) -> &'static str {
         "runtime_task_lifecycle_decision"
     }
+
+    /// lifecycle outcome です。
+    pub const fn outcome(&self) -> RuntimeTaskLifecycleOutcome {
+        self.outcome
+    }
+
+    /// rejected/failed reason です。
+    pub const fn reason(&self) -> Option<RuntimeFailureKind> {
+        self.reason
+    }
 }
 
 /// task cancellation surface です。

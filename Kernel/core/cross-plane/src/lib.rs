@@ -51,6 +51,21 @@ impl CrossPlaneBindingClass {
             | Self::TestCrossPlaneBinding => false,
         }
     }
+
+    /// explicit binding materialization に source/target reference が必要な class です。
+    pub const fn requires_materialized_references(self) -> bool {
+        match self {
+            Self::NoCrossPlaneBindingRequired => false,
+            Self::SignalingParticipantBinding
+            | Self::SfuEndpointBinding
+            | Self::TurnAllocationBinding
+            | Self::TurnPermissionBinding
+            | Self::IceCandidateBinding
+            | Self::SecureMediaSessionBinding
+            | Self::TestCrossPlaneBinding
+            | Self::ImplicitBindingRequested => true,
+        }
+    }
 }
 
 /// cross-plane が扱う plane の閉集合です。
@@ -474,6 +489,19 @@ pub fn materialize_cross_plane_binding(
             Some(input),
             CrossPlaneBindingOutcome::Rejected,
             Some(CrossPlaneBindingFailureKind::BindingClassNotAdmitted),
+        ));
+    }
+
+    if input.binding_class.requires_materialized_references()
+        && (matches!(input.source_plane_ref, CrossPlaneReference::NotMaterialized)
+            || matches!(input.target_plane_ref, CrossPlaneReference::NotMaterialized))
+    {
+        return CrossPlaneBindingDecision::Rejected(CrossPlaneBindingDecisionRecord::new(
+            None,
+            None,
+            Some(input),
+            CrossPlaneBindingOutcome::Rejected,
+            Some(CrossPlaneBindingFailureKind::RequiredBindingAbsent),
         ));
     }
 

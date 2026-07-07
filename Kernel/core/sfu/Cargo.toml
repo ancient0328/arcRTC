@@ -18,3 +18,4 @@ path = "src/lib.rs"
 [dependencies]
 arcrtc-core-command = { path = "../command" }
 arcrtc-core-identity = { path = "../identity" }
+arcrtc-core-transport = { path = "../transport" }

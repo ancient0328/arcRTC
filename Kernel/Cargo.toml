@@ -45,6 +45,7 @@ members = [
   "regulated",
   "tests",
   "integration-tests",
+  "benchmarks",
 ]
 
 [workspace.package]
@@ -73,3 +74,4 @@ drivers = ["drivers/webrtc-str0m", "drivers/network", "drivers/persistence", "dr
 entrypoints = ["entrypoints/signaling-server", "entrypoints/composition-root", "entrypoints/sfu-server", "entrypoints/turn-server", "entrypoints/cli", "entrypoints/demo", "entrypoints/configuration", "entrypoints/endpoints", "entrypoints/topology", "entrypoints/internal-control", "entrypoints/admin"]
 sdk = ["sdk/typescript", "sdk/android", "sdk/ios"]
 regulated = ["regulated"]
+benchmark = ["benchmarks"]

@@ -4,10 +4,7 @@ use std::process::{Child, Command, Stdio};
 use std::time::Duration;
 
 const FRAME: &[u8] = &[0x00, 0x00, 0x02, 0x72, 0x31, 0x63, 0x31];
-const EXPECTED_RESPONSE: &[u8] = &[
-    0x01, b't', b'o', b'k', b'e', b'n', b'_', b'v', b'e', b'r', b'i', b'f', b'i', b'c', b'a', b't',
-    b'i', b'o', b'n', b'_', b'f', b'a', b'i', b'l', b'e', b'd',
-];
+const EXPECTED_RESPONSE: &[u8] = &[0x00];
 
 struct ServerProc {
     child: Child,

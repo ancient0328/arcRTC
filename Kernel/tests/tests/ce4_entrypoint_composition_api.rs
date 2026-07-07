@@ -223,7 +223,7 @@ fn ce4_server_composition_sources_remain_core_driver_wiring_only() {
         let source = read_impl(path);
         assert!(
             source.contains("ResidentServerLoopConfig::new")
-                && source.contains("run_resident_loop(config)"),
+                && source.contains("serve_resident_loop(config)"),
             "{path} must construct resident loop config and delegate to composition root"
         );
         assert_not_contains(

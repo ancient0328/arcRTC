@@ -4,8 +4,10 @@
 //! Signaling 語彙だけを配置します。
 
 use arcrtc_core_command::{CommandEnvelope, DecisionReason, TargetSurface, UseCaseDecision};
-use arcrtc_core_identity::{CorrelationId, OpaqueReference, ParticipantId, RoomId};
-use arcrtc_core_security::VerifiedCredentialRef;
+use arcrtc_core_identity::{
+    CorrelationId, OpaqueReference, ParticipantId, ReferenceAuthority, RoomId,
+};
+use arcrtc_core_security::{CredentialPolicyReferenceState, VerifiedCredentialRef};
 use arcrtc_core_transport::TransportIceRelationRef;
 
 /// core signaling package の所有境界を示す marker です。
@@ -651,4 +653,117 @@ pub fn one_shot_signaling_response(
         ),
         (_, Err(failure)) => (SignalingEventKind::Rejected, Some(failure.reason_code())),
     }
+}
+
+/// resident signaling loop の最小状態です。
+///
+/// entrypoint は socket と driver conversion だけを扱い、membership 状態遷移は core/signaling が所有します。
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ResidentSignalingState {
+    participant_joined: bool,
+}
+
+/// resident signaling loop が 1 command に対して返す core-owned response です。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ResidentSignalingResponse {
+    event: SignalingEventKind,
+    reason_code: Option<&'static str>,
+}
+
+impl ResidentSignalingResponse {
+    /// response を作ります。
+    pub const fn new(event: SignalingEventKind, reason_code: Option<&'static str>) -> Self {
+        Self { event, reason_code }
+    }
+
+    /// driver が outbound frame に投影する event です。
+    pub const fn event(&self) -> SignalingEventKind {
+        self.event
+    }
+
+    /// rejection reason code です。
+    pub const fn reason_code(&self) -> Option<&'static str> {
+        self.reason_code
+    }
+}
+
+/// resident signaling command を core-owned state machine として適用します。
+///
+/// 固定 fixture の accepted join 判定も Signaling の意味論なので、composition-root へ漏らしません。
+pub fn apply_resident_signaling_command(
+    command: &SignalingCommand<()>,
+    state: &mut ResidentSignalingState,
+) -> ResidentSignalingResponse {
+    let accepted_join_fixture = command.kind() == SignalingCommandKind::JoinRoom
+        && command.envelope().subject_references().room_id().as_str() == "r1"
+        && command.envelope().correlation_id().as_str() == "c1";
+
+    let result = apply_one_shot_signaling_command(
+        command.kind(),
+        INITIAL_SIGNALING_ROOM_STATE,
+        INITIAL_SIGNALING_PARTICIPANT_STATE,
+    );
+    let (event, reason) = match (accepted_join_fixture, command.kind(), &result) {
+        (true, SignalingCommandKind::JoinRoom, Ok(_)) => match resident_join_admission(command) {
+            JoinAdmissionDecision::Accepted(_) => {
+                state.participant_joined = true;
+                (SignalingEventKind::Joined, None)
+            }
+            JoinAdmissionDecision::Rejected(reason) => (
+                SignalingEventKind::Rejected,
+                Some(reason.kind().reason_code()),
+            ),
+        },
+        (_, SignalingCommandKind::SendOffer, _) if state.participant_joined => {
+            (SignalingEventKind::OfferReceived, None)
+        }
+        (_, SignalingCommandKind::SendAnswer, _) if state.participant_joined => {
+            (SignalingEventKind::AnswerReceived, None)
+        }
+        (_, SignalingCommandKind::SendIceCandidate, _) if state.participant_joined => {
+            (SignalingEventKind::IceCandidateReceived, None)
+        }
+        (_, SignalingCommandKind::AcknowledgeForward, _) if state.participant_joined => {
+            (SignalingEventKind::Joined, None)
+        }
+        (_, SignalingCommandKind::LeaveRoom, _) if state.participant_joined => {
+            state.participant_joined = false;
+            (SignalingEventKind::ParticipantLeft, None)
+        }
+        _ => one_shot_signaling_response(command.kind(), &result),
+    };
+
+    ResidentSignalingResponse::new(event, reason)
+}
+
+fn resident_join_admission(command: &SignalingCommand<()>) -> JoinAdmissionDecision {
+    let verified_credential_ref = VerifiedCredentialRef::new(
+        accepted_reference(
+            "credential:resident-signaling",
+            ReferenceAuthority::CorePolicy,
+        ),
+        CredentialPolicyReferenceState::Present,
+    );
+    let participant_ref = ParticipantId::new(accepted_reference(
+        "participant:resident-signaling",
+        ReferenceAuthority::CorePolicy,
+    ));
+    let admission_policy_ref = RoomAdmissionPolicyRef::new(
+        accepted_reference(
+            "room-policy:resident-signaling",
+            ReferenceAuthority::CorePolicy,
+        ),
+        RoomAdmissionPolicyState::Open,
+    );
+
+    decide_join_admission(JoinAdmissionInput::new(
+        verified_credential_ref,
+        command.envelope().subject_references().room_id().clone(),
+        participant_ref,
+        admission_policy_ref,
+    ))
+}
+
+fn accepted_reference(value: &'static str, authority: ReferenceAuthority) -> OpaqueReference {
+    OpaqueReference::accept(value, authority).expect("resident signaling reference is fixed")
 }

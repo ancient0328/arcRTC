@@ -9,12 +9,16 @@ publish.workspace = true
 [package.metadata.arcrtc]
 owner_layer = "entrypoints"
 package_role = "resident loop composition root"
-allowed_dependency_direction = "composition root may depend on entrypoint observation surfaces"
+allowed_dependency_direction = "composition root may depend on published core contracts, selected drivers, and entrypoint observation surfaces"
 dependency_class = "entrypoint_composition_dependency"
 
 [lib]
 path = "src/lib.rs"
 
 [dependencies]
+arcrtc-core-sfu = { path = "../../core/sfu" }
+arcrtc-core-signaling = { path = "../../core/signaling" }
+arcrtc-core-turn = { path = "../../core/turn" }
+arcrtc-driver-network = { path = "../../drivers/network" }
 arcrtc-entrypoint-admin = { path = "../admin" }
 arcrtc-entrypoint-configuration = { path = "../configuration" }
