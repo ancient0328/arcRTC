@@ -41,6 +41,32 @@ threshold_mode = "closed-scenario-threshold"
 required_threshold_fields = ["latency_p95", "throughput_min", "error_rate_max", "memory_max"]
 non_adoption = "threshold policy is not correctness proof"
 
+# I-PERF-02: benchmark evidence が post-hoc な任意解釈にならないよう、
+# scenario ごとの数値閾値を source policy として先に固定します。
+[threshold_values.load]
+latency_p95_ms_max = 0.005
+throughput_ops_per_sec_min = 200000
+error_rate_ratio_max = 0.0
+memory_mib_max = 512
+
+[threshold_values.soak]
+latency_p95_ms_max = 0.075
+throughput_ops_per_sec_min = 10000
+error_rate_ratio_max = 0.0
+memory_mib_max = 512
+
+[threshold_values.concurrency]
+latency_p95_ms_max = 0.150
+throughput_ops_per_sec_min = 5000
+error_rate_ratio_max = 0.0
+memory_mib_max = 512
+
+[threshold_evaluator]
+pass_condition = "all_scenarios_within_thresholds"
+missing_metric_reason = "MISSING_REQUIRED_FIELD"
+failed_metric_reason = "BENCHMARK_THRESHOLD_FAILED"
+non_adoption = "threshold evaluator source is not benchmark output or readiness proof"
+
 [non_adoption]
 owner = "tools/benchmark"
 benchmark_result_is_correctness_proof = false

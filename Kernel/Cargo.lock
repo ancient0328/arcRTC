@@ -353,6 +353,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "arcrtc-entrypoint-live-server"
+version = "0.0.0"
+dependencies = [
+ "arcrtc-core-reason",
+]
+
+[[package]]
 name = "arcrtc-entrypoint-topology"
 version = "0.0.0"
 dependencies = [
