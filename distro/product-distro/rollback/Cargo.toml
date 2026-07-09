@@ -16,6 +16,5 @@ workspace = true
 arcrtc-core-recovery = { path = "../../../Kernel/core/recovery" }
 arcrtc-core-operation = { path = "../../../Kernel/core/operation" }
 arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
-arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
 arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "signal", "sync"] }

@@ -9,6 +9,7 @@ dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
  "arcrtc-core-reason",
+ "arcrtc-core-security",
 ]
 
 [[package]]
@@ -30,14 +31,8 @@ version = "0.0.0"
 name = "arcrtc-core-operation"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-audit",
  "arcrtc-core-command",
- "arcrtc-core-identity",
-]
-
-[[package]]
-name = "arcrtc-core-quality"
-version = "0.0.0"
-dependencies = [
  "arcrtc-core-identity",
 ]
 
@@ -74,6 +69,7 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-transport",
 ]
 
 [[package]]
@@ -82,6 +78,8 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-security",
+ "arcrtc-core-transport",
 ]
 
 [[package]]
@@ -102,6 +100,7 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-security",
 ]
 
 [[package]]
@@ -129,6 +128,7 @@ dependencies = [
  "arcrtc-product-signaling",
  "arcrtc-product-turn",
  "arcrtc-reference-output",
+ "tokio",
 ]
 
 [[package]]
@@ -151,8 +151,6 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-audit",
  "arcrtc-core-identity",
- "arcrtc-core-quality",
- "arcrtc-core-reason",
  "arcrtc-distro-evidence",
  "serde",
  "serde_json",
@@ -163,8 +161,6 @@ dependencies = [
 name = "arcrtc-product-persistence-topology"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-reason",
- "arcrtc-core-state",
  "arcrtc-distro-evidence",
  "serde",
 ]
@@ -173,9 +169,7 @@ dependencies = [
 name = "arcrtc-product-policy"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-command",
  "arcrtc-core-identity",
- "arcrtc-core-reason",
  "arcrtc-distro-evidence",
 ]
 
@@ -185,7 +179,6 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-identity",
  "arcrtc-core-operation",
- "arcrtc-core-reason",
  "arcrtc-core-recovery",
  "arcrtc-distro-evidence",
  "tokio",
@@ -196,11 +189,6 @@ name = "arcrtc-product-sfu"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-identity",
- "arcrtc-core-quality",
- "arcrtc-core-reason",
- "arcrtc-core-sfu",
- "arcrtc-core-state",
- "arcrtc-core-transport",
  "arcrtc-distro-evidence",
  "arcrtc-product-policy",
  "arcrtc-reference-output",
@@ -210,10 +198,7 @@ dependencies = [
 name = "arcrtc-product-signaling"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-command",
  "arcrtc-core-identity",
- "arcrtc-core-reason",
- "arcrtc-core-signaling",
  "arcrtc-distro-evidence",
  "arcrtc-product-policy",
  "arcrtc-reference-output",
@@ -224,10 +209,6 @@ name = "arcrtc-product-turn"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-identity",
- "arcrtc-core-reason",
- "arcrtc-core-security",
- "arcrtc-core-transport",
- "arcrtc-core-turn",
  "arcrtc-distro-evidence",
  "arcrtc-product-policy",
  "arcrtc-reference-output",

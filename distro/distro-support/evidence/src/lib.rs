@@ -18,10 +18,10 @@ pub use readiness_extension::{
 };
 pub use reason::DistroEvidenceReason;
 pub use record::{
-    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceRecord,
-    DistroLayer, DistroNonClaimScope, DistroPlane,
+    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceRecord, DistroLayer,
+    DistroNonClaimScope, DistroPlane,
 };
 pub use validation::{
-    validate_evidence_record, EvidenceValidationError, DISTRO_COMMAND_ROOT,
-    DISTRO_EVIDENCE_ROOT, DISTRO_TARGET_ROOT,
+    validate_evidence_record, EvidenceValidationError, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
+    DISTRO_TARGET_ROOT,
 };

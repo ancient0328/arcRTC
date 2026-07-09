@@ -17,9 +17,7 @@ impl ProductMonitoringError {
     /// distro evidence reasonへ変換します。
     pub const fn distro_reason(&self) -> DistroEvidenceReason {
         match self {
-            Self::EvidenceFieldsIncomplete => {
-                DistroEvidenceReason::EvidenceFieldsIncomplete
-            }
+            Self::EvidenceFieldsIncomplete => DistroEvidenceReason::EvidenceFieldsIncomplete,
             Self::CommandScopeMismatch => DistroEvidenceReason::CommandScopeMismatch,
             Self::ReadinessNotAdmitted => DistroEvidenceReason::ReadinessNotAdmitted,
         }

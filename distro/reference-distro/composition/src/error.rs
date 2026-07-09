@@ -21,9 +21,7 @@ impl ReferenceCompositionError {
         match self {
             Self::KernelContractMismatch => DistroEvidenceReason::KernelContractMismatch,
             Self::StateBoundaryViolation => DistroEvidenceReason::StateBoundaryViolation,
-            Self::EvidenceFieldsIncomplete => {
-                DistroEvidenceReason::EvidenceFieldsIncomplete
-            }
+            Self::EvidenceFieldsIncomplete => DistroEvidenceReason::EvidenceFieldsIncomplete,
             Self::PlaneExecutionFailed => DistroEvidenceReason::RuntimeExecutorError,
         }
     }

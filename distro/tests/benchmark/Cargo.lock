@@ -68,6 +68,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "arcrtc-core-audit"
+version = "0.0.0"
+dependencies = [
+ "arcrtc-core-command",
+ "arcrtc-core-identity",
+ "arcrtc-core-reason",
+ "arcrtc-core-security",
+]
+
+[[package]]
 name = "arcrtc-core-command"
 version = "0.0.0"
 dependencies = [
@@ -94,6 +104,7 @@ version = "0.0.0"
 name = "arcrtc-core-operation"
 version = "0.0.0"
 dependencies = [
+ "arcrtc-core-audit",
  "arcrtc-core-command",
  "arcrtc-core-identity",
 ]
@@ -103,6 +114,7 @@ name = "arcrtc-core-ports"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-identity",
+ "arcrtc-core-operation",
  "arcrtc-core-protocol",
  "arcrtc-core-quality",
  "arcrtc-core-reason",
@@ -158,6 +170,7 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-transport",
 ]
 
 [[package]]
@@ -166,6 +179,8 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-security",
+ "arcrtc-core-transport",
 ]
 
 [[package]]
@@ -193,6 +208,7 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-command",
  "arcrtc-core-identity",
+ "arcrtc-core-security",
 ]
 
 [[package]]
@@ -243,8 +259,6 @@ dependencies = [
 name = "arcrtc-product-persistence-topology"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-reason",
- "arcrtc-core-state",
  "arcrtc-distro-evidence",
  "serde",
 ]
@@ -253,9 +267,7 @@ dependencies = [
 name = "arcrtc-product-policy"
 version = "0.0.0"
 dependencies = [
- "arcrtc-core-command",
  "arcrtc-core-identity",
- "arcrtc-core-reason",
  "arcrtc-distro-evidence",
 ]
 
@@ -265,7 +277,6 @@ version = "0.0.0"
 dependencies = [
  "arcrtc-core-identity",
  "arcrtc-core-operation",
- "arcrtc-core-reason",
  "arcrtc-core-recovery",
  "arcrtc-distro-evidence",
  "tokio",

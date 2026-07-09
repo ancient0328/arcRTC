@@ -14,10 +14,7 @@ pub struct ReferenceTurnOutcome {
 
 impl ReferenceTurnOutcome {
     /// TURN outcomeを作ります。
-    pub const fn new(
-        kind: TurnDecisionKind,
-        distro_reason: DistroEvidenceReason,
-    ) -> Self {
+    pub const fn new(kind: TurnDecisionKind, distro_reason: DistroEvidenceReason) -> Self {
         Self {
             kind,
             distro_reason,

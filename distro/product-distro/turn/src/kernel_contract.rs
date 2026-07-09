@@ -1,9 +1,7 @@
 //! product TURN と Kernel / reference outcome の接続境界です。
 
 use arcrtc_core_identity::CorrelationId;
-use arcrtc_distro_evidence::{
-    DistroEvidenceReason, DistroNonClaimScope, DistroPlane,
-};
+use arcrtc_distro_evidence::{DistroEvidenceReason, DistroNonClaimScope, DistroPlane};
 use arcrtc_product_policy::ProductPolicyDecision;
 use arcrtc_reference_output::ReferenceTurnOutcome;
 
@@ -78,9 +76,7 @@ pub fn apply_product_turn_policy(
     if input.policy_decision.non_claim_scope.is_empty() {
         return Err(ProductTurnError::StateBoundaryViolation);
     }
-    if input.policy_decision.distro_reason
-        == DistroEvidenceReason::ReadinessNotAdmitted
-    {
+    if input.policy_decision.distro_reason == DistroEvidenceReason::ReadinessNotAdmitted {
         return Err(ProductTurnError::ReadinessNotAdmitted);
     }
     Ok(ProductTurnOutcome {

@@ -14,10 +14,7 @@ pub struct ReferenceCompositionOutcome {
 
 impl ReferenceCompositionOutcome {
     /// composition outcomeを作ります。
-    pub const fn new(
-        correlation_id: CorrelationId,
-        distro_reason: DistroEvidenceReason,
-    ) -> Self {
+    pub const fn new(correlation_id: CorrelationId, distro_reason: DistroEvidenceReason) -> Self {
         Self {
             correlation_id,
             distro_reason,

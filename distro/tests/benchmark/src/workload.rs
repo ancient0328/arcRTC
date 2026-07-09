@@ -16,7 +16,10 @@ use arcrtc_product_deployment::{
     build_product_runtime_profile, select_product_runtime, ProductHostClass,
 };
 use arcrtc_product_persistence_topology::{map_product_projection, ProductPersistenceRecordClass};
-use arcrtc_product_policy::{evaluate_product_auth_policy, ProductAction, ProductPolicyInput};
+use arcrtc_product_policy::{
+    evaluate_product_auth_policy, ProductAction, ProductOperationalPolicyClass, ProductPolicyInput,
+    ProductQuotaClass, ProductTenantClass,
+};
 use arcrtc_product_rollback::{plan_drain, ProductDrainMode};
 use arcrtc_reference_composition::{
     bind_signaling_to_sfu, bind_signaling_to_turn, validate_reference_composition_state,
@@ -613,6 +616,9 @@ fn product_policy_evaluate() -> usize {
             correlation_id: cid("bench-product-policy"),
             target_plane: plane,
             fixture_identity: Some("bench-fixture-user".to_owned()),
+            tenant_class: ProductTenantClass::LocalFixtureTenant,
+            quota_class: ProductQuotaClass::LocalQuotaAvailable,
+            operational_policy_class: ProductOperationalPolicyClass::ControlledLocal,
             requested_action: action,
         })
         .expect("product policy");

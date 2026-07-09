@@ -13,7 +13,5 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
-arcrtc-core-state = { path = "../../../Kernel/core/state" }
-arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
 arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
 serde = { version = "1", features = ["derive"] }

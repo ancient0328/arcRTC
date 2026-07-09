@@ -1,12 +1,14 @@
 //! reference runtime executorです。
 
+use std::net::SocketAddr;
+
 use arcrtc_core_identity::CorrelationId;
 use arcrtc_distro_evidence::{
-    validate_evidence_record, DistroCommandClass, DistroEnvironmentClass,
-    DistroEvidenceReason, DistroEvidenceRecord, DistroLayer,
-    DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT,
+    validate_evidence_record, DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
+    DistroEvidenceRecord, DistroLayer, DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT,
 };
 use arcrtc_reference_composition::ReferenceCompositionState;
+use tokio::net::TcpListener;
 
 use crate::error::ReferenceRuntimeError;
 
@@ -86,12 +88,28 @@ pub struct ReferenceRuntimeOutcome {
 }
 
 /// reference runtime executorです。
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct ReferenceRuntime {
     /// runtime stateです。
     state: DistroRuntimeState,
     /// composition stateです。
     composition: ReferenceCompositionState,
+    /// socket probe の listener です。外部公開 endpoint ではなく、Running の実 I/O 生存性だけを保持します。
+    socket_probe_listener: Option<TcpListener>,
+}
+
+/// reference runtime socket probe の観測結果です。
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReferenceRuntimeSocketProbe {
+    /// 実際にbindされたlocal addressです。
+    local_addr: SocketAddr,
+}
+
+impl ReferenceRuntimeSocketProbe {
+    /// 実際にbindされたlocal addressを返します。
+    pub const fn local_addr(&self) -> SocketAddr {
+        self.local_addr
+    }
 }
 
 impl ReferenceRuntime {
@@ -100,6 +118,7 @@ impl ReferenceRuntime {
         Self {
             state: DistroRuntimeState::Created,
             composition,
+            socket_probe_listener: None,
         }
     }
 
@@ -117,6 +136,34 @@ impl ReferenceRuntime {
         Ok(reference_runtime_outcome(correlation_id, self.state))
     }
 
+    /// 実socket bindを伴ってruntimeを開始します。
+    pub async fn start_with_socket_probe(
+        &mut self,
+        correlation_id: CorrelationId,
+        bind_addr: SocketAddr,
+    ) -> Result<(ReferenceRuntimeOutcome, ReferenceRuntimeSocketProbe), ReferenceRuntimeError> {
+        if self.state != DistroRuntimeState::Created {
+            self.state = DistroRuntimeState::Failed;
+            return Err(ReferenceRuntimeError::RuntimeExecutorError);
+        }
+        self.state = DistroRuntimeState::Starting;
+        let listener = TcpListener::bind(bind_addr).await.map_err(|_| {
+            self.state = DistroRuntimeState::Failed;
+            ReferenceRuntimeError::RuntimeExecutorError
+        })?;
+        let local_addr = listener.local_addr().map_err(|_| {
+            self.state = DistroRuntimeState::Failed;
+            ReferenceRuntimeError::RuntimeExecutorError
+        })?;
+        // listener を runtime に保持することで、Running が単なる enum 代入でないことを示します。
+        self.socket_probe_listener = Some(listener);
+        self.state = DistroRuntimeState::Running;
+        Ok((
+            reference_runtime_outcome(correlation_id, self.state),
+            ReferenceRuntimeSocketProbe { local_addr },
+        ))
+    }
+
     /// runtimeをshutdownします。
     pub fn shutdown(
         &mut self,
@@ -129,11 +176,12 @@ impl ReferenceRuntime {
         }
         match mode {
             DistroShutdownMode::Immediate => {
+                self.socket_probe_listener = None;
                 self.state = DistroRuntimeState::Stopped;
             }
-            DistroShutdownMode::GracefulLocal
-            | DistroShutdownMode::DrainThenStop => {
+            DistroShutdownMode::GracefulLocal | DistroShutdownMode::DrainThenStop => {
                 self.state = DistroRuntimeState::Draining;
+                self.socket_probe_listener = None;
                 self.state = DistroRuntimeState::Stopped;
             }
         }

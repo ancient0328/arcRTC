@@ -11,9 +11,7 @@ pub enum ProductPersistenceTopologyError {
 
 impl ProductPersistenceTopologyError {
     /// distro evidence reasonへ変換します。
-    pub const fn distro_reason(
-        &self,
-    ) -> arcrtc_distro_evidence::DistroEvidenceReason {
+    pub const fn distro_reason(&self) -> arcrtc_distro_evidence::DistroEvidenceReason {
         match self {
             Self::ProviderNotAdmitted => {
                 arcrtc_distro_evidence::DistroEvidenceReason::ReadinessNotAdmitted

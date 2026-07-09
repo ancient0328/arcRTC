@@ -14,10 +14,7 @@ pub struct ReferenceSfuOutcome {
 
 impl ReferenceSfuOutcome {
     /// SFU outcomeを作ります。
-    pub const fn new(
-        kind: SfuDecisionKind,
-        distro_reason: DistroEvidenceReason,
-    ) -> Self {
+    pub const fn new(kind: SfuDecisionKind, distro_reason: DistroEvidenceReason) -> Self {
         Self {
             kind,
             distro_reason,

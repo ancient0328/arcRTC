@@ -6,7 +6,8 @@ pub mod provider_admission;
 pub mod security_reason;
 
 pub use auth_policy::{
-    evaluate_product_auth_policy, ProductAction, ProductPolicyDecision, ProductPolicyInput,
+    evaluate_product_auth_policy, ProductAction, ProductOperationalPolicyClass,
+    ProductPolicyDecision, ProductPolicyInput, ProductQuotaClass, ProductTenantClass,
 };
 pub use error::ProductPolicyError;
 pub use provider_admission::{

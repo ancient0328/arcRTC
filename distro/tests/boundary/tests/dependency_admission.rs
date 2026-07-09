@@ -101,6 +101,44 @@ fn kernel_production_implementability_kernel_imports_are_allow_listed() {
     }
 }
 
+#[test]
+fn distro_does_not_vendor_kernel_source_tree() {
+    for forbidden_root in [
+        "Kernel",
+        "core",
+        "drivers",
+        "entrypoints",
+        "sdk",
+        "regulated",
+    ] {
+        assert!(
+            !root().join(forbidden_root).exists(),
+            "distro must not vendor Kernel source root {forbidden_root}"
+        );
+    }
+
+    for manifest_path in collect_cargo_toml(root()) {
+        let relative_path = manifest_path
+            .strip_prefix(root())
+            .expect("manifest must be under distro root")
+            .to_string_lossy()
+            .into_owned();
+        if relative_path == "Cargo.toml" {
+            continue;
+        }
+        let body = fs::read_to_string(&manifest_path).expect("manifest must be readable");
+        let package_name = package_name_from_manifest(&body)
+            .unwrap_or_else(|| panic!("{relative_path} must define a package name"));
+
+        // Kernel source copy は local path dependency とは別の境界侵食なので、
+        // distro 側で arcrtc-core-* package を再定義しないことを検査します。
+        assert!(
+            !package_name.starts_with("arcrtc-core-"),
+            "{relative_path} must not define Kernel package {package_name}"
+        );
+    }
+}
+
 fn collect_cargo_toml(path: PathBuf) -> Vec<PathBuf> {
     let mut files = Vec::new();
     collect(path, &mut files);
@@ -199,27 +237,11 @@ fn allowed_kernel_dependencies(package_name: &str) -> &'static [&'static str] {
             "arcrtc-core-runtime",
             "arcrtc-core-identity",
         ],
-        "arcrtc-product-signaling" => &[
-            "arcrtc-core-signaling",
-            "arcrtc-core-command",
-            "arcrtc-core-identity",
-            "arcrtc-core-reason",
-        ],
-        "arcrtc-product-turn" => &[
-            "arcrtc-core-turn",
-            "arcrtc-core-transport",
-            "arcrtc-core-security",
-            "arcrtc-core-identity",
-            "arcrtc-core-reason",
-        ],
-        "arcrtc-product-sfu" => &[
-            "arcrtc-core-sfu",
-            "arcrtc-core-transport",
-            "arcrtc-core-quality",
-            "arcrtc-core-state",
-            "arcrtc-core-identity",
-            "arcrtc-core-reason",
-        ],
+        "arcrtc-product-signaling" | "arcrtc-product-turn" | "arcrtc-product-sfu" => {
+            // Product plane は reference output を入力にするため、
+            // Kernel communication semantic ではなく共通 identity だけを直接許可します。
+            &["arcrtc-core-identity"]
+        }
         "arcrtc-product-policy" => &[
             "arcrtc-core-command",
             "arcrtc-core-identity",

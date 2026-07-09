@@ -1,9 +1,7 @@
 //! reference composition runtime bridge境界です。
 
 use arcrtc_core_identity::CorrelationId;
-use arcrtc_distro_evidence::{
-    DistroEvidenceReason, DistroNonClaimScope, DistroPlane,
-};
+use arcrtc_distro_evidence::{DistroEvidenceReason, DistroNonClaimScope, DistroPlane};
 use arcrtc_reference_output::{
     ReferenceSfuOutcome, ReferenceSignalingOutcome, ReferenceTurnOutcome,
 };

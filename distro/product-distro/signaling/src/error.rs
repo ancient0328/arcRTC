@@ -19,9 +19,7 @@ impl ProductSignalingError {
     /// distro evidence reasonへ変換します。
     pub const fn distro_reason(&self) -> DistroEvidenceReason {
         match self {
-            Self::KernelContractUnavailable => {
-                DistroEvidenceReason::KernelContractUnavailable
-            }
+            Self::KernelContractUnavailable => DistroEvidenceReason::KernelContractUnavailable,
             Self::KernelContractMismatch => DistroEvidenceReason::KernelContractMismatch,
             Self::StateBoundaryViolation => DistroEvidenceReason::StateBoundaryViolation,
             Self::ReadinessNotAdmitted => DistroEvidenceReason::ReadinessNotAdmitted,

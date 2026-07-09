@@ -13,9 +13,7 @@ pub enum ProductPolicyError {
 
 impl ProductPolicyError {
     /// distro evidence reasonへ変換します。
-    pub const fn distro_reason(
-        &self,
-    ) -> arcrtc_distro_evidence::DistroEvidenceReason {
+    pub const fn distro_reason(&self) -> arcrtc_distro_evidence::DistroEvidenceReason {
         match self {
             Self::InvalidFixtureIdentity => {
                 arcrtc_distro_evidence::DistroEvidenceReason::FixtureIdentityInvalid

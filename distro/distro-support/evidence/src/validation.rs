@@ -1,8 +1,6 @@
 //! base evidence record のvalidation境界です。
 
-use crate::record::{
-    DistroCommandClass, DistroEvidenceRecord, DistroNonClaimScope,
-};
+use crate::record::{DistroCommandClass, DistroEvidenceRecord, DistroNonClaimScope};
 
 /// distro command の固定root（repository-root 相対）です。
 pub const DISTRO_COMMAND_ROOT: &str = "distro";
@@ -139,9 +137,7 @@ fn validate_required_non_claim_scope(
     record: &DistroEvidenceRecord,
 ) -> Result<(), EvidenceValidationError> {
     let required: &[DistroNonClaimScope] = match record.command_class {
-        DistroCommandClass::Format => {
-            &[DistroNonClaimScope::CommandTargetSuccessNotClaimed]
-        }
+        DistroCommandClass::Format => &[DistroNonClaimScope::CommandTargetSuccessNotClaimed],
         DistroCommandClass::Build => &[
             DistroNonClaimScope::BehaviorCorrectnessNotClaimed,
             DistroNonClaimScope::ProductionReadinessNotClaimed,

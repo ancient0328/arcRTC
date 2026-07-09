@@ -14,9 +14,7 @@ workspace = true
 
 [dependencies]
 arcrtc-core-audit = { path = "../../../Kernel/core/audit" }
-arcrtc-core-quality = { path = "../../../Kernel/core/quality" }
 arcrtc-core-identity = { path = "../../../Kernel/core/identity" }
-arcrtc-core-reason = { path = "../../../Kernel/core/reason" }
 arcrtc-distro-evidence = { path = "../../distro-support/evidence" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

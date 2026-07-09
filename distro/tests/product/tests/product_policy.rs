@@ -3,11 +3,10 @@
 use std::{fs, path::PathBuf};
 
 use arcrtc_core_identity::{CorrelationId, OpaqueReference, ReferenceAuthority};
-use arcrtc_distro_evidence::{
-    DistroEvidenceReason, DistroNonClaimScope, DistroPlane,
-};
+use arcrtc_distro_evidence::{DistroEvidenceReason, DistroNonClaimScope, DistroPlane};
 use arcrtc_product_policy::{
-    evaluate_product_auth_policy, ProductAction, ProductPolicyError, ProductPolicyInput,
+    evaluate_product_auth_policy, ProductAction, ProductOperationalPolicyClass, ProductPolicyError,
+    ProductPolicyInput, ProductQuotaClass, ProductTenantClass,
 };
 
 fn accepted(value: &str) -> OpaqueReference {
@@ -31,6 +30,9 @@ fn input(identity: Option<&str>) -> ProductPolicyInput {
         correlation_id: cid("product-policy"),
         target_plane: DistroPlane::Signaling,
         fixture_identity: identity.map(str::to_owned),
+        tenant_class: ProductTenantClass::LocalFixtureTenant,
+        quota_class: ProductQuotaClass::LocalQuotaAvailable,
+        operational_policy_class: ProductOperationalPolicyClass::ControlledLocal,
         requested_action: ProductAction::Join,
     }
 }
@@ -40,10 +42,7 @@ fn product_policy_has_explicit_non_claim_scope_and_identity_fail_closed_branch()
     let allowed = evaluate_product_auth_policy(&input(Some("fixture-user")))
         .expect("fixture identity must be accepted");
     assert!(allowed.allowed);
-    assert_eq!(
-        allowed.distro_reason,
-        DistroEvidenceReason::DistroOk
-    );
+    assert_eq!(allowed.distro_reason, DistroEvidenceReason::DistroOk);
     assert!(allowed
         .non_claim_scope
         .contains(&DistroNonClaimScope::ProductionReadinessNotClaimed));
@@ -92,15 +91,15 @@ fn kpi_product_policy_executes_without_kernel_semantic_ownership() {
         correlation_id: cid("product-policy-kpi"),
         target_plane: DistroPlane::Sfu,
         fixture_identity: Some("fixture-user".to_owned()),
+        tenant_class: ProductTenantClass::LocalFixtureTenant,
+        quota_class: ProductQuotaClass::LocalQuotaAvailable,
+        operational_policy_class: ProductOperationalPolicyClass::ControlledLocal,
         requested_action: ProductAction::Subscribe,
     })
     .expect("product authorization decision must be returned");
 
     assert!(decision.allowed);
-    assert_eq!(
-        decision.distro_reason,
-        DistroEvidenceReason::DistroOk
-    );
+    assert_eq!(decision.distro_reason, DistroEvidenceReason::DistroOk);
     assert_eq!(
         decision.non_claim_scope,
         vec![
@@ -108,4 +107,50 @@ fn kpi_product_policy_executes_without_kernel_semantic_ownership() {
             DistroNonClaimScope::LiveReadinessNotClaimed,
         ]
     );
+}
+
+#[test]
+fn product_policy_owns_tenant_quota_and_operational_decisions() {
+    let tenant_denied = evaluate_product_auth_policy(&ProductPolicyInput {
+        tenant_class: ProductTenantClass::TenantNotAdmitted,
+        ..input(Some("fixture-user"))
+    })
+    .expect("tenant decision must return product policy decision");
+    assert!(!tenant_denied.allowed);
+    assert_eq!(
+        tenant_denied.distro_reason,
+        DistroEvidenceReason::DependencyNotAdmitted
+    );
+
+    let quota_denied = evaluate_product_auth_policy(&ProductPolicyInput {
+        quota_class: ProductQuotaClass::QuotaExceeded,
+        ..input(Some("fixture-user"))
+    })
+    .expect("quota decision must return product policy decision");
+    assert!(!quota_denied.allowed);
+    assert_eq!(
+        quota_denied.distro_reason,
+        DistroEvidenceReason::StateBoundaryViolation
+    );
+
+    let operation_denied = evaluate_product_auth_policy(&ProductPolicyInput {
+        operational_policy_class: ProductOperationalPolicyClass::MaintenanceDrainOnly,
+        requested_action: ProductAction::Join,
+        ..input(Some("fixture-user"))
+    })
+    .expect("operational decision must return product policy decision");
+    assert!(!operation_denied.allowed);
+    assert_eq!(
+        operation_denied.distro_reason,
+        DistroEvidenceReason::StateBoundaryViolation
+    );
+
+    let drain_allowed = evaluate_product_auth_policy(&ProductPolicyInput {
+        operational_policy_class: ProductOperationalPolicyClass::MaintenanceDrainOnly,
+        requested_action: ProductAction::Drain,
+        ..input(Some("fixture-user"))
+    })
+    .expect("maintenance drain action must be accepted");
+    assert!(drain_allowed.allowed);
+    assert_eq!(drain_allowed.distro_reason, DistroEvidenceReason::DistroOk);
 }

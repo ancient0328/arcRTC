@@ -93,8 +93,7 @@ pub fn build_product_live_profile(
     Ok(ProductRuntimeProfile {
         profile_name: "product-live-admitted",
         host_class: ProductHostClass::LiveAdmitted,
-        environment_class:
-            arcrtc_distro_evidence::DistroEnvironmentClass::LiveDeferred,
+        environment_class: arcrtc_distro_evidence::DistroEnvironmentClass::LiveDeferred,
         public_endpoint_claimed: true,
     })
 }

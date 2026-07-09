@@ -3,8 +3,8 @@
 use std::path::PathBuf;
 
 use arcrtc_distro_evidence::{
-    validate_evidence_record, DistroCommandClass, DistroEvidenceRecord,
-    DistroLayer, DistroPlane, DISTRO_EVIDENCE_ROOT,
+    validate_evidence_record, DistroCommandClass, DistroEvidenceRecord, DistroLayer, DistroPlane,
+    DISTRO_EVIDENCE_ROOT,
 };
 
 use crate::error::ReferenceRuntimeError;
@@ -53,9 +53,7 @@ fn reference_output_directory(
 fn validate_reference_writer_ownership(
     record: &DistroEvidenceRecord,
 ) -> Result<(), ReferenceRuntimeError> {
-    if record.distro_layer != DistroLayer::Reference
-        || record.target_plane != DistroPlane::Ops
-    {
+    if record.distro_layer != DistroLayer::Reference || record.target_plane != DistroPlane::Ops {
         return Err(ReferenceRuntimeError::CommandScopeMismatch);
     }
 

@@ -2,28 +2,36 @@
 
 use arcrtc_core_identity::{
     AllocationId, ChannelBindId, CorrelationId, CredentialRef, EndpointId, OpaqueReference,
-    ParticipantId, PermissionId, ReferenceAuthority, RoomId, RouteId, SessionId, StreamId,
+    PacketId, ParticipantId, PermissionId, ReferenceAuthority, RoomId, RouteId, SessionId,
+    StreamId,
 };
-use arcrtc_core_sfu::SfuDecisionKind;
-use arcrtc_core_signaling::SignalingCommandKind;
+use arcrtc_core_sfu::{
+    PacketClass, PacketHeaderSemanticView, SfuDecisionKind, SfuModelKind, SfuReferenceSet,
+};
+use arcrtc_core_signaling::{SignalingCommandKind, SignalingEventKind};
 use arcrtc_core_turn::{
     CorePeerAddress, TurnCommandKind, TurnDecisionKind, TurnReferenceSet,
     TurnRequestedLifetimeSeconds, TurnTransactionId,
 };
-use arcrtc_distro_evidence::{
-    DistroEvidenceReason, DistroNonClaimScope, DistroPlane,
-};
+use arcrtc_distro_evidence::{DistroEvidenceReason, DistroNonClaimScope, DistroPlane};
 use arcrtc_reference_composition::{
     bind_signaling_to_sfu, bind_signaling_to_turn, run_reference_composition_step,
     validate_reference_composition_state, ReferenceCompositionError,
     ReferenceCompositionPlaneOutcome, ReferenceCompositionState, ReferenceCompositionStep,
     ReferenceCompositionStepInput,
 };
-use arcrtc_reference_sfu::{apply_reference_sfu, ReferenceSfuAction};
-use arcrtc_reference_signaling::{
-    apply_reference_signaling, ReferenceSignalingCommandInput, ReferenceSignalingPayload,
+use arcrtc_reference_sfu::{
+    apply_reference_sfu, build_borrowed_packet_view, build_kernel_sfu_item, ReferenceSfuAction,
+    ReferenceSfuContractInput, ReferenceSfuSuppressionSource,
 };
-use arcrtc_reference_turn::{apply_reference_turn, ReferenceTurnCommandInput};
+use arcrtc_reference_signaling::fixture_identity::FixtureSessionDescriptionDirection;
+use arcrtc_reference_signaling::{
+    apply_reference_signaling, build_kernel_signaling_command, FixtureIceCandidate,
+    FixtureSessionDescription, ReferenceSignalingCommandInput, ReferenceSignalingPayload,
+};
+use arcrtc_reference_turn::{
+    apply_reference_turn, build_kernel_turn_command, ReferenceTurnCommandInput,
+};
 
 fn accepted(value: &str) -> OpaqueReference {
     OpaqueReference::accept(value, ReferenceAuthority::CoreValidatedUntrustedInput)
@@ -70,6 +78,10 @@ fn channel_bind() -> ChannelBindId {
     ChannelBindId::new(accepted("composition-channel"))
 }
 
+fn packet() -> PacketId {
+    PacketId::new(accepted("composition-packet"))
+}
+
 fn credential() -> CredentialRef {
     CredentialRef::new(accepted("composition-credential"))
 }
@@ -94,8 +106,103 @@ fn turn_input(kind: TurnCommandKind) -> ReferenceTurnCommandInput {
         credential_ref: Some(credential()),
         peer_address: Some(CorePeerAddress::new("192.0.2.11:3478").expect("peer address")),
         requested_lifetime: Some(TurnRequestedLifetimeSeconds::try_new(600).expect("lifetime")),
-        relay_packet_id: None,
+        relay_packet_id: matches!(kind, TurnCommandKind::RelayData).then(packet),
     }
+}
+
+fn signaling_input(
+    correlation_id: &str,
+    kind: SignalingCommandKind,
+    payload: ReferenceSignalingPayload,
+) -> ReferenceSignalingCommandInput {
+    ReferenceSignalingCommandInput::new(
+        cid(correlation_id),
+        room(),
+        Some(participant()),
+        kind,
+        payload,
+    )
+}
+
+fn kernel_driven_signaling_input(
+    kind: SignalingCommandKind,
+    payload: ReferenceSignalingPayload,
+) -> ReferenceSignalingCommandInput {
+    let requested = signaling_input("dcomp3-signaling-kernel", kind, payload);
+    let kernel_command =
+        build_kernel_signaling_command(&requested).expect("Kernel Signaling command must build");
+    let subject = kernel_command.envelope().subject_references();
+    ReferenceSignalingCommandInput::new(
+        kernel_command.envelope().correlation_id().clone(),
+        subject.room_id().clone(),
+        subject.participant_id().cloned(),
+        kernel_command.kind(),
+        requested.payload.clone(),
+    )
+}
+
+fn kernel_driven_turn_input(kind: TurnCommandKind) -> ReferenceTurnCommandInput {
+    let requested = turn_input(kind);
+    let kernel_command =
+        build_kernel_turn_command(&requested).expect("Kernel TURN command must build");
+    ReferenceTurnCommandInput {
+        kind: kernel_command.kind(),
+        transaction_id: kernel_command.transaction_id().clone(),
+        references: kernel_command.references().clone(),
+        allocation_id: requested.allocation_id,
+        permission_id: requested.permission_id,
+        channel_bind_id: requested.channel_bind_id,
+        credential_ref: requested.credential_ref,
+        peer_address: requested.peer_address,
+        requested_lifetime: requested.requested_lifetime,
+        relay_packet_id: requested.relay_packet_id,
+    }
+}
+
+fn sfu_references() -> SfuReferenceSet {
+    SfuReferenceSet::new(
+        session(),
+        Some(endpoint()),
+        Some(stream()),
+        Some(route()),
+        Some(packet()),
+    )
+}
+
+fn kernel_checked_sfu_action(model_kind: SfuModelKind, action: ReferenceSfuAction) -> ReferenceSfuAction {
+    let raw_packet = [
+        0x80, 0x60, 0x00, 0x2a, 0x00, 0x00, 0x03, 0xe8, 0, 0, 0, 7, 1, 2, 3, 4,
+    ];
+    let payload = &raw_packet[12..];
+    let packet_id = packet();
+    let stream_id = stream();
+    let endpoint_id = endpoint();
+    let packet_view = build_borrowed_packet_view(
+        &packet_id,
+        &stream_id,
+        &endpoint_id,
+        PacketHeaderSemanticView::new(PacketClass::Rtp, Some(42), Some(1000), Some(7)),
+        &raw_packet,
+        payload,
+    );
+    let packet_item = build_kernel_sfu_item(ReferenceSfuContractInput::new(
+        SfuModelKind::BorrowedPacketAbstractView,
+        sfu_references(),
+        packet_view,
+    ));
+    assert_eq!(
+        packet_item.model_kind(),
+        SfuModelKind::BorrowedPacketAbstractView
+    );
+    let action_item = build_kernel_sfu_item(ReferenceSfuContractInput::new(
+        model_kind,
+        sfu_references(),
+        action.clone(),
+    ));
+    assert_eq!(action_item.model_kind(), model_kind);
+    // Kernel item は payload getter を公開しないため、ここでは constructor/model kind 接続を観測し、
+    // 実行payloadは同じ reference action を composition step へ渡します。
+    action
 }
 
 fn seed_composition_state() -> ReferenceCompositionState {
@@ -262,6 +369,235 @@ fn kpi_reference_composition_executes_cross_plane_binding() {
 }
 
 #[test]
+fn dcomp3_reference_composition_executes_full_bounded_reference_flow() {
+    let mut state = ReferenceCompositionState::default();
+
+    // D-COMP-3 は個別planeの単体検査ではなく、Kernel public type を通した
+    // reference-local flow が composition state に閉じることを一連のscenarioで固定する。
+    let joined = run_reference_composition_step(
+        &mut state,
+        step(
+            "dcomp3-signaling-join",
+            ReferenceCompositionStep::ApplySignaling(kernel_driven_signaling_input(
+                SignalingCommandKind::JoinRoom,
+                ReferenceSignalingPayload::JoinRoom,
+            )),
+        ),
+    )
+    .expect("signaling join must succeed");
+    assert_eq!(joined.applied_plane, DistroPlane::Signaling);
+    assert!(matches!(
+        joined.plane_outcome,
+        ReferenceCompositionPlaneOutcome::Signaling(outcome)
+            if outcome.kind == SignalingEventKind::Joined
+    ));
+
+    let offered = run_reference_composition_step(
+        &mut state,
+        step(
+            "dcomp3-signaling-offer",
+            ReferenceCompositionStep::ApplySignaling(kernel_driven_signaling_input(
+                SignalingCommandKind::SendOffer,
+                ReferenceSignalingPayload::SendOffer {
+                    session: FixtureSessionDescription {
+                        session_id: session(),
+                        fixture_sdp_id: "dcomp3-offer-sdp".to_owned(),
+                        direction: FixtureSessionDescriptionDirection::Offer,
+                    },
+                },
+            )),
+        ),
+    )
+    .expect("signaling offer must succeed");
+    assert!(matches!(
+        offered.plane_outcome,
+        ReferenceCompositionPlaneOutcome::Signaling(outcome)
+            if outcome.kind == SignalingEventKind::OfferReceived
+    ));
+
+    let candidate = run_reference_composition_step(
+        &mut state,
+        step(
+            "dcomp3-signaling-candidate",
+            ReferenceCompositionStep::ApplySignaling(kernel_driven_signaling_input(
+                SignalingCommandKind::SendIceCandidate,
+                ReferenceSignalingPayload::SendIceCandidate {
+                    candidate: FixtureIceCandidate {
+                        session_id: session(),
+                        fixture_candidate_id: "dcomp3-candidate".to_owned(),
+                    },
+                },
+            )),
+        ),
+    )
+    .expect("signaling candidate must succeed");
+    assert!(matches!(
+        candidate.plane_outcome,
+        ReferenceCompositionPlaneOutcome::Signaling(outcome)
+            if outcome.kind == SignalingEventKind::IceCandidateReceived
+    ));
+
+    for (label, kind, expected) in [
+        (
+            "dcomp3-turn-allocation",
+            TurnCommandKind::Allocate,
+            TurnDecisionKind::Allocation,
+        ),
+        (
+            "dcomp3-turn-permission",
+            TurnCommandKind::CreatePermission,
+            TurnDecisionKind::Permission,
+        ),
+        (
+            "dcomp3-turn-channel-bind",
+            TurnCommandKind::ChannelBind,
+            TurnDecisionKind::ChannelBind,
+        ),
+        (
+            "dcomp3-turn-relay",
+            TurnCommandKind::RelayData,
+            TurnDecisionKind::Relay,
+        ),
+    ] {
+        let turn = run_reference_composition_step(
+            &mut state,
+            step(
+                label,
+                ReferenceCompositionStep::ApplyTurn(kernel_driven_turn_input(kind)),
+            ),
+        )
+        .expect("TURN step must succeed");
+        assert!(matches!(
+            turn.plane_outcome,
+            ReferenceCompositionPlaneOutcome::Turn(outcome) if outcome.kind == expected
+        ));
+    }
+
+    for (label, model_kind, action, expected) in [
+        (
+            "dcomp3-sfu-admission",
+            SfuModelKind::AdmissionDecision,
+            ReferenceSfuAction::AdmitParticipant {
+                session_id: session(),
+                endpoint_id: endpoint(),
+            },
+            SfuDecisionKind::ParticipantAdmission,
+        ),
+        (
+            "dcomp3-sfu-publication",
+            SfuModelKind::Publication,
+            ReferenceSfuAction::PublishStream {
+                session_id: session(),
+                endpoint_id: endpoint(),
+                stream_id: stream(),
+            },
+            SfuDecisionKind::Publication,
+        ),
+        (
+            "dcomp3-sfu-subscription",
+            SfuModelKind::Subscription,
+            ReferenceSfuAction::SubscribeRoute {
+                session_id: session(),
+                endpoint_id: endpoint(),
+                stream_id: stream(),
+                route_id: route(),
+            },
+            SfuDecisionKind::Subscription,
+        ),
+        (
+            "dcomp3-sfu-forwarding-selection",
+            SfuModelKind::RouteCandidate,
+            ReferenceSfuAction::SelectRoute {
+                session_id: session(),
+                endpoint_id: endpoint(),
+                stream_id: stream(),
+                route_id: route(),
+            },
+            SfuDecisionKind::RouteSelection,
+        ),
+        (
+            "dcomp3-sfu-forwarding",
+            SfuModelKind::ForwardingIntent,
+            ReferenceSfuAction::SuppressForwarding {
+                route_id: route(),
+                source: ReferenceSfuSuppressionSource::Backpressure,
+            },
+            SfuDecisionKind::Forwarding,
+        ),
+    ] {
+        let sfu = run_reference_composition_step(
+            &mut state,
+            step(
+                label,
+                ReferenceCompositionStep::ApplySfu(kernel_checked_sfu_action(model_kind, action)),
+            ),
+        )
+        .expect("SFU step must succeed");
+        assert!(matches!(
+            sfu.plane_outcome,
+            ReferenceCompositionPlaneOutcome::Sfu(outcome) if outcome.kind == expected
+        ));
+    }
+
+    run_reference_composition_step(
+        &mut state,
+        step(
+            "dcomp3-bind-turn",
+            ReferenceCompositionStep::BindSignalingToTurn {
+                room_id: room(),
+                allocation_id: allocation(),
+            },
+        ),
+    )
+    .expect("signaling to TURN binding must succeed");
+
+    run_reference_composition_step(
+        &mut state,
+        step(
+            "dcomp3-bind-sfu",
+            ReferenceCompositionStep::BindSignalingToSfu {
+                room_id: room(),
+                session_id: session(),
+                route_id: route(),
+            },
+        ),
+    )
+    .expect("signaling to SFU binding must succeed");
+
+    let validated = run_reference_composition_step(
+        &mut state,
+        step("dcomp3-validate", ReferenceCompositionStep::Validate),
+    )
+    .expect("composition validation must succeed");
+    assert_eq!(
+        validated.non_claim_scope,
+        vec![
+            DistroNonClaimScope::ProductionReadinessNotClaimed,
+            DistroNonClaimScope::LiveReadinessNotClaimed,
+        ]
+    );
+    assert_eq!(validate_reference_composition_state(&state), Ok(()));
+    assert_eq!(state.signaling.rooms.len(), 1);
+    assert_eq!(state.turn.allocations.len(), 1);
+    assert_eq!(state.turn.permissions.len(), 1);
+    assert_eq!(state.turn.channel_binds.len(), 1);
+    assert_eq!(state.sfu.sessions.len(), 1);
+    assert_eq!(state.sfu.endpoints.len(), 1);
+    assert_eq!(state.sfu.routes.len(), 1);
+    assert_eq!(state.bindings.len(), 2);
+    println!(
+        "D-COMP-3 reference composition bounded flow rooms={} allocations={} permissions={} channel_binds={} sfu_sessions={} routes={} bindings={}",
+        state.signaling.rooms.len(),
+        state.turn.allocations.len(),
+        state.turn.permissions.len(),
+        state.turn.channel_binds.len(),
+        state.sfu.sessions.len(),
+        state.sfu.routes.len(),
+        state.bindings.len()
+    );
+}
+
+#[test]
 fn composition_binds_only_existing_cross_plane_state() {
     let mut state = seed_composition_state();
 
@@ -272,10 +608,7 @@ fn composition_binds_only_existing_cross_plane_state() {
         allocation(),
     )
     .expect("signaling to turn binding must succeed");
-    assert_eq!(
-        turn_outcome.distro_reason,
-        DistroEvidenceReason::DistroOk
-    );
+    assert_eq!(turn_outcome.distro_reason, DistroEvidenceReason::DistroOk);
 
     bind_signaling_to_sfu(
         &mut state,

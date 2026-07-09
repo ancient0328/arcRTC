@@ -27,3 +27,6 @@ arcrtc-product-rollback = { path = "../../product-distro/rollback" }
 arcrtc-product-sfu = { path = "../../product-distro/sfu" }
 arcrtc-product-signaling = { path = "../../product-distro/signaling" }
 arcrtc-product-turn = { path = "../../product-distro/turn" }
+
+[dev-dependencies]
+tokio = { version = "=1.52.3", features = ["rt-multi-thread", "macros", "net"] }

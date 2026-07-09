@@ -2,9 +2,8 @@
 
 use arcrtc_core_identity::CorrelationId;
 use arcrtc_distro_evidence::{
-    validate_evidence_record, DistroCommandClass, DistroEnvironmentClass,
-    DistroEvidenceReason, DistroEvidenceRecord, DistroLayer,
-    DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT,
+    validate_evidence_record, DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
+    DistroEvidenceRecord, DistroLayer, DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT,
 };
 
 use crate::error::ProductMonitoringError;
@@ -109,10 +108,7 @@ fn validate_product_monitoring_evidence_ownership(
     Ok(())
 }
 
-fn is_product_command_class_shape(
-    command_class: DistroCommandClass,
-    command: &str,
-) -> bool {
+fn is_product_command_class_shape(command_class: DistroCommandClass, command: &str) -> bool {
     let trimmed = command.trim_start();
     match command_class {
         DistroCommandClass::Build => trimmed == "cargo build --workspace --all-targets",

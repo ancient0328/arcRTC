@@ -20,4 +20,5 @@ pub use profile::{build_product_runtime_profile, ProductHostClass, ProductRuntim
 pub use production_profile::build_product_production_profile;
 pub use runtime::{
     select_product_runtime, ProductRuntime, ProductRuntimeOutcome, ProductRuntimeSelection,
+    ProductRuntimeSocketProbe,
 };

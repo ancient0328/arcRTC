@@ -23,3 +23,6 @@ arcrtc-reference-ops = { path = "../../reference-distro/ops" }
 arcrtc-reference-sfu = { path = "../../reference-distro/sfu" }
 arcrtc-reference-signaling = { path = "../../reference-distro/signaling" }
 arcrtc-reference-turn = { path = "../../reference-distro/turn" }
+
+[dev-dependencies]
+tokio = { version = "=1.52.3", features = ["rt-multi-thread", "macros", "net"] }
