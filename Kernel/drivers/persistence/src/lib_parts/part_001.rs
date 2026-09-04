@@ -86,7 +86,6 @@ pub struct PersistenceDriverAdmissionGuard {
     persistence_rule: PersistenceRule,
     driver_does_not_decide_domain_semantics: bool,
     driver_transaction_not_domain_commit: bool,
-    persistence_output_not_closeout_evidence_on_failure: bool,
 }
 
 /// persistence admission guard の fail-closed error です。
@@ -96,8 +95,6 @@ pub enum PersistenceDriverAdmissionError {
     DriverOwnsDomainSemantics,
     /// driver DB transaction を aggregate commit として扱っています。
     DriverTransactionAsDomainCommit,
-    /// failure がある persistence output を closeout evidence として扱っています。
-    FailedPersistenceOutputUsedAsEvidence,
 }
 
 impl PersistenceDriverAdmissionGuard {
@@ -106,7 +103,6 @@ impl PersistenceDriverAdmissionGuard {
         state_class: StateClass,
         driver_does_not_decide_domain_semantics: bool,
         driver_transaction_not_domain_commit: bool,
-        persistence_output_not_closeout_evidence_on_failure: bool,
     ) -> Result<Self, PersistenceDriverAdmissionError> {
         if !driver_does_not_decide_domain_semantics {
             return Err(PersistenceDriverAdmissionError::DriverOwnsDomainSemantics);
@@ -114,16 +110,11 @@ impl PersistenceDriverAdmissionGuard {
         if !driver_transaction_not_domain_commit {
             return Err(PersistenceDriverAdmissionError::DriverTransactionAsDomainCommit);
         }
-        if !persistence_output_not_closeout_evidence_on_failure {
-            return Err(PersistenceDriverAdmissionError::FailedPersistenceOutputUsedAsEvidence);
-        }
-
         Ok(Self {
             state_class,
             persistence_rule: state_class.persistence_rule(),
             driver_does_not_decide_domain_semantics,
             driver_transaction_not_domain_commit,
-            persistence_output_not_closeout_evidence_on_failure,
         })
     }
 }
@@ -236,8 +227,8 @@ pub enum ProhibitedPersistenceDriverBehavior {
     UnboundedOrUnauditedRetryQueue,
     /// audit hash-chain meaning delegated to storage implementation.
     StorageOwnsAuditHashChainMeaning,
-    /// failed persistence output used as closeout evidence.
-    FailedPersistenceOutputAsCloseoutEvidence,
+    /// failed persistence output is treated as a successful result.
+    FailedPersistenceOutputAsSuccess,
     /// storage transaction becomes aggregate commit authority.
     StorageTransactionAsAggregateCommitAuthority,
     /// persisted artifact leaves boundary without export/backup classification.
@@ -259,23 +250,6 @@ pub enum SchemaMigrationClass {
     DriverEncodingCompat,
     /// schema unchanged.
     NoMigrationRequired,
-}
-
-/// schema migration lifecycle の固定順序です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SchemaMigrationLifecycleStep {
-    /// Canonical / ADR defines persistence surface and owner.
-    CanonicalDefinesSurfaceOwner,
-    /// driver defines concrete schema / migration implementation.
-    DriverDefinesConcreteImplementation,
-    /// entrypoints wires migration mode and selected driver.
-    EntrypointsWireMigrationMode,
-    /// dry-run or validation command is executed where available.
-    DryRunOrValidation,
-    /// migration execution result is recorded in reports.
-    ReportRecorded,
-    /// restore / replay / checkpoint behavior is evaluated separately.
-    RestoreReplayEvaluatedSeparately,
 }
 
 /// persisted representation の unknown field handling です。
@@ -307,7 +281,7 @@ pub struct MigrationCompatibilityRule {
 pub enum MigrationCompatibilityRuleError {
     /// accepted / rejected version が宣言されていません。
     VersionSetMissing,
-    /// digest / compatibility evidence に使う canonical format version が未宣言です。
+    /// digest / compatibility verification に使う canonical format version が未宣言です。
     CanonicalFormatVersionMissing,
     /// required fields が未宣言です。
     RequiredFieldsMissing,
@@ -320,7 +294,7 @@ pub enum MigrationCompatibilityRuleError {
 }
 
 impl MigrationCompatibilityRule {
-    /// compatibility evidence に必要な version / field / rollback 条件を固定します。
+    /// compatibility verification に必要な version / field / rollback 条件を固定します。
     pub fn try_new(
         accepted_versions: Vec<&'static str>,
         rejected_versions: Vec<&'static str>,
@@ -330,12 +304,12 @@ impl MigrationCompatibilityRule {
         unknown_field_handling: UnknownPersistedFieldHandling,
         rollback_condition_declared: bool,
         data_loss_condition_declared: bool,
-        digest_or_compatibility_evidence_claimed: bool,
+        digest_or_compatibility_verification_requested: bool,
     ) -> Result<Self, MigrationCompatibilityRuleError> {
         if accepted_versions.is_empty() || rejected_versions.is_empty() {
             return Err(MigrationCompatibilityRuleError::VersionSetMissing);
         }
-        if digest_or_compatibility_evidence_claimed && canonical_format_version.is_none() {
+        if digest_or_compatibility_verification_requested && canonical_format_version.is_none() {
             return Err(MigrationCompatibilityRuleError::CanonicalFormatVersionMissing);
         }
         if !required_fields_declared {
@@ -379,8 +353,7 @@ pub struct SchemaMigrationExecutionGuard {
     migration_class: SchemaMigrationClass,
     mode_owner: MigrationModeSelectionOwner,
     dry_run_or_validation_available: bool,
-    report_required: bool,
-    restore_success_not_claimed: bool,
+    migration_result_not_treated_as_restore_success: bool,
 }
 
 /// migration execution guard の fail-closed error です。
@@ -390,8 +363,6 @@ pub enum SchemaMigrationExecutionGuardError {
     MigrationModeNotSelectedByEntrypoints,
     /// dry-run / validation が可能なのに扱われていません。
     DryRunOrValidationMissing,
-    /// migration result report が不要扱いされています。
-    MigrationReportNotRequired,
     /// migration success を restore / replay success として扱っています。
     MigrationSuccessAsRestoreSuccess,
 }
@@ -402,8 +373,7 @@ impl SchemaMigrationExecutionGuard {
         migration_class: SchemaMigrationClass,
         mode_owner: MigrationModeSelectionOwner,
         dry_run_or_validation_available: bool,
-        report_required: bool,
-        restore_success_not_claimed: bool,
+        migration_result_not_treated_as_restore_success: bool,
     ) -> Result<Self, SchemaMigrationExecutionGuardError> {
         if !matches!(
             mode_owner,
@@ -416,10 +386,7 @@ impl SchemaMigrationExecutionGuard {
         {
             return Err(SchemaMigrationExecutionGuardError::DryRunOrValidationMissing);
         }
-        if !report_required {
-            return Err(SchemaMigrationExecutionGuardError::MigrationReportNotRequired);
-        }
-        if !restore_success_not_claimed {
+        if !migration_result_not_treated_as_restore_success {
             return Err(SchemaMigrationExecutionGuardError::MigrationSuccessAsRestoreSuccess);
         }
 
@@ -427,8 +394,7 @@ impl SchemaMigrationExecutionGuard {
             migration_class,
             mode_owner,
             dry_run_or_validation_available,
-            report_required,
-            restore_success_not_claimed,
+            migration_result_not_treated_as_restore_success,
         })
     }
 }
@@ -483,4 +449,3 @@ pub struct SchemaMigrationFailure {
     reason: CatalogedReasonRef,
     persistence_failure: Option<PersistencePortFailure>,
 }
-

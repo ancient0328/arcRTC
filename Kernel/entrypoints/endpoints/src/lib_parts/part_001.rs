@@ -457,7 +457,7 @@ pub struct PublicInternalEndpointSeparationGuard {
     endpoint_class: PublicEndpointClass,
     private_endpoint_not_bound_to_public_listener_by_default: bool,
     shared_process_or_address_keeps_route_level_private_class: bool,
-    own_authorization_canonical_required_for_private_route: bool,
+    own_authorization_policy_required_for_private_route: bool,
     public_endpoint_does_not_inherit_internal_service_trust: bool,
 }
 
@@ -468,8 +468,8 @@ pub enum PublicInternalEndpointSeparationError {
     PrivateEndpointPublicByDefault,
     /// shared process/address で route-level private class が維持されていません。
     RouteLevelPrivateClassMissing,
-    /// private route 固有の authorization Canonical がありません。
-    PrivateRouteAuthorizationCanonicalMissing,
+    /// private route 固有の authorization policy がありません。
+    PrivateRouteAuthorizationPolicyMissing,
     /// public endpoint が internal service trust を継承しています。
     PublicEndpointInheritsInternalServiceTrust,
 }
@@ -480,7 +480,7 @@ impl PublicInternalEndpointSeparationGuard {
         endpoint_class: PublicEndpointClass,
         private_endpoint_not_bound_to_public_listener_by_default: bool,
         shared_process_or_address_keeps_route_level_private_class: bool,
-        own_authorization_canonical_required_for_private_route: bool,
+        own_authorization_policy_required_for_private_route: bool,
         public_endpoint_does_not_inherit_internal_service_trust: bool,
     ) -> Result<Self, PublicInternalEndpointSeparationError> {
         if endpoint_class.is_private_control_or_admin()
@@ -494,10 +494,10 @@ impl PublicInternalEndpointSeparationGuard {
             return Err(PublicInternalEndpointSeparationError::RouteLevelPrivateClassMissing);
         }
         if endpoint_class.is_private_control_or_admin()
-            && !own_authorization_canonical_required_for_private_route
+            && !own_authorization_policy_required_for_private_route
         {
             return Err(
-                PublicInternalEndpointSeparationError::PrivateRouteAuthorizationCanonicalMissing,
+                PublicInternalEndpointSeparationError::PrivateRouteAuthorizationPolicyMissing,
             );
         }
         if !public_endpoint_does_not_inherit_internal_service_trust {
@@ -510,9 +510,8 @@ impl PublicInternalEndpointSeparationGuard {
             endpoint_class,
             private_endpoint_not_bound_to_public_listener_by_default,
             shared_process_or_address_keeps_route_level_private_class,
-            own_authorization_canonical_required_for_private_route,
+            own_authorization_policy_required_for_private_route,
             public_endpoint_does_not_inherit_internal_service_trust,
         })
     }
 }
-

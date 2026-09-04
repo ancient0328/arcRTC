@@ -1,6 +1,12 @@
 //! real-device wrapper command 境界を検査します。
 
-use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf, process::Command};
+use std::{
+    fs,
+    os::unix::fs::PermissionsExt,
+    path::PathBuf,
+    process::Command,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 #[path = "../src/cli.rs"]
 mod cli;
@@ -29,37 +35,46 @@ use evidence::{
 use serde_json::Value;
 use wrapper::{
     all_wrapper_exit_codes, build_kpi_bounded_real_device_record, build_real_device_record,
-    distro_reason_for_exit, is_current_working_directory_distro_root,
-    planned_exit_for_dispatch, validated_exit_code, RealDeviceWrapperExit,
+    distro_reason_for_exit, is_current_working_directory_distro_root, planned_exit_for_dispatch,
+    validated_exit_code, RealDeviceWrapperExit,
 };
 
-fn distro_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("distro root must exist")
+fn run_wrapper(platform: &str, device_class: &str, profile: &str) -> std::process::Output {
+    let isolated_root = isolated_distro_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(&isolated_root)
+        .args([
+            platform,
+            "--profile",
+            profile,
+            "--device-class",
+            device_class,
+        ])
+        .output()
+        .expect("wrapper binary must execute");
+    let _ = fs::remove_dir_all(isolated_root);
+    output
 }
 
-fn run_wrapper(platform: &str, device_class: &str, profile: &str) -> std::process::Output {
-    Command::new(env!(
-        "CARGO_BIN_EXE_arcrtc-distro-real-device-tests"
-    ))
-    .current_dir(distro_root())
-    .args([
-        platform,
-        "--profile",
-        profile,
-        "--device-class",
-        device_class,
-    ])
-    .output()
-    .expect("wrapper binary must execute")
+fn isolated_distro_root() -> PathBuf {
+    static NEXT_ROOT_ID: AtomicU64 = AtomicU64::new(0);
+    let id = NEXT_ROOT_ID.fetch_add(1, Ordering::Relaxed);
+    let root = std::env::temp_dir()
+        .join(format!(
+            "arcrtc-real-device-wrapper-{id}-{}",
+            std::process::id()
+        ))
+        .join("distro");
+    fs::create_dir_all(&root).expect("isolated distro root must be created");
+    root
 }
 
 fn fake_android_sdk_with_adb(script: &str) -> PathBuf {
+    static NEXT_SDK_ID: AtomicU64 = AtomicU64::new(0);
+    let id = NEXT_SDK_ID.fetch_add(1, Ordering::Relaxed);
     let sdk_root = std::env::temp_dir().join(format!(
-        "arcrtc-real-device-wrapper-fake-sdk-{}",
-        std::process::id()
+        "arcrtc-real-device-wrapper-fake-sdk-{}-{id}",
+        std::process::id(),
     ));
     let platform_tools = sdk_root.join("platform-tools");
     fs::create_dir_all(&platform_tools).expect("fake platform-tools must be created");
@@ -104,6 +119,12 @@ fn wrapper_dispatch_admits_only_closed_platform_command_matrix() {
             .expect("ios simulator")
             .platform_command
             .is_some_and(|command| command == "xcrun simctl list devices")
+    );
+    assert!(
+        dispatch_real_device_command(CliPlatform::Ios, CliDeviceClass::IosPhysical)
+            .expect("ios physical")
+            .platform_command
+            .is_some_and(|command| command == "xcrun devicectl list devices")
     );
     assert!(
         dispatch_real_device_command(CliPlatform::Browser, CliDeviceClass::DesktopBrowser)
@@ -155,7 +176,7 @@ fn kpi_real_device_wrapper_rejects_unbounded_command_execution() {
             "ios",
             "ios-physical",
             RealDeviceWrapperExit::PlatformCommandUnavailable,
-            Some("xcrun xctrace list devices"),
+            Some("xcrun devicectl list devices"),
             REAL_DEVICE_PREFLIGHT_PLATFORM_COMMAND_UNAVAILABLE,
         ),
         (
@@ -292,12 +313,10 @@ fn wrapper_exit_mapping_separates_success_platform_unavailable_and_validation_fa
 
 #[test]
 fn wrapper_binary_exits_five_outside_distro_root() {
-    let output = Command::new(env!(
-        "CARGO_BIN_EXE_arcrtc-distro-real-device-tests"
-    ))
-    .current_dir(std::env::temp_dir())
-    .output()
-    .expect("wrapper binary must execute");
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(std::env::temp_dir())
+        .output()
+        .expect("wrapper binary must execute");
 
     assert_eq!(output.status.code(), Some(5));
 }
@@ -316,20 +335,20 @@ fn wrapper_binary_reports_scope_mismatch_for_platform_device_mismatch() {
 #[test]
 fn wrapper_binary_reports_required_device_not_observed_for_empty_adb_output() {
     let sdk_root = fake_android_sdk_with_adb("#!/bin/sh\nprintf 'List of devices attached\\n'\n");
-    let output = Command::new(env!(
-        "CARGO_BIN_EXE_arcrtc-distro-real-device-tests"
-    ))
-    .current_dir(distro_root())
-    .env("ANDROID_HOME", sdk_root)
-    .args([
-        "android",
-        "--profile",
-        "reference-local",
-        "--device-class",
-        "android-physical",
-    ])
-    .output()
-    .expect("wrapper binary must execute fake adb");
+    let isolated_root = isolated_distro_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(&isolated_root)
+        .env("ANDROID_HOME", sdk_root)
+        .args([
+            "android",
+            "--profile",
+            "reference-local",
+            "--device-class",
+            "android-physical",
+        ])
+        .output()
+        .expect("wrapper binary must execute fake adb");
+    let _ = fs::remove_dir_all(isolated_root);
 
     assert_eq!(
         output.status.code(),
@@ -348,6 +367,69 @@ fn wrapper_binary_reports_required_device_not_observed_for_empty_adb_output() {
 }
 
 #[test]
+fn wrapper_binary_persists_the_same_validated_record_it_prints() {
+    let sdk_root = fake_android_sdk_with_adb(
+        "#!/bin/sh\nprintf 'List of devices attached\\nABC123 device product:pixel\\n'\n",
+    );
+    let isolated_root = isolated_distro_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(&isolated_root)
+        .env("ANDROID_HOME", sdk_root)
+        .args([
+            "android",
+            "--profile",
+            "reference-local",
+            "--device-class",
+            "android-physical",
+        ])
+        .output()
+        .expect("wrapper binary must execute fake adb");
+    assert_eq!(output.status.code(), Some(0));
+    let persisted_path =
+        isolated_root.join("target/distro-evidence/real-device/android-physical.json");
+    let stdout_record: Value = stdout_json(&output);
+    let persisted_record: Value = serde_json::from_slice(
+        &fs::read(&persisted_path).expect("persisted evidence must be readable"),
+    )
+    .expect("persisted evidence must be JSON");
+    assert_eq!(persisted_record, stdout_record);
+    assert!(
+        fs::read_dir(persisted_path.parent().expect("evidence directory"))
+            .expect("evidence directory must be readable")
+            .all(|entry| !entry
+                .expect("entry")
+                .path()
+                .to_string_lossy()
+                .ends_with(".tmp"))
+    );
+    let _ = fs::remove_dir_all(isolated_root);
+}
+
+#[test]
+fn wrapper_binary_fails_closed_when_evidence_directory_cannot_be_created() {
+    let isolated_root = isolated_distro_root();
+    fs::create_dir_all(isolated_root.join("target")).expect("target directory");
+    fs::write(isolated_root.join("target/distro-evidence"), "blocked").expect("blocking file");
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(&isolated_root)
+        .args([
+            "browser",
+            "--profile",
+            "reference-local",
+            "--device-class",
+            "desktop-browser",
+        ])
+        .output()
+        .expect("wrapper binary must execute");
+    assert_eq!(
+        output.status.code(),
+        Some(RealDeviceWrapperExit::EvidenceValidationFailure.code())
+    );
+    assert!(output.stdout.is_empty());
+    let _ = fs::remove_dir_all(isolated_root);
+}
+
+#[test]
 fn wrapper_binary_reports_platform_command_unavailable_for_missing_adb() {
     let empty_home = std::env::temp_dir().join(format!(
         "arcrtc-real-device-wrapper-empty-home-{}",
@@ -355,24 +437,24 @@ fn wrapper_binary_reports_platform_command_unavailable_for_missing_adb() {
     ));
     let empty_path = empty_home.join("bin");
     fs::create_dir_all(&empty_path).expect("empty PATH dir must be created");
+    let isolated_root = isolated_distro_root();
 
-    let output = Command::new(env!(
-        "CARGO_BIN_EXE_arcrtc-distro-real-device-tests"
-    ))
-    .current_dir(distro_root())
-    .env_remove("ANDROID_HOME")
-    .env_remove("ANDROID_SDK_ROOT")
-    .env("HOME", &empty_home)
-    .env("PATH", &empty_path)
-    .args([
-        "android",
-        "--profile",
-        "reference-local",
-        "--device-class",
-        "android-physical",
-    ])
-    .output()
-    .expect("wrapper binary must execute without adb");
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(&isolated_root)
+        .env_remove("ANDROID_HOME")
+        .env_remove("ANDROID_SDK_ROOT")
+        .env("HOME", &empty_home)
+        .env("PATH", &empty_path)
+        .args([
+            "android",
+            "--profile",
+            "reference-local",
+            "--device-class",
+            "android-physical",
+        ])
+        .output()
+        .expect("wrapper binary must execute without adb");
+    let _ = fs::remove_dir_all(isolated_root);
 
     assert_eq!(
         output.status.code(),

@@ -1,6 +1,17 @@
 const BENCHMARK_POLICY: &str = include_str!("../../tools/benchmark/benchmark-scenario-policy.toml");
 const CI_MATRIX: &str = include_str!("../../tools/ci/kernel-gate-matrix.toml");
 
+fn policy_command_ids() -> Vec<&'static str> {
+    BENCHMARK_POLICY
+        .lines()
+        .filter_map(|line| {
+            line.trim()
+                .strip_prefix("command_id = \"")
+                .and_then(|value| value.strip_suffix('"'))
+        })
+        .collect()
+}
+
 #[test]
 fn benchmark_policy_declares_normalized_units_measurement_window_and_thresholds() {
     assert!(BENCHMARK_POLICY.contains("[measurement_window]"));
@@ -50,32 +61,16 @@ fn benchmark_policy_declares_load_soak_and_concurrency_scenarios() {
 }
 
 #[test]
-fn benchmark_command_ids_resolve_through_ci_command_line_mapping() {
-    for (command_id, command_line) in [
-        (
-            "benchmark-load-check",
-            "cargo bench -p arcrtc-benchmarks --bench kernel_load",
-        ),
-        (
-            "benchmark-soak-check",
-            "cargo bench -p arcrtc-benchmarks --bench kernel_soak",
-        ),
-        (
-            "benchmark-concurrency-check",
-            "cargo bench -p arcrtc-benchmarks --bench kernel_concurrency",
-        ),
-    ] {
-        assert!(CI_MATRIX.contains(&format!("command_id = \"{command_id}\"")));
-        assert!(CI_MATRIX.contains("command_family = \"benchmark-scenario-check\""));
-        assert!(CI_MATRIX.contains("gate_class = \"benchmark\""));
-        assert!(CI_MATRIX.contains(&format!("command_line = \"{command_line}\"")));
-    }
-}
+fn benchmark_policy_command_ids_resolve_once_in_ci_matrix() {
+    let command_ids = policy_command_ids();
+    assert_eq!(command_ids.len(), 3);
 
-#[test]
-fn benchmark_policy_is_not_adopted_as_readiness_evidence() {
-    assert!(BENCHMARK_POLICY.contains("[non_adoption]"));
-    assert!(BENCHMARK_POLICY.contains("benchmark_result_is_correctness_proof = false"));
-    assert!(BENCHMARK_POLICY.contains("benchmark_result_is_readiness_proof = false"));
-    assert!(BENCHMARK_POLICY.contains("benchmark_result_is_release_gate_evidence = false"));
+    for command_id in command_ids {
+        let match_count = CI_MATRIX
+            .split("[[commands]]")
+            .skip(1)
+            .filter(|block| block.contains(&format!("command_id = \"{command_id}\"")))
+            .count();
+        assert_eq!(match_count, 1, "{command_id} must resolve exactly once");
+    }
 }

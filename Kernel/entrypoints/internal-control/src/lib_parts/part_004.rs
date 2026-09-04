@@ -101,6 +101,6 @@ pub enum ProhibitedInternalControlPlaneBehavior {
     InternalTransportEncodingChangesDomainDecisionSemantics,
     /// service-to-service failure is recorded only as free-text or external status.
     ServiceToServiceFailureRecordedAsFreeTextOnly,
-    /// in-process evidence is used as same-host, networked, or multi-node evidence.
-    InProcessEvidenceUsedAsRemoteControlEvidence,
+    /// in-process control relation is used as same-host, networked, or multi-node control.
+    InProcessRelationUsedAsRemoteControl,
 }

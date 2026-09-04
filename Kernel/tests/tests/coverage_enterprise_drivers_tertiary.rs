@@ -14,16 +14,14 @@ use arcrtc_core_turn::TurnCommandKind;
 use arcrtc_driver_browser::{
     BrowserDriverFailure, BrowserDriverFailureKind, BrowserDriverResponsibility,
     BrowserDriverSurface, BrowserLifecycleMappingError, BrowserLifecycleMappingGuard,
-    BrowserLifecycleObservation, BrowserOutOfScopeAdmissionGuard, BrowserOutOfScopeFeature,
-    BrowserPlatformBoundaryError, BrowserPlatformBoundaryGuard, BrowserTypeConversionError,
-    BrowserTypeConversionGuard,
+    BrowserLifecycleObservation, BrowserPlatformBoundaryError, BrowserPlatformBoundaryGuard,
+    BrowserTypeConversionError, BrowserTypeConversionGuard,
 };
 use arcrtc_driver_native::{
     NativeConcreteApiType, NativeDriverFailure, NativeDriverFailureKind,
     NativeDriverResponsibility, NativeDriverSurface, NativeLifecycleMappingError,
-    NativeLifecycleMappingGuard, NativeLifecycleObservation, NativeOutOfScopeAdmissionGuard,
-    NativeOutOfScopeFeature, NativePlatformBoundaryError, NativePlatformBoundaryGuard,
-    NativeTypeConversionError, NativeTypeConversionGuard,
+    NativeLifecycleMappingGuard, NativeLifecycleObservation, NativePlatformBoundaryError,
+    NativePlatformBoundaryGuard, NativeTypeConversionError, NativeTypeConversionGuard,
 };
 use arcrtc_driver_network::{
     CoreOwnedIngress, DecodedWireEnvelopeFields, DriverCommandConversionInput,
@@ -35,50 +33,44 @@ use arcrtc_driver_network::{
     ProhibitedNetworkIoBehavior, ProhibitedTurnWireDriverBehavior, SemanticDelegationGuard,
     TransportPeerVerificationRequirement, TransportSecurityBackendClass,
     TransportSecurityConfigurationError, TransportSecurityConfigurationGuard,
-    TransportSecurityEvidenceClass, TransportSecurityEvidenceShape,
-    TransportSecurityEvidenceShapeError, TransportSecurityFailure, TransportSecurityFailureKind,
-    TransportSecurityMode, TransportSecurityPathError, TransportSecurityPathGuard,
-    TransportSecurityProfile, TransportSecuritySecretHandlingError,
-    TransportSecuritySecretHandlingGuard, TurnWireEncodeError, TurnWireEncodeInput,
-    TurnWireFailure, TurnWireFailureKind, TurnWireFailureShapeError, TurnWireMethodClass,
-    TurnWireOutputClass, TurnWirePreconditions, WireEnvelopeDecodeInput, WireEnvelopeEncodeError,
+    TransportSecurityFailure, TransportSecurityFailureKind, TransportSecurityMode,
+    TransportSecurityPathError, TransportSecurityPathGuard, TransportSecurityProfile,
+    TransportSecuritySecretHandlingError, TransportSecuritySecretHandlingGuard,
+    TransportSecurityVerificationClass, TransportSecurityVerificationError,
+    TransportSecurityVerificationGuard, TurnWireEncodeError, TurnWireEncodeInput, TurnWireFailure,
+    TurnWireFailureKind, TurnWireFailureShapeError, TurnWireMethodClass, TurnWireOutputClass,
+    TurnWirePreconditions, WireEnvelopeDecodeInput, WireEnvelopeEncodeError,
     WireEnvelopeEncodeInput,
 };
 use arcrtc_driver_observability::{
-    ObservabilitySignalAuditShape, ObservabilitySignalAuditShapeError,
-    ObservabilitySignalEvidenceShape, ObservabilitySignalEvidenceShapeError,
-    ObservabilitySignalFailure, ObservabilitySignalFailureKind, PrivacyDataClass,
-    PrivacyLabelGuard, PrivacyLabelGuardError, PrivacyRedactionRetentionFailure,
-    PrivacyRedactionRetentionFailureKind, PrivacyReportEvidenceGuard,
-    PrivacyReportEvidenceGuardError, PrivacyRetentionBoundClass, PrivacyRetentionOwner,
-    PrivacyRetentionPolicy, PrivacyRetentionPolicyError, PrivacyRetentionTarget,
+    ObservabilitySignalAuditShape, ObservabilitySignalAuditShapeError, ObservabilitySignalFailure,
+    ObservabilitySignalFailureKind, PrivacyDataClass, PrivacyLabelGuard, PrivacyLabelGuardError,
+    PrivacyRedactionRetentionFailure, PrivacyRedactionRetentionFailureKind,
+    PrivacyRetentionBoundClass, PrivacyRetentionOwner, PrivacyRetentionPolicy,
+    PrivacyRetentionPolicyError, PrivacyRetentionTarget,
 };
 use arcrtc_driver_persistence::{
     ArtifactIntegrityClass, ArtifactIntegrityGuard, ArtifactIntegrityGuardError,
-    ArtifactRedactionClass, ArtifactRestoreImportGuard, ArtifactRestoreImportGuardError,
-    ArtifactRetentionClass, ArtifactSensitiveDataError, ArtifactSensitiveDataGuard,
-    ExportBackupArtifactAdmission, ExportBackupArtifactAdmissionError,
-    ExportBackupArtifactAuditShape, ExportBackupArtifactAuditShapeError, ExportBackupArtifactClass,
-    ExportBackupArtifactFailure, ExportBackupArtifactFailureKind, MigrationCompatibilityRule,
-    MigrationCompatibilityRuleError, MigrationModeSelectionOwner, PersistenceBackendClass,
-    PersistenceDriverAdmissionError, PersistenceDriverAdmissionGuard,
-    PersistenceDriverFailureSource, PersistenceDriverPort, PersistenceRetryBoundError,
-    PersistenceRetryBoundGuard, PersistenceStorageShapeError, PersistenceStorageShapeGuard,
-    RestoreReplayApplicability, SchemaMigrationClass, SchemaMigrationExecutionGuard,
-    SchemaMigrationExecutionGuardError, SchemaMigrationFailure, SchemaMigrationFailureKind,
-    SchemaMigrationReportShape, SchemaMigrationReportShapeError, UnknownPersistedFieldHandling,
+    ArtifactRestoreImportGuard, ArtifactRestoreImportGuardError, ArtifactSensitiveDataError,
+    ArtifactSensitiveDataGuard, ExportBackupArtifactAuditShape,
+    ExportBackupArtifactAuditShapeError, ExportBackupArtifactFailure,
+    ExportBackupArtifactFailureKind, MigrationCompatibilityRule, MigrationCompatibilityRuleError,
+    MigrationModeSelectionOwner, PersistenceBackendClass, PersistenceDriverAdmissionError,
+    PersistenceDriverAdmissionGuard, PersistenceDriverFailureSource, PersistenceDriverPort,
+    PersistenceRetryBoundError, PersistenceRetryBoundGuard, PersistenceStorageShapeError,
+    PersistenceStorageShapeGuard, RestoreReplayApplicability, SchemaMigrationClass,
+    SchemaMigrationExecutionGuard, SchemaMigrationExecutionGuardError, SchemaMigrationFailure,
+    SchemaMigrationFailureKind, UnknownPersistedFieldHandling,
 };
 use arcrtc_driver_security::{
     KeyCacheRefreshBounds, KeyCacheRefreshBoundsError, KeyLookupRefreshError,
     KeyLookupRefreshGuard, KeyLookupRefreshState, KeySourceConfigurationError,
     KeySourceConfigurationGuard, KeySourceConfigurationOrigin, SecretGenerationState,
-    SecretGenerationStateAdmission, SecretGenerationStateAdmissionError, SecretRotationAuditShape,
-    SecretRotationAuditShapeError, SecretRotationClass, SecretRotationEvidenceShape,
-    SecretRotationEvidenceShapeError, SecretRotationExecutionBoundaryError,
-    SecretRotationExecutionBoundaryGuard, SecretRotationFailure, SecretRotationFailureKind,
-    SecretRotationPolicyError, SecretRotationPolicyGuard, SecurityDriverSurface,
-    SecurityKeySourceType, SecurityTokenVerifierDriverPort, TokenVerificationAuditShape,
-    TokenVerificationAuditShapeError, TokenVerifierDriverBoundaryError,
+    SecretGenerationStateAdmission, SecretGenerationStateAdmissionError, SecretRotationClass,
+    SecretRotationExecutionBoundaryError, SecretRotationExecutionBoundaryGuard,
+    SecretRotationFailure, SecretRotationFailureKind, SecretRotationPolicyError,
+    SecretRotationPolicyGuard, SecurityDriverSurface, SecurityKeySourceType,
+    SecurityTokenVerifierDriverPort, TokenVerifierDriverBoundaryError,
     TokenVerifierDriverBoundaryGuard, VerifierBackendFailureClass, VerifierDriverFailure,
 };
 use arcrtc_driver_webrtc_str0m::{
@@ -217,19 +209,6 @@ fn tertiary_browser_native_boundaries_cover_late_fail_closed_edges() {
         ),
         Err(BrowserTypeConversionError::PlatformErrorTextAsReason)
     );
-
-    for feature in [
-        BrowserOutOfScopeFeature::ScreenSharing,
-        BrowserOutOfScopeFeature::UserAccountOrAuthIssuance,
-    ] {
-        assert!(BrowserOutOfScopeAdmissionGuard::try_new(feature, true, false).is_ok());
-    }
-    for feature in [
-        NativeOutOfScopeFeature::PushNotificationWorkflow,
-        NativeOutOfScopeFeature::UserAccountOrAuthIssuance,
-    ] {
-        assert!(NativeOutOfScopeAdmissionGuard::try_new(feature, true, false).is_ok());
-    }
 
     for kind in [
         BrowserDriverFailureKind::ExternalEncodeFailed,
@@ -561,11 +540,11 @@ fn tertiary_network_wire_envelope_and_transport_security_edges_are_closed() {
     );
     assert_eq!(
         TransportSecuritySecretHandlingGuard::try_new(true, true, true, true, false, true, true),
-        Err(TransportSecuritySecretHandlingError::RawSecretInReport)
+        Err(TransportSecuritySecretHandlingError::RawSecretInDiagnosticExport)
     );
     assert_eq!(
-        TransportSecurityEvidenceShape::try_new(
-            TransportSecurityEvidenceClass::RotationGenerationOverlap,
+        TransportSecurityVerificationGuard::try_new(
+            TransportSecurityVerificationClass::RotationGenerationOverlap,
             true,
             true,
             true,
@@ -576,7 +555,7 @@ fn tertiary_network_wire_envelope_and_transport_security_edges_are_closed() {
             true,
             true,
         ),
-        Err(TransportSecurityEvidenceShapeError::RotationEvidenceMissing)
+        Err(TransportSecurityVerificationError::RotationStateMissing)
     );
 
     for kind in [
@@ -602,10 +581,6 @@ fn tertiary_observability_privacy_signal_edges_are_closed() {
         assert!(format!("{failure:?}").contains(kind.reason_code()));
     }
     assert_eq!(
-        ObservabilitySignalEvidenceShape::try_new(true, true, true, true, true, true, false),
-        Err(ObservabilitySignalEvidenceShapeError::RequiredSignalEvidenceFieldMissing)
-    );
-    assert_eq!(
         ObservabilitySignalAuditShape::try_new(true, true, true, false, true),
         Err(ObservabilitySignalAuditShapeError::RequiredSignalAuditFieldMissing)
     );
@@ -618,7 +593,7 @@ fn tertiary_observability_privacy_signal_edges_are_closed() {
             PrivacyRetentionTarget::PacketCache,
             PrivacyRetentionOwner::Driver,
             PrivacyDataClass::RawPacketPayload,
-            PrivacyRetentionBoundClass::CanonicalClosedFields,
+            PrivacyRetentionBoundClass::ClosedFieldSet,
             true,
             true,
             true,
@@ -628,20 +603,16 @@ fn tertiary_observability_privacy_signal_edges_are_closed() {
     );
     assert_eq!(
         PrivacyRetentionPolicy::try_new(
-            PrivacyRetentionTarget::ReportEvidence,
-            PrivacyRetentionOwner::Reports,
+            PrivacyRetentionTarget::SdkClientLocalData,
+            PrivacyRetentionOwner::Sdk,
             PrivacyDataClass::RawToken,
-            PrivacyRetentionBoundClass::SpecializedRetentionCanonical,
+            PrivacyRetentionBoundClass::SpecializedRetentionPolicy,
             true,
             true,
             true,
             true,
         ),
         Err(PrivacyRetentionPolicyError::DataClassCannotBeRetained)
-    );
-    assert_eq!(
-        PrivacyReportEvidenceGuard::try_new(true, true, true, true, true, true, true, false),
-        Err(PrivacyReportEvidenceGuardError::RedactedEvidenceReferenceMissing)
     );
     assert_eq!(
         PrivacyLabelGuard::try_new(
@@ -655,9 +626,9 @@ fn tertiary_observability_privacy_signal_edges_are_closed() {
         Err(PrivacyLabelGuardError::UnboundedLabelCardinality)
     );
     for kind in [
-        PrivacyRedactionRetentionFailureKind::PacketPayloadEvidenceRejected,
+        PrivacyRedactionRetentionFailureKind::PacketPayloadExportRejected,
         PrivacyRedactionRetentionFailureKind::SensitiveCardinalityRejected,
-        PrivacyRedactionRetentionFailureKind::RotationEvidenceRejected,
+        PrivacyRedactionRetentionFailureKind::RotationDetailExportRejected,
     ] {
         assert!(
             format!("{:?}", PrivacyRedactionRetentionFailure::from_kind(kind))
@@ -683,8 +654,8 @@ fn tertiary_persistence_schema_artifact_edges_are_closed() {
         Err(PersistenceStorageShapeError::MigrationFileAsDomainModel)
     );
     assert_eq!(
-        PersistenceDriverAdmissionGuard::try_new(StateClass::DriverLocalState, true, true, false),
-        Err(PersistenceDriverAdmissionError::FailedPersistenceOutputUsedAsEvidence)
+        PersistenceDriverAdmissionGuard::try_new(StateClass::DriverLocalState, true, false),
+        Err(PersistenceDriverAdmissionError::DriverTransactionAsDomainCommit)
     );
     assert_eq!(
         PersistenceRetryBoundGuard::try_new(true, true, false, true),
@@ -717,7 +688,6 @@ fn tertiary_persistence_schema_artifact_edges_are_closed() {
             MigrationModeSelectionOwner::DriverSelfSelection,
             true,
             true,
-            true,
         ),
         Err(SchemaMigrationExecutionGuardError::MigrationModeNotSelectedByEntrypoints)
     );
@@ -731,32 +701,6 @@ fn tertiary_persistence_schema_artifact_edges_are_closed() {
         );
     }
     assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, true, true, false, true, false, true, true,
-        ),
-        Err(SchemaMigrationReportShapeError::ResultOrReasonMissing)
-    );
-
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-        ),
-        Err(ExportBackupArtifactAdmissionError::SchemaFormatVersionMissing)
-    );
-    assert_eq!(
         ArtifactSensitiveDataGuard::try_new(true, true, false, true, true, true),
         Err(ArtifactSensitiveDataError::SensitiveMaterialRequiresRedaction)
     );
@@ -765,12 +709,8 @@ fn tertiary_persistence_schema_artifact_edges_are_closed() {
         Err(ArtifactIntegrityGuardError::IntegrityClassConflated)
     );
     assert_eq!(
-        ArtifactRestoreImportGuard::try_new(
-            RestoreReplayApplicability::RequiresRestoreCanonicalAdmission,
-            true,
-            false,
-        ),
-        Err(ArtifactRestoreImportGuardError::RestoreReplayEvidenceMissing)
+        ArtifactRestoreImportGuard::try_new(RestoreReplayApplicability::RestoreInput, true, false,),
+        Err(ArtifactRestoreImportGuardError::RestoreReplayVerificationMissing)
     );
     for kind in [
         ExportBackupArtifactFailureKind::ExportSurfaceNotAllowed,
@@ -836,11 +776,6 @@ fn tertiary_security_token_rotation_edges_are_closed() {
         Err(TokenVerifierDriverBoundaryError::TokenIssuanceMixed)
     );
     assert_eq!(
-        TokenVerificationAuditShape::try_new(true, true, false, true),
-        Err(TokenVerificationAuditShapeError::PublicWrapperReplacesConcreteReason)
-    );
-
-    assert_eq!(
         SecretRotationPolicyGuard::try_new(
             SecretRotationClass::TransportCertificateKey,
             true,
@@ -851,7 +786,7 @@ fn tertiary_security_token_rotation_edges_are_closed() {
             false,
             true,
         ),
-        Err(SecretRotationPolicyError::AuditEvidenceRelationMissing)
+        Err(SecretRotationPolicyError::AuditRelationMissing)
     );
     assert_eq!(
         SecretGenerationStateAdmission::try_new(
@@ -873,14 +808,6 @@ fn tertiary_security_token_rotation_edges_are_closed() {
             format!("{:?}", SecretRotationFailure::from_kind(kind)).contains(kind.reason_code())
         );
     }
-    assert_eq!(
-        SecretRotationEvidenceShape::try_new(true, true, true, true, true, true, false, true, true),
-        Err(SecretRotationEvidenceShapeError::RawSecretMaterialInEvidence)
-    );
-    assert_eq!(
-        SecretRotationAuditShape::try_new(true, true, true, true, true, false),
-        Err(SecretRotationAuditShapeError::CorrelationIdMissing)
-    );
     assert_eq!(
         SecretRotationExecutionBoundaryGuard::try_new(
             true, true, true, false, true, true, true, true

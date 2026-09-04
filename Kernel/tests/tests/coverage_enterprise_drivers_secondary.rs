@@ -4,39 +4,34 @@ use arcrtc_core_security::TokenVerificationFailureKind;
 use arcrtc_core_state::StateClass;
 use arcrtc_driver_observability::{
     MetricsExportBacklogBound, MetricsExportBacklogBoundError, ObservabilityDriverSurface,
-    ObservabilityEvidenceShape, ObservabilityEvidenceShapeError, ObservabilityFailureSource,
-    ObservabilityMetricsSinkDriverPort, ObservabilityProjectionClass, ObservabilityProjectionError,
-    ObservabilityProjectionGuard, ObservabilitySensitiveDataError, ObservabilitySensitiveDataGuard,
-    ObservabilitySignalAuditShape, ObservabilitySignalAuditShapeError, ObservabilitySignalClass,
-    ObservabilitySignalDescriptor, ObservabilitySignalDescriptorError,
-    ObservabilitySignalEvidenceShape, ObservabilitySignalEvidenceShapeError,
-    ObservabilitySignalFailure, ObservabilitySignalFailureKind, ObservabilitySignalOwner,
-    PrivacyDataClass, PrivacyLabelGuard, PrivacyLabelGuardError, PrivacyRedactionAdmission,
-    PrivacyRedactionAdmissionError, PrivacyRedactionRetentionFailure,
-    PrivacyRedactionRetentionFailureKind, PrivacyReportEvidenceGuard,
-    PrivacyReportEvidenceGuardError, PrivacyRetentionBoundClass, PrivacyRetentionOwner,
+    ObservabilityFailureSource, ObservabilityMetricsSinkDriverPort, ObservabilityProjectionClass,
+    ObservabilityProjectionError, ObservabilityProjectionGuard, ObservabilitySensitiveDataError,
+    ObservabilitySensitiveDataGuard, ObservabilitySignalAuditShape,
+    ObservabilitySignalAuditShapeError, ObservabilitySignalClass, ObservabilitySignalDescriptor,
+    ObservabilitySignalDescriptorError, ObservabilitySignalFailure, ObservabilitySignalFailureKind,
+    ObservabilitySignalOwner, PrivacyDataClass, PrivacyLabelGuard, PrivacyLabelGuardError,
+    PrivacyRedactionAdmission, PrivacyRedactionAdmissionError, PrivacyRedactionRetentionFailure,
+    PrivacyRedactionRetentionFailureKind, PrivacyRetentionBoundClass, PrivacyRetentionOwner,
     PrivacyRetentionPolicy, PrivacyRetentionPolicyError, PrivacyRetentionTarget,
     PrivacyTargetSurface, ProhibitedObservabilityBoundaryBehavior,
     ProhibitedObservabilitySignalTaxonomyBehavior, ProhibitedPrivacyRedactionRetentionBehavior,
-    RedactedOutputClass, SignalCardinalityClass, SignalEvidenceAdoptionRule, SignalReferenceClass,
-    SignalSamplingGuard, SignalSamplingGuardError, SignalSamplingRule, SignalSensitiveDataClass,
+    RedactedOutputClass, SignalCardinalityClass, SignalReferenceClass, SignalSamplingGuard,
+    SignalSamplingGuardError, SignalSamplingRule, SignalSensitiveDataClass, SignalUseClass,
 };
 use arcrtc_driver_persistence::{
     ArtifactIntegrityClass, ArtifactIntegrityGuard, ArtifactIntegrityGuardError,
-    ArtifactRedactionClass, ArtifactRestoreImportGuard, ArtifactRestoreImportGuardError,
-    ArtifactRetentionClass, ArtifactSensitiveDataError, ArtifactSensitiveDataGuard,
-    ExportBackupArtifactAdmission, ExportBackupArtifactAdmissionError,
-    ExportBackupArtifactAuditShape, ExportBackupArtifactAuditShapeError, ExportBackupArtifactClass,
-    ExportBackupArtifactFailure, ExportBackupArtifactFailureKind, MigrationCompatibilityRule,
-    MigrationCompatibilityRuleError, MigrationModeSelectionOwner, PersistenceBackendClass,
-    PersistenceDriverAdmissionError, PersistenceDriverAdmissionGuard,
-    PersistenceDriverFailureSource, PersistenceDriverPort, PersistenceDriverSurface,
-    PersistenceRetryBoundError, PersistenceRetryBoundGuard, PersistenceStorageShapeError,
-    PersistenceStorageShapeGuard, ProhibitedExportBackupArtifactBehavior,
-    ProhibitedPersistenceDriverBehavior, ProhibitedSchemaMigrationBehavior,
-    RestoreReplayApplicability, SchemaMigrationClass, SchemaMigrationExecutionGuard,
-    SchemaMigrationExecutionGuardError, SchemaMigrationFailure, SchemaMigrationFailureKind,
-    SchemaMigrationReportShape, SchemaMigrationReportShapeError, UnknownPersistedFieldHandling,
+    ArtifactRestoreImportGuard, ArtifactRestoreImportGuardError, ArtifactSensitiveDataError,
+    ArtifactSensitiveDataGuard, ExportBackupArtifactAuditShape,
+    ExportBackupArtifactAuditShapeError, ExportBackupArtifactFailure,
+    ExportBackupArtifactFailureKind, MigrationCompatibilityRule, MigrationCompatibilityRuleError,
+    MigrationModeSelectionOwner, PersistenceBackendClass, PersistenceDriverAdmissionError,
+    PersistenceDriverAdmissionGuard, PersistenceDriverFailureSource, PersistenceDriverPort,
+    PersistenceDriverSurface, PersistenceRetryBoundError, PersistenceRetryBoundGuard,
+    PersistenceStorageShapeError, PersistenceStorageShapeGuard,
+    ProhibitedExportBackupArtifactBehavior, ProhibitedPersistenceDriverBehavior,
+    ProhibitedSchemaMigrationBehavior, RestoreReplayApplicability, SchemaMigrationClass,
+    SchemaMigrationExecutionGuard, SchemaMigrationExecutionGuardError, SchemaMigrationFailure,
+    SchemaMigrationFailureKind, UnknownPersistedFieldHandling,
 };
 use arcrtc_driver_security::{
     KeyCacheRefreshBounds, KeyCacheRefreshBoundsError, KeyLookupRefreshError,
@@ -44,14 +39,11 @@ use arcrtc_driver_security::{
     KeySourceConfigurationGuard, KeySourceConfigurationOrigin,
     ProhibitedSecretRotationLifecycleBehavior, ProhibitedSecurityVerifierDriverBehavior,
     SecretGenerationState, SecretGenerationStateAdmission, SecretGenerationStateAdmissionError,
-    SecretRotationAuditShape, SecretRotationAuditShapeError, SecretRotationClass,
-    SecretRotationEvidenceShape, SecretRotationEvidenceShapeError,
-    SecretRotationExecutionBoundaryError, SecretRotationExecutionBoundaryGuard,
-    SecretRotationFailure, SecretRotationFailureKind, SecretRotationPolicyError,
-    SecretRotationPolicyGuard, SecurityDriverSurface, SecurityKeySourceType,
-    SecurityTokenVerifierDriverPort, TokenVerificationAuditShape, TokenVerificationAuditShapeError,
-    TokenVerifierDriverBoundaryError, TokenVerifierDriverBoundaryGuard,
-    VerifierBackendFailureClass, VerifierDriverFailure,
+    SecretRotationClass, SecretRotationExecutionBoundaryError,
+    SecretRotationExecutionBoundaryGuard, SecretRotationFailure, SecretRotationFailureKind,
+    SecretRotationPolicyError, SecretRotationPolicyGuard, SecurityDriverSurface,
+    SecurityKeySourceType, SecurityTokenVerifierDriverPort, TokenVerifierDriverBoundaryError,
+    TokenVerifierDriverBoundaryGuard, VerifierBackendFailureClass, VerifierDriverFailure,
 };
 
 fn assert_cataloged(code: &str) {
@@ -89,7 +81,6 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             true,
             true,
             true,
-            true,
             true
         )
         .is_ok());
@@ -98,7 +89,6 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
         ObservabilityProjectionGuard::try_new(
             ObservabilityProjectionClass::Metric,
             false,
-            true,
             true,
             true,
             true,
@@ -115,7 +105,6 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             true,
             true,
             true,
-            true,
             true
         ),
         Err(ObservabilityProjectionError::DecisionSemanticsChangedByProjection)
@@ -128,25 +117,10 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             true,
             true,
             false,
-            true,
             true
         ),
         Err(ObservabilityProjectionError::FreeTextAsAuthority)
     );
-    assert_eq!(
-        ObservabilityProjectionGuard::try_new(
-            ObservabilityProjectionClass::Trace,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false
-        ),
-        Err(ObservabilityProjectionError::ObservabilityAsCloseoutEvidence)
-    );
-
     assert!(ObservabilitySensitiveDataGuard::try_new(true, true, true, true, true, true).is_ok());
     assert_eq!(
         ObservabilitySensitiveDataGuard::try_new(false, true, true, true, true, true),
@@ -210,56 +184,50 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
         );
     }
 
-    assert!(ObservabilityEvidenceShape::try_new(true, true, true, true, true, true, true).is_ok());
-    assert_eq!(
-        ObservabilityEvidenceShape::try_new(false, true, true, true, true, true, true),
-        Err(ObservabilityEvidenceShapeError::RequiredEvidenceFieldMissing)
-    );
-
-    for (signal_class, owner, evidence_rule) in [
+    for (signal_class, owner, use_class) in [
         (
             ObservabilitySignalClass::AuditSignal,
             ObservabilitySignalOwner::CoreAudit,
-            SignalEvidenceAdoptionRule::AuditCanonical,
+            SignalUseClass::AuditRecord,
         ),
         (
             ObservabilitySignalClass::QualityDecisionMetric,
             ObservabilitySignalOwner::CoreQualityPolicy,
-            SignalEvidenceAdoptionRule::QualityCanonical,
+            SignalUseClass::QualityDecisionInput,
         ),
         (
             ObservabilitySignalClass::ResourceBoundMetric,
             ObservabilitySignalOwner::CoreResourceBoundPolicy,
-            SignalEvidenceAdoptionRule::ResourceBoundCanonical,
+            SignalUseClass::ResourceBoundDecisionInput,
         ),
         (
             ObservabilitySignalClass::OperationalMetric,
             ObservabilitySignalOwner::DriverObservability,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence,
+            SignalUseClass::OperationalObservation,
         ),
         (
             ObservabilitySignalClass::TraceSpan,
             ObservabilitySignalOwner::DriverObservability,
-            SignalEvidenceAdoptionRule::DiagnosticOnly,
+            SignalUseClass::DiagnosticOnly,
         ),
         (
             ObservabilitySignalClass::StructuredLog,
             ObservabilitySignalOwner::DriverObservability,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence,
+            SignalUseClass::OperationalObservation,
         ),
         (
             ObservabilitySignalClass::AlertSignal,
             ObservabilitySignalOwner::EntrypointsOperationsPolicy,
-            SignalEvidenceAdoptionRule::DiagnosticOnly,
+            SignalUseClass::DiagnosticOnly,
         ),
         (
             ObservabilitySignalClass::ProfilingSignal,
             ObservabilitySignalOwner::DriverObservability,
-            SignalEvidenceAdoptionRule::DiagnosticOnly,
+            SignalUseClass::DiagnosticOnly,
         ),
     ] {
         assert_eq!(signal_class.required_owner(), owner);
-        assert_eq!(signal_class.required_evidence_rule(), evidence_rule);
+        assert_eq!(signal_class.use_class(), use_class);
         assert!(ObservabilitySignalDescriptor::try_new(
             signal_class,
             owner,
@@ -267,8 +235,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::NoSensitiveMaterial,
             SignalCardinalityClass::FixedLow,
             SignalSamplingRule::NotSampled,
-            true,
-            evidence_rule
+            true
         )
         .is_ok());
     }
@@ -281,8 +248,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::NoSensitiveMaterial,
             SignalCardinalityClass::FixedLow,
             SignalSamplingRule::NotSampled,
-            true,
-            SignalEvidenceAdoptionRule::AuditCanonical
+            true
         ),
         Err(ObservabilitySignalDescriptorError::SignalOwnerMismatch)
     );
@@ -294,8 +260,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::NoSensitiveMaterial,
             SignalCardinalityClass::FixedLow,
             SignalSamplingRule::NotSampled,
-            true,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence
+            true
         ),
         Err(ObservabilitySignalDescriptorError::ReferenceClassMissing)
     );
@@ -307,8 +272,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::SensitiveMaterialRejected,
             SignalCardinalityClass::FixedLow,
             SignalSamplingRule::NotSampled,
-            true,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence
+            true
         ),
         Err(ObservabilitySignalDescriptorError::SensitiveDataClassInvalid)
     );
@@ -320,8 +284,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::NoSensitiveMaterial,
             SignalCardinalityClass::Unbounded,
             SignalSamplingRule::NotSampled,
-            true,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence
+            true
         ),
         Err(ObservabilitySignalDescriptorError::UnboundedCardinality)
     );
@@ -335,8 +298,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
                 maximum_distinct_values: 0
             },
             SignalSamplingRule::NotSampled,
-            true,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence
+            true
         ),
         Err(ObservabilitySignalDescriptorError::UnboundedCardinality)
     );
@@ -348,8 +310,7 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::NoSensitiveMaterial,
             SignalCardinalityClass::FixedLow,
             SignalSamplingRule::MissingPolicy,
-            true,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence
+            true
         ),
         Err(ObservabilitySignalDescriptorError::SamplingPolicyMissing)
     );
@@ -361,29 +322,13 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSensitiveDataClass::NoSensitiveMaterial,
             SignalCardinalityClass::FixedLow,
             SignalSamplingRule::NotSampled,
-            false,
-            SignalEvidenceAdoptionRule::ReportRequiredForEvidence
+            false
         ),
         Err(ObservabilitySignalDescriptorError::RetentionRedactionRuleMissing)
     );
-    assert_eq!(
-        ObservabilitySignalDescriptor::try_new(
-            ObservabilitySignalClass::OperationalMetric,
-            ObservabilitySignalOwner::DriverObservability,
-            vec![SignalReferenceClass::ResourceOwnerReference],
-            SignalSensitiveDataClass::NoSensitiveMaterial,
-            SignalCardinalityClass::FixedLow,
-            SignalSamplingRule::NotSampled,
-            true,
-            SignalEvidenceAdoptionRule::DiagnosticOnly
-        ),
-        Err(ObservabilitySignalDescriptorError::EvidenceAdoptionRuleMismatch)
-    );
-
     assert!(SignalSamplingGuard::try_new(
         ObservabilitySignalClass::AuditSignal,
         SignalSamplingRule::SamplingForbidden,
-        true,
         true,
         true,
         true
@@ -393,7 +338,6 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
         SignalSamplingGuard::try_new(
             ObservabilitySignalClass::OperationalMetric,
             SignalSamplingRule::MissingPolicy,
-            true,
             true,
             true,
             true
@@ -406,18 +350,9 @@ fn coverage_observability_guards_cover_success_and_fail_closed_edges() {
             SignalSamplingRule::SamplingForbidden,
             false,
             true,
-            true,
             true
         ),
-        Err(SignalSamplingGuardError::SamplingHidesRequiredEvidence)
-    );
-
-    assert!(
-        ObservabilitySignalEvidenceShape::try_new(true, true, true, true, true, true, true).is_ok()
-    );
-    assert_eq!(
-        ObservabilitySignalEvidenceShape::try_new(false, true, true, true, true, true, true),
-        Err(ObservabilitySignalEvidenceShapeError::RequiredSignalEvidenceFieldMissing)
+        Err(SignalSamplingGuardError::SamplingHidesRequiredSignal)
     );
     assert!(ObservabilitySignalAuditShape::try_new(true, true, true, true, true).is_ok());
     assert_eq!(
@@ -434,7 +369,7 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
     assert!(!PrivacyDataClass::CatalogReason.is_raw_sensitive());
     assert!(PrivacyDataClass::RawSecret.is_forbidden_retention_for(PrivacyRetentionTarget::Metrics));
     assert!(PrivacyDataClass::RegulatedPayload
-        .is_forbidden_retention_for(PrivacyRetentionTarget::ReportEvidence));
+        .is_forbidden_retention_for(PrivacyRetentionTarget::SdkClientLocalData));
     assert!(!PrivacyDataClass::RegulatedPayload
         .is_forbidden_retention_for(PrivacyRetentionTarget::RegulatedOnly));
 
@@ -529,7 +464,7 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
     assert_eq!(
         PrivacyRedactionAdmission::try_new(
             PrivacyDataClass::DiagnosticDetail,
-            PrivacyTargetSurface::ReportEvidence,
+            PrivacyTargetSurface::ObservabilitySink,
             RedactedOutputClass::RedactedExcerpt,
             true,
             false,
@@ -544,8 +479,8 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
     assert_eq!(
         PrivacyRedactionAdmission::try_new(
             PrivacyDataClass::RegulatedPayload,
-            PrivacyTargetSurface::ReportEvidence,
-            RedactedOutputClass::RejectedEvidence,
+            PrivacyTargetSurface::ObservabilitySink,
+            RedactedOutputClass::Rejected,
             true,
             false,
             true,
@@ -580,15 +515,11 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
         PrivacyRetentionTarget::PacketCache.required_owner(),
         PrivacyRetentionOwner::Driver
     );
-    assert_eq!(
-        PrivacyRetentionTarget::ReportEvidence.required_owner(),
-        PrivacyRetentionOwner::Reports
-    );
     assert!(PrivacyRetentionPolicy::try_new(
         PrivacyRetentionTarget::AuditEvent,
         PrivacyRetentionOwner::Core,
         PrivacyDataClass::CatalogReason,
-        PrivacyRetentionBoundClass::CanonicalClosedFields,
+        PrivacyRetentionBoundClass::ClosedFieldSet,
         true,
         true,
         true,
@@ -599,7 +530,7 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
         PrivacyRetentionTarget::PacketCache,
         PrivacyRetentionOwner::Driver,
         PrivacyDataClass::RawPacketPayload,
-        PrivacyRetentionBoundClass::ResourceBoundsCanonical,
+        PrivacyRetentionBoundClass::ResourceBoundPolicy,
         true,
         true,
         true,
@@ -611,7 +542,7 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
             PrivacyRetentionTarget::AuditEvent,
             PrivacyRetentionOwner::Driver,
             PrivacyDataClass::CatalogReason,
-            PrivacyRetentionBoundClass::CanonicalClosedFields,
+            PrivacyRetentionBoundClass::ClosedFieldSet,
             true,
             true,
             true,
@@ -637,7 +568,7 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
             PrivacyRetentionTarget::LogTrace,
             PrivacyRetentionOwner::Driver,
             PrivacyDataClass::RawSecret,
-            PrivacyRetentionBoundClass::SpecializedRetentionCanonical,
+            PrivacyRetentionBoundClass::SpecializedRetentionPolicy,
             true,
             true,
             true,
@@ -650,7 +581,7 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
             PrivacyRetentionTarget::AuditHashChain,
             PrivacyRetentionOwner::Core,
             PrivacyDataClass::CatalogReason,
-            PrivacyRetentionBoundClass::CanonicalClosedFields,
+            PrivacyRetentionBoundClass::ClosedFieldSet,
             true,
             true,
             false,
@@ -663,29 +594,13 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
             PrivacyRetentionTarget::KeyCache,
             PrivacyRetentionOwner::Driver,
             PrivacyDataClass::RawKeyMaterial,
-            PrivacyRetentionBoundClass::CanonicalClosedFields,
+            PrivacyRetentionBoundClass::ClosedFieldSet,
             true,
             true,
             true,
             false
         ),
         Err(PrivacyRetentionPolicyError::DriverCacheNotBoundedLocal)
-    );
-
-    assert!(
-        PrivacyReportEvidenceGuard::try_new(true, true, true, true, true, true, true, true).is_ok()
-    );
-    assert_eq!(
-        PrivacyReportEvidenceGuard::try_new(false, true, true, true, true, true, true, true),
-        Err(PrivacyReportEvidenceGuardError::ReportEvidenceFieldMissing)
-    );
-    assert_eq!(
-        PrivacyReportEvidenceGuard::try_new(true, true, true, false, true, true, true, true),
-        Err(PrivacyReportEvidenceGuardError::RawSensitiveMaterialInReport)
-    );
-    assert_eq!(
-        PrivacyReportEvidenceGuard::try_new(true, true, true, true, true, true, true, false),
-        Err(PrivacyReportEvidenceGuardError::RedactedEvidenceReferenceMissing)
     );
 
     assert!(PrivacyLabelGuard::try_new(
@@ -765,11 +680,11 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
         PrivacyRedactionRetentionFailureKind::ExportRedactionRequired,
         PrivacyRedactionRetentionFailureKind::SecretUnavailable,
         PrivacyRedactionRetentionFailureKind::UnsafeVerificationDetailSuppressed,
-        PrivacyRedactionRetentionFailureKind::PacketPayloadEvidenceRejected,
+        PrivacyRedactionRetentionFailureKind::PacketPayloadExportRejected,
         PrivacyRedactionRetentionFailureKind::SensitiveLabelRejected,
         PrivacyRedactionRetentionFailureKind::SensitiveCardinalityRejected,
         PrivacyRedactionRetentionFailureKind::RetentionPolicyInvalid,
-        PrivacyRedactionRetentionFailureKind::RotationEvidenceRejected,
+        PrivacyRedactionRetentionFailureKind::RotationDetailExportRejected,
     ] {
         assert_cataloged(kind.reason_code());
         assert_debug_contains_reason(
@@ -796,11 +711,11 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
         [
             ProhibitedObservabilitySignalTaxonomyBehavior::TraceSpanNameAsAuditEventType,
             ProhibitedObservabilitySignalTaxonomyBehavior::AlertStatusAsDomainDecision,
-            ProhibitedObservabilitySignalTaxonomyBehavior::SampledMetricAsCompleteAuditEvidence,
+            ProhibitedObservabilitySignalTaxonomyBehavior::SampledMetricAsCompleteAuditRecord,
             ProhibitedObservabilitySignalTaxonomyBehavior::RawSensitiveLabelValue,
             ProhibitedObservabilitySignalTaxonomyBehavior::DashboardStateAsRuntimeCorrectnessProof,
             ProhibitedObservabilitySignalTaxonomyBehavior::ExporterAggregationChangesQualityDecision,
-            ProhibitedObservabilitySignalTaxonomyBehavior::DriverSpecificTaxonomyWithoutCanonical,
+            ProhibitedObservabilitySignalTaxonomyBehavior::DriverSpecificTaxonomyWithoutSourceContract,
         ]
         .len(),
         7
@@ -808,11 +723,11 @@ fn coverage_observability_privacy_reasons_and_prohibited_enums_are_closed() {
     assert_eq!(
         [
             ProhibitedPrivacyRedactionRetentionBehavior::RawCredentialMaterialExported,
-            ProhibitedPrivacyRedactionRetentionBehavior::PacketPayloadAsCloseoutEvidence,
-            ProhibitedPrivacyRedactionRetentionBehavior::RegulatedPayloadInGenericEvidence,
+            ProhibitedPrivacyRedactionRetentionBehavior::RawPacketPayloadExported,
+            ProhibitedPrivacyRedactionRetentionBehavior::RegulatedPayloadInGenericExport,
             ProhibitedPrivacyRedactionRetentionBehavior::ExternalSinkDefaultRedaction,
             ProhibitedPrivacyRedactionRetentionBehavior::DiagnosticDetailAsAuthoritativeReason,
-            ProhibitedPrivacyRedactionRetentionBehavior::SensitiveMaterialInReportForReproducibility,
+            ProhibitedPrivacyRedactionRetentionBehavior::SensitiveMaterialRetainedForDiagnostics,
             ProhibitedPrivacyRedactionRetentionBehavior::RawEdgeProxyMetadataAsIdentity,
             ProhibitedPrivacyRedactionRetentionBehavior::UnownedOrUnboundedRetention,
         ]
@@ -874,36 +789,16 @@ fn coverage_persistence_guards_cover_success_and_fail_closed_edges() {
     assert!(PersistenceDriverAdmissionGuard::try_new(
         StateClass::CheckpointEligibleState,
         true,
-        true,
         true
     )
     .is_ok());
     assert_eq!(
-        PersistenceDriverAdmissionGuard::try_new(
-            StateClass::CheckpointEligibleState,
-            false,
-            true,
-            true
-        ),
+        PersistenceDriverAdmissionGuard::try_new(StateClass::CheckpointEligibleState, false, true),
         Err(PersistenceDriverAdmissionError::DriverOwnsDomainSemantics)
     );
     assert_eq!(
-        PersistenceDriverAdmissionGuard::try_new(
-            StateClass::CheckpointEligibleState,
-            true,
-            false,
-            true
-        ),
+        PersistenceDriverAdmissionGuard::try_new(StateClass::CheckpointEligibleState, true, false),
         Err(PersistenceDriverAdmissionError::DriverTransactionAsDomainCommit)
-    );
-    assert_eq!(
-        PersistenceDriverAdmissionGuard::try_new(
-            StateClass::CheckpointEligibleState,
-            true,
-            true,
-            false
-        ),
-        Err(PersistenceDriverAdmissionError::FailedPersistenceOutputUsedAsEvidence)
     );
 
     let retry_bound =
@@ -1052,14 +947,12 @@ fn coverage_persistence_guards_cover_success_and_fail_closed_edges() {
         SchemaMigrationClass::NoMigrationRequired,
         MigrationModeSelectionOwner::EntrypointsTypedConfiguration,
         false,
-        true,
         true
     )
     .is_ok());
     assert!(SchemaMigrationExecutionGuard::try_new(
         SchemaMigrationClass::DriverSchemaForward,
         MigrationModeSelectionOwner::EntrypointsTypedConfiguration,
-        true,
         true,
         true
     )
@@ -1068,7 +961,6 @@ fn coverage_persistence_guards_cover_success_and_fail_closed_edges() {
         SchemaMigrationExecutionGuard::try_new(
             SchemaMigrationClass::DriverSchemaForward,
             MigrationModeSelectionOwner::DriverSelfSelection,
-            true,
             true,
             true
         ),
@@ -1079,7 +971,6 @@ fn coverage_persistence_guards_cover_success_and_fail_closed_edges() {
             SchemaMigrationClass::DriverSchemaForward,
             MigrationModeSelectionOwner::EntrypointsTypedConfiguration,
             false,
-            true,
             true
         ),
         Err(SchemaMigrationExecutionGuardError::DryRunOrValidationMissing)
@@ -1089,254 +980,14 @@ fn coverage_persistence_guards_cover_success_and_fail_closed_edges() {
             SchemaMigrationClass::NoMigrationRequired,
             MigrationModeSelectionOwner::EntrypointsTypedConfiguration,
             false,
-            false,
-            true
-        ),
-        Err(SchemaMigrationExecutionGuardError::MigrationReportNotRequired)
-    );
-    assert_eq!(
-        SchemaMigrationExecutionGuard::try_new(
-            SchemaMigrationClass::NoMigrationRequired,
-            MigrationModeSelectionOwner::EntrypointsTypedConfiguration,
-            false,
-            true,
             false
         ),
         Err(SchemaMigrationExecutionGuardError::MigrationSuccessAsRestoreSuccess)
-    );
-
-    assert!(SchemaMigrationReportShape::try_new(
-        true, true, true, true, true, true, true, true, true, true
-    )
-    .is_ok());
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            false, true, true, true, true, true, true, true, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::CorrelationOrStartupRefMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, false, true, true, true, true, true, true, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::TargetDriverStoreMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, false, true, true, true, true, true, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::MigrationClassMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, false, true, true, true, true, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::VersionMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, true, false, true, true, true, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::CanonicalFormatVersionMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, true, true, true, false, true, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::ReproducibleProcedureMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, true, true, true, true, false, true, true
-        ),
-        Err(SchemaMigrationReportShapeError::ResultOrReasonMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, true, true, true, true, true, false, true
-        ),
-        Err(SchemaMigrationReportShapeError::RollbackStatusMissing)
-    );
-    assert_eq!(
-        SchemaMigrationReportShape::try_new(
-            true, true, true, true, true, true, true, true, true, false
-        ),
-        Err(SchemaMigrationReportShapeError::RedactionStatementMissing)
     );
 }
 
 #[test]
 fn coverage_persistence_artifact_reasons_and_prohibited_enums_are_closed() {
-    assert!(ExportBackupArtifactAdmission::try_new(
-        ExportBackupArtifactClass::EvidenceBundle,
-        ArtifactRedactionClass::Redacted,
-        ArtifactRetentionClass::BoundedRetention,
-        ArtifactIntegrityClass::Digest,
-        RestoreReplayApplicability::NotIntendedForRestoreReplay,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-    )
-    .is_ok());
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-            true,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::GenerationProcedureMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::WorkingDirectoryOrOwnerMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::SourceScopeTimePhaseMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::CorrelationIdMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::ConcreteStorageOwnerMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false
-        ),
-        Err(ExportBackupArtifactAdmissionError::RerunConditionMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            false,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::IntegrityEvidenceMissing)
-    );
-    assert_eq!(
-        ExportBackupArtifactAdmission::try_new(
-            ExportBackupArtifactClass::EvidenceBundle,
-            ArtifactRedactionClass::Redacted,
-            ArtifactRetentionClass::BoundedRetention,
-            ArtifactIntegrityClass::Digest,
-            RestoreReplayApplicability::NotIntendedForRestoreReplay,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true
-        ),
-        Err(ExportBackupArtifactAdmissionError::SchemaFormatVersionMissing)
-    );
-
     assert!(ArtifactSensitiveDataGuard::try_new(true, true, true, true, true, true).is_ok());
     assert_eq!(
         ArtifactSensitiveDataGuard::try_new(true, true, false, true, true, true),
@@ -1365,32 +1016,28 @@ fn coverage_persistence_artifact_reasons_and_prohibited_enums_are_closed() {
     )
     .is_ok());
     assert!(ArtifactRestoreImportGuard::try_new(
-        RestoreReplayApplicability::RequiresRestoreCanonicalAdmission,
+        RestoreReplayApplicability::RestoreInput,
         true,
         true
     )
     .is_ok());
     assert!(ArtifactRestoreImportGuard::try_new(
-        RestoreReplayApplicability::RequiresReplayCanonicalAdmission,
+        RestoreReplayApplicability::ReplayVerificationInput,
         true,
         true
     )
     .is_ok());
     assert_eq!(
-        ArtifactRestoreImportGuard::try_new(
-            RestoreReplayApplicability::RequiresRestoreCanonicalAdmission,
-            false,
-            true
-        ),
-        Err(ArtifactRestoreImportGuardError::RestoreImportAdmissionMissing)
+        ArtifactRestoreImportGuard::try_new(RestoreReplayApplicability::RestoreInput, false, true),
+        Err(ArtifactRestoreImportGuardError::RestoreReplayPolicyDenied)
     );
     assert_eq!(
         ArtifactRestoreImportGuard::try_new(
-            RestoreReplayApplicability::RequiresReplayCanonicalAdmission,
+            RestoreReplayApplicability::ReplayVerificationInput,
             true,
             false
         ),
-        Err(ArtifactRestoreImportGuardError::RestoreReplayEvidenceMissing)
+        Err(ArtifactRestoreImportGuardError::RestoreReplayVerificationMissing)
     );
 
     assert!(ExportBackupArtifactAuditShape::try_new(
@@ -1437,7 +1084,7 @@ fn coverage_persistence_artifact_reasons_and_prohibited_enums_are_closed() {
             ProhibitedPersistenceDriverBehavior::DriverOwnsStateTransitionSemantics,
             ProhibitedPersistenceDriverBehavior::UnboundedOrUnauditedRetryQueue,
             ProhibitedPersistenceDriverBehavior::StorageOwnsAuditHashChainMeaning,
-            ProhibitedPersistenceDriverBehavior::FailedPersistenceOutputAsCloseoutEvidence,
+            ProhibitedPersistenceDriverBehavior::FailedPersistenceOutputAsSuccess,
             ProhibitedPersistenceDriverBehavior::StorageTransactionAsAggregateCommitAuthority,
             ProhibitedPersistenceDriverBehavior::ArtifactLeavesWithoutExportBackupClassification,
             ProhibitedPersistenceDriverBehavior::BackendReplicationAsDomainOwnershipProof,
@@ -1454,7 +1101,7 @@ fn coverage_persistence_artifact_reasons_and_prohibited_enums_are_closed() {
             ProhibitedSchemaMigrationBehavior::BestEffortDecodeOfIncompatibleRepresentation,
             ProhibitedSchemaMigrationBehavior::StorageLayoutAsCanonicalSerialization,
             ProhibitedSchemaMigrationBehavior::RollbackPlanOmitted,
-            ProhibitedSchemaMigrationBehavior::MigrationSnapshotAsBackupRestoreEvidence,
+            ProhibitedSchemaMigrationBehavior::MigrationSnapshotAsRestoreProof,
         ]
         .len(),
         8
@@ -1464,10 +1111,10 @@ fn coverage_persistence_artifact_reasons_and_prohibited_enums_are_closed() {
             ProhibitedExportBackupArtifactBehavior::DatabaseDumpShapeAsPublicApi,
             ProhibitedExportBackupArtifactBehavior::BackupExistenceAsRestoreSuccess,
             ProhibitedExportBackupArtifactBehavior::StorageChecksumAsAuditHashChainProof,
-            ProhibitedExportBackupArtifactBehavior::RawSensitiveMaterialInGeneralEvidence,
+            ProhibitedExportBackupArtifactBehavior::RawSensitiveMaterialInGeneralExport,
             ProhibitedExportBackupArtifactBehavior::ArtifactPathAsCoreDomainIdentity,
             ProhibitedExportBackupArtifactBehavior::ExportFormatAsCanonicalSerialization,
-            ProhibitedExportBackupArtifactBehavior::ReleaseDistributionEvidenceHiddenAsBackup,
+            ProhibitedExportBackupArtifactBehavior::ReleaseDistributionArtifactHiddenAsBackup,
         ]
         .len(),
         7
@@ -1614,24 +1261,6 @@ fn coverage_security_guards_cover_success_and_fail_closed_edges() {
         TokenVerifierDriverBoundaryGuard::try_new(true, true, true, true, true, true, true, false),
         Err(TokenVerifierDriverBoundaryError::RawCredentialCrossesToCore)
     );
-
-    assert!(TokenVerificationAuditShape::try_new(true, true, true, true).is_ok());
-    assert_eq!(
-        TokenVerificationAuditShape::try_new(false, true, true, true),
-        Err(TokenVerificationAuditShapeError::DecisionEventMissing)
-    );
-    assert_eq!(
-        TokenVerificationAuditShape::try_new(true, false, true, true),
-        Err(TokenVerificationAuditShapeError::ConcreteTokenReasonMissing)
-    );
-    assert_eq!(
-        TokenVerificationAuditShape::try_new(true, true, false, true),
-        Err(TokenVerificationAuditShapeError::PublicWrapperReplacesConcreteReason)
-    );
-    assert_eq!(
-        TokenVerificationAuditShape::try_new(true, true, true, false),
-        Err(TokenVerificationAuditShapeError::AuthorizationMappingMixed)
-    );
 }
 
 #[test]
@@ -1723,7 +1352,7 @@ fn coverage_security_rotation_reasons_and_prohibited_enums_are_closed() {
             false,
             true
         ),
-        Err(SecretRotationPolicyError::AuditEvidenceRelationMissing)
+        Err(SecretRotationPolicyError::AuditRelationMissing)
     );
     assert_eq!(
         SecretRotationPolicyGuard::try_new(
@@ -1838,42 +1467,6 @@ fn coverage_security_rotation_reasons_and_prohibited_enums_are_closed() {
             false
         ),
         Err(SecretGenerationStateAdmissionError::RevokedOrExpiredGenerationAccepted)
-    );
-
-    assert!(SecretRotationEvidenceShape::try_new(
-        true, true, true, true, true, true, true, true, true
-    )
-    .is_ok());
-    assert_eq!(
-        SecretRotationEvidenceShape::try_new(false, true, true, true, true, true, true, true, true),
-        Err(SecretRotationEvidenceShapeError::RequiredRotationEvidenceFieldMissing)
-    );
-    assert_eq!(
-        SecretRotationEvidenceShape::try_new(true, true, true, true, true, false, true, true, true),
-        Err(SecretRotationEvidenceShapeError::RawSecretMaterialInEvidence)
-    );
-
-    assert!(SecretRotationAuditShape::try_new(true, true, true, true, false, false).is_ok());
-    assert!(SecretRotationAuditShape::try_new(true, true, true, true, true, true).is_ok());
-    assert_eq!(
-        SecretRotationAuditShape::try_new(false, true, true, true, false, false),
-        Err(SecretRotationAuditShapeError::SecretRotationDecisionEventMissing)
-    );
-    assert_eq!(
-        SecretRotationAuditShape::try_new(true, false, true, true, false, false),
-        Err(SecretRotationAuditShapeError::SecretClassMissing)
-    );
-    assert_eq!(
-        SecretRotationAuditShape::try_new(true, true, false, true, false, false),
-        Err(SecretRotationAuditShapeError::OpaqueGenerationReferenceMissing)
-    );
-    assert_eq!(
-        SecretRotationAuditShape::try_new(true, true, true, false, false, false),
-        Err(SecretRotationAuditShapeError::StartupRunIdMissing)
-    );
-    assert_eq!(
-        SecretRotationAuditShape::try_new(true, true, true, true, true, false),
-        Err(SecretRotationAuditShapeError::CorrelationIdMissing)
     );
 
     assert!(SecretRotationExecutionBoundaryGuard::try_new(
@@ -2010,7 +1603,7 @@ fn coverage_security_rotation_reasons_and_prohibited_enums_are_closed() {
             ProhibitedSecretRotationLifecycleBehavior::StaleGenerationAcceptedWithoutOverlapPolicy,
             ProhibitedSecretRotationLifecycleBehavior::RevokedGenerationAcceptedFromCache,
             ProhibitedSecretRotationLifecycleBehavior::RotationFailureInsecureFallback,
-            ProhibitedSecretRotationLifecycleBehavior::RawSecretMaterialWrittenToEvidence,
+            ProhibitedSecretRotationLifecycleBehavior::RawSecretMaterialWrittenToAuditOrObservation,
             ProhibitedSecretRotationLifecycleBehavior::RawSecretMaterialCrossesCoreOrSdk,
             ProhibitedSecretRotationLifecycleBehavior::DriverStateChangesCorePolicySilently,
             ProhibitedSecretRotationLifecycleBehavior::TokenIssuanceOwnedByArcRtc,

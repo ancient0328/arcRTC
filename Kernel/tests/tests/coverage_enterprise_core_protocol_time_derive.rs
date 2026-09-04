@@ -97,7 +97,6 @@ fn decision(
             command::TargetSurface::Turn,
         )],
         audit_projection: command::AuditProjectionRequirement::Required,
-        evidence_class: command::DecisionEvidenceClass::SourceDecisionOnly,
     })
     .expect("decision shape is valid")
 }
@@ -119,8 +118,8 @@ fn protocol_canonical_version_and_semantic_envelope_paths_are_exercised() {
     }
 
     for status in [
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::RequiresAdrOrCanonical,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Unspecified,
     ] {
         touch_hash(status);
     }
@@ -132,37 +131,37 @@ fn protocol_canonical_version_and_semantic_envelope_paths_are_exercised() {
     }
 
     let defined_rules = protocol::CanonicalEncodingRuleSet::new(
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
         protocol::UnknownFieldHandling::Reject,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
     );
-    assert!(defined_rules.usable_for_canonical_evidence());
+    assert!(defined_rules.is_complete_for_canonical_encoding());
     touch_hash(defined_rules);
 
     let incomplete_digest_rule = protocol::CanonicalEncodingRuleSet::new(
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::RequiresAdrOrCanonical,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Unspecified,
+        protocol::CanonicalRuleStatus::Specified,
         protocol::UnknownFieldHandling::IgnoredOnlyWhenCompatibilityAllows,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
     );
-    assert!(!incomplete_digest_rule.usable_for_canonical_evidence());
+    assert!(!incomplete_digest_rule.is_complete_for_canonical_encoding());
 
     let format_version = protocol::CanonicalFormatVersion::new("arcrtc-canonical", "0.2.0");
     assert_eq!(format_version.format(), "arcrtc-canonical");
@@ -302,15 +301,12 @@ fn protocol_canonical_version_and_semantic_envelope_paths_are_exercised() {
         range,
         vec![
             protocol::DeprecationLifecycleStep::IdentifyAffectedSurfaceAndVersion,
-            protocol::DeprecationLifecycleStep::RecordAdrOrCanonicalUpdate,
             protocol::DeprecationLifecycleStep::DefineUnsupportedVersionBehavior,
             protocol::DeprecationLifecycleStep::UpdateSdkParityAndDriverMapping,
-            protocol::DeprecationLifecycleStep::AddCompatibilityNegativePlan,
-            protocol::DeprecationLifecycleStep::RecordExecutionEvidence,
-            protocol::DeprecationLifecycleStep::RemoveAfterDocumentedCondition,
+            protocol::DeprecationLifecycleStep::RemoveAfterCompatibilityWindow,
         ],
     );
-    assert_eq!(deprecation.lifecycle_steps().len(), 7);
+    assert_eq!(deprecation.lifecycle_steps().len(), 4);
     touch_eq(deprecation);
 
     for failure in [
@@ -511,7 +507,7 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
         ),
         (
             time::NormalizedQuantity::Timestamp,
-            time::NormalizedUnit::UtcEpochMillisecondsEvidenceOnly,
+            time::NormalizedUnit::UtcEpochMillisecondsObservationOnly,
         ),
         (
             time::NormalizedQuantity::Bytes,
@@ -601,19 +597,14 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
     for owner in [
         time::RawMeasurementOwner::Driver,
         time::RawMeasurementOwner::Entrypoints,
-        time::RawMeasurementOwner::BenchmarkDocsReports,
+        time::RawMeasurementOwner::BenchmarkHarness,
     ] {
         touch_hash(owner);
     }
-    for owner in [
-        time::PolicyDecisionOwner::Core,
-        time::PolicyDecisionOwner::Reports,
-    ] {
-        touch_hash(owner);
-    }
+    touch_hash(time::PolicyDecisionOwner::Core);
     for source in [
         time::TimeSourceClass::MonotonicClockPort,
-        time::TimeSourceClass::WallClockEvidenceOnly,
+        time::TimeSourceClass::WallClockObservationOnly,
     ] {
         touch_hash(source);
     }
@@ -641,12 +632,12 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
         touch_hash(failure);
         assert!(CatalogedReasonRef::from_code(failure.reason_code()).is_ok());
     }
-    for adoption in [
-        time::EvidenceUnitWindowAdoption::RawAndNormalizedRecorded,
-        time::EvidenceUnitWindowAdoption::NormalizedValueRecorded,
-        time::EvidenceUnitWindowAdoption::MissingUnitWindowNotAdoptable,
+    for status in [
+        time::MeasurementUnitWindowStatus::RawAndNormalizedAvailable,
+        time::MeasurementUnitWindowStatus::NormalizedValueAvailable,
+        time::MeasurementUnitWindowStatus::MissingUnitOrWindow,
     ] {
-        touch_hash(adoption);
+        touch_hash(status);
     }
     for prohibited in [
         time::ProhibitedUnitMeasurementBehavior::DriverMetricLabelAsPolicyUnit,
@@ -655,7 +646,7 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
         time::ProhibitedUnitMeasurementBehavior::BitrateByteRateConflated,
         time::ProhibitedUnitMeasurementBehavior::BenchmarkWithoutUnitWindowAggregation,
         time::ProhibitedUnitMeasurementBehavior::RawPlatformStatsInCorePolicy,
-        time::ProhibitedUnitMeasurementBehavior::TimezoneConversionAsSynchronizationEvidence,
+        time::ProhibitedUnitMeasurementBehavior::TimezoneConversionAsSynchronizationProof,
     ] {
         touch_hash(prohibited);
     }
@@ -681,10 +672,6 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
             time::TimeSynchronizationConcern::TimestampNormalization,
             time::TimeSynchronizationOwner::CorePolicy,
         ),
-        (
-            time::TimeSynchronizationConcern::EvidenceTimestampClaim,
-            time::TimeSynchronizationOwner::EvidenceCanonical,
-        ),
     ] {
         touch_hash(concern);
         touch_hash(owner);
@@ -700,7 +687,7 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
         (time::TimeTrustClass::TimeUntrusted, false, false),
     ] {
         touch_hash(trust);
-        assert_eq!(trust.runtime_evidence_allowed(), runtime_allowed);
+        assert_eq!(trust.supports_runtime_trust_decision(), runtime_allowed);
         assert_eq!(trust.supports_cross_node_comparison(), cross_node_allowed);
     }
     for scope in [
@@ -732,7 +719,7 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
         time::ClockSkewImpact::Expiry,
         time::ClockSkewImpact::Ordering,
         time::ClockSkewImpact::Audit,
-        time::ClockSkewImpact::Evidence,
+        time::ClockSkewImpact::Verification,
     ] {
         touch_hash(impact);
     }
@@ -769,7 +756,7 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
             time::PrecisionClass::DeclaredPrecisionLabel("external-ms"),
             time::SamplingWindow::PolicyLabel("ntp-sample"),
             time::TrustedTimeSourceClass::LocalWallClock,
-            time::ClockSkewImpact::Evidence,
+            time::ClockSkewImpact::Verification,
         ),
         Err(time::ClockSkewPolicyError::ExternalSourceClassRequired)
     );
@@ -863,8 +850,8 @@ fn time_normalization_clock_skew_and_sync_decision_paths_are_exercised() {
 
     for prohibited in [
         time::ProhibitedTimeSynchronizationBehavior::WallClockAsCrossNodeCausalOrder,
-        time::ProhibitedTimeSynchronizationBehavior::ReportCreationTimeAsRuntimeObservation,
-        time::ProhibitedTimeSynchronizationBehavior::DeterministicTestClockAsProductionSyncEvidence,
+        time::ProhibitedTimeSynchronizationBehavior::ExternalRecordCreationTimeAsRuntimeObservation,
+        time::ProhibitedTimeSynchronizationBehavior::DeterministicTestClockAsProductionClockTrust,
         time::ProhibitedTimeSynchronizationBehavior::DriverNtpStatusRedefinesCorePolicy,
         time::ProhibitedTimeSynchronizationBehavior::TimezoneConversionAsSynchronizationProof,
         time::ProhibitedTimeSynchronizationBehavior::MissingSkewObservationAccepted,
@@ -1068,7 +1055,7 @@ fn transport_and_turn_contracts_exercise_derive_reason_and_fail_closed_edges() {
     assert_eq!(ice_policy.accepted_classes().len(), 2);
     touch_eq(ice_policy);
     for meaning in [
-        transport::IceObservationMeaning::DiagnosticEvidenceOnly,
+        transport::IceObservationMeaning::DiagnosticObservationOnly,
         transport::IceObservationMeaning::NotSignalingRelaySuccess,
         transport::IceObservationMeaning::NotCrossPlaneBinding,
     ] {
@@ -1107,10 +1094,10 @@ fn transport_and_turn_contracts_exercise_derive_reason_and_fail_closed_edges() {
         true,
     ));
     for class in [
-        transport::SecureMediaEvidenceClass::Handshake,
-        transport::SecureMediaEvidenceClass::PeerVerification,
-        transport::SecureMediaEvidenceClass::ProtectionState,
-        transport::SecureMediaEvidenceClass::PacketForwardingScope,
+        transport::SecureMediaVerificationClass::Handshake,
+        transport::SecureMediaVerificationClass::PeerVerification,
+        transport::SecureMediaVerificationClass::ProtectionState,
+        transport::SecureMediaVerificationClass::PacketForwardingScope,
     ] {
         touch_hash(class);
     }
@@ -1507,24 +1494,9 @@ fn configuration_domain_features_state_and_security_edges_are_exercised() {
     ] {
         touch_hash(surface);
     }
-    for requirement in [
-        features::FutureAdmissionRequirement::FeatureClass,
-        features::FutureAdmissionRequirement::OwnerPackageLayer,
-        features::FutureAdmissionRequirement::GenericCoreRelation,
-        features::FutureAdmissionRequirement::PublicSdkApiSurface,
-        features::FutureAdmissionRequirement::DriverRuntimeDependencyBoundary,
-        features::FutureAdmissionRequirement::SecurityPrivacyRedactionBoundary,
-        features::FutureAdmissionRequirement::ReasonCatalogAdditions,
-        features::FutureAdmissionRequirement::AuditEventRelation,
-        features::FutureAdmissionRequirement::EvidenceClass,
-        features::FutureAdmissionRequirement::MigrationDeprecationRelation,
-    ] {
-        touch_hash(requirement);
-    }
     for decision_class in [
         features::FeatureAdmissionDecisionClass::Rejected,
-        features::FeatureAdmissionDecisionClass::CloseNotClaimed,
-        features::FeatureAdmissionDecisionClass::AdmittedByCanonical,
+        features::FeatureAdmissionDecisionClass::SupportedBySourceContract,
     ] {
         touch_hash(decision_class);
     }
@@ -1550,7 +1522,7 @@ fn configuration_domain_features_state_and_security_edges_are_exercised() {
     touch_eq(feature_decision);
     for failure in [
         features::FeatureAdmissionFailureKind::FeatureOutOfScope,
-        features::FeatureAdmissionFailureKind::FeatureAdmissionNotDocumented,
+        features::FeatureAdmissionFailureKind::FeatureNotSupported,
         features::FeatureAdmissionFailureKind::ChatNotSupported,
         features::FeatureAdmissionFailureKind::RecordingNotSupported,
         features::FeatureAdmissionFailureKind::ScreenShareNotSupported,
@@ -1676,7 +1648,7 @@ fn configuration_domain_features_state_and_security_edges_are_exercised() {
     }
     for prohibited in [
         state::ProhibitedStatePersistenceBehavior::DriverSchemaAsDomainSourceOfTruth,
-        state::ProhibitedStatePersistenceBehavior::CheckpointRestoreWithoutRestoreCanonical,
+        state::ProhibitedStatePersistenceBehavior::CheckpointRestoreWithoutRestorePolicy,
         state::ProhibitedStatePersistenceBehavior::SfuRouteDurableByDefault,
         state::ProhibitedStatePersistenceBehavior::TurnAllocationSilentlyRestored,
         state::ProhibitedStatePersistenceBehavior::AuditLogAsMutableStateStore,

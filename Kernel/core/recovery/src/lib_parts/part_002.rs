@@ -33,17 +33,17 @@ pub enum PacketRoutingRule {
     NotPacketScoped,
 }
 
-/// recovery/restore relation for distributed state evidence.
+/// recovery/restore relation for distributed state verification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RecoveryRestoreRelation {
     /// no restore relation is claimed.
     NoRestoreRelation,
-    /// checkpoint candidate relation under durable recovery Canonical.
+    /// checkpoint candidate relation under durable recovery policy.
     CheckpointCandidate,
     /// replay verification only.
     ReplayVerificationOnly,
-    /// explicit restore evidence is required before failover claim.
-    ExplicitRestoreEvidenceRequired,
+    /// explicit restore verification is required before failover admission.
+    ExplicitRestoreVerificationRequired,
 }
 
 /// owner-scoped conflict rule です。
@@ -51,8 +51,8 @@ pub enum RecoveryRestoreRelation {
 pub enum DistributedConflictRule {
     /// conflicting owner is rejected.
     RejectConflictingOwner,
-    /// drain and mark close-not-claimed.
-    DrainAndCloseNotClaimed,
+    /// drain and reject the conflicting owner.
+    DrainAndRejectConflictingOwner,
     /// admitted consensus/conflict rule is required; initial v0.2 では成立しません。
     RequiresFutureConsensusAdmission,
 }
@@ -172,7 +172,7 @@ pub enum DistributedStateAdmissionError {
     StateReplicationNotAdmitted,
     /// consensus or leader election requested without admitted policy.
     ConsensusNotAdmitted,
-    /// automatic failover requested without admitted policy/evidence.
+    /// automatic failover requested without admitted policy and verification.
     FailoverNotProven,
 }
 
@@ -206,13 +206,13 @@ pub enum FailoverClaimClass {
     ServiceDiscoveryFallback,
     /// health/readiness probe success only.
     HealthProbeSuccess,
-    /// explicit evidence-backed failover candidate.
-    EvidenceBackedFailoverCandidate,
+    /// explicitly verified failover candidate.
+    VerifiedFailoverCandidate,
 }
 
-/// failover evidence に必要な field shape です。
+/// failover verification に必要な runtime state です。
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct FailoverEvidenceShape {
+pub struct FailoverVerificationState {
     failed_owner_observed: bool,
     replacement_owner: OpaqueReference,
     affected_state_family: StateFamily,
@@ -220,12 +220,12 @@ pub struct FailoverEvidenceShape {
     restore_replay_relation: RecoveryRestoreRelation,
     conflict_and_duplicate_handling_defined: bool,
     resource_lifetime_revalidated: bool,
-    audit_continuity_or_close_not_claimed_scope_recorded: bool,
+    audit_continuity_recorded: bool,
 }
 
-/// failover evidence shape 生成時の未検査入力です。
+/// failover verification state 生成時の未検査入力です。
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct FailoverEvidenceShapeInput {
+pub struct FailoverVerificationStateInput {
     pub failed_owner_observed: bool,
     pub replacement_owner: Option<OpaqueReference>,
     pub affected_state_family: StateFamily,
@@ -233,12 +233,12 @@ pub struct FailoverEvidenceShapeInput {
     pub restore_replay_relation: RecoveryRestoreRelation,
     pub conflict_and_duplicate_handling_defined: bool,
     pub resource_lifetime_revalidated: bool,
-    pub audit_continuity_or_close_not_claimed_scope_recorded: bool,
+    pub audit_continuity_recorded: bool,
 }
 
-/// failover evidence shape の fail-closed error です。
+/// failover verification state の fail-closed error です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum FailoverEvidenceShapeError {
+pub enum FailoverVerificationStateError {
     /// failed owner/node observation がありません。
     FailedOwnerObservationMissing,
     /// replacement owner/node がありません。
@@ -249,14 +249,16 @@ pub enum FailoverEvidenceShapeError {
     ConflictDuplicateHandlingMissing,
     /// resource/lifetime revalidation が記録されていません。
     ResourceLifetimeRevalidationMissing,
-    /// audit continuity または close-not-claimed scope が記録されていません。
-    AuditContinuityOrCloseNotClaimedScopeMissing,
+    /// audit continuity が記録されていません。
+    AuditContinuityMissing,
 }
 
-impl FailoverEvidenceShape {
-    /// failover evidence の最小 field set を作ります。
-    pub fn try_new(input: FailoverEvidenceShapeInput) -> Result<Self, FailoverEvidenceShapeError> {
-        let FailoverEvidenceShapeInput {
+impl FailoverVerificationState {
+    /// failover verification の最小 runtime state を作ります。
+    pub fn try_new(
+        input: FailoverVerificationStateInput,
+    ) -> Result<Self, FailoverVerificationStateError> {
+        let FailoverVerificationStateInput {
             failed_owner_observed,
             replacement_owner,
             affected_state_family,
@@ -264,25 +266,25 @@ impl FailoverEvidenceShape {
             restore_replay_relation,
             conflict_and_duplicate_handling_defined,
             resource_lifetime_revalidated,
-            audit_continuity_or_close_not_claimed_scope_recorded,
+            audit_continuity_recorded,
         } = input;
 
         if !failed_owner_observed {
-            return Err(FailoverEvidenceShapeError::FailedOwnerObservationMissing);
+            return Err(FailoverVerificationStateError::FailedOwnerObservationMissing);
         }
         let replacement_owner =
-            replacement_owner.ok_or(FailoverEvidenceShapeError::ReplacementOwnerMissing)?;
+            replacement_owner.ok_or(FailoverVerificationStateError::ReplacementOwnerMissing)?;
         if !affinity_sticky_routing_updated {
-            return Err(FailoverEvidenceShapeError::AffinityRoutingUpdateMissing);
+            return Err(FailoverVerificationStateError::AffinityRoutingUpdateMissing);
         }
         if !conflict_and_duplicate_handling_defined {
-            return Err(FailoverEvidenceShapeError::ConflictDuplicateHandlingMissing);
+            return Err(FailoverVerificationStateError::ConflictDuplicateHandlingMissing);
         }
         if !resource_lifetime_revalidated {
-            return Err(FailoverEvidenceShapeError::ResourceLifetimeRevalidationMissing);
+            return Err(FailoverVerificationStateError::ResourceLifetimeRevalidationMissing);
         }
-        if !audit_continuity_or_close_not_claimed_scope_recorded {
-            return Err(FailoverEvidenceShapeError::AuditContinuityOrCloseNotClaimedScopeMissing);
+        if !audit_continuity_recorded {
+            return Err(FailoverVerificationStateError::AuditContinuityMissing);
         }
 
         Ok(Self {
@@ -293,7 +295,7 @@ impl FailoverEvidenceShape {
             restore_replay_relation,
             conflict_and_duplicate_handling_defined,
             resource_lifetime_revalidated,
-            audit_continuity_or_close_not_claimed_scope_recorded,
+            audit_continuity_recorded,
         })
     }
 }
@@ -302,7 +304,7 @@ impl FailoverEvidenceShape {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FailoverAdmission {
     claim_class: FailoverClaimClass,
-    evidence: FailoverEvidenceShape,
+    verification: FailoverVerificationState,
 }
 
 /// failover admission の fail-closed error です。
@@ -317,15 +319,15 @@ pub enum FailoverAdmissionError {
 }
 
 impl FailoverAdmission {
-    /// evidence-backed failover candidate だけを admission します。
+    /// verified failover candidate だけを admission します。
     pub fn admit(
         claim_class: FailoverClaimClass,
-        evidence: FailoverEvidenceShape,
+        verification: FailoverVerificationState,
     ) -> Result<Self, FailoverAdmissionError> {
         match claim_class {
-            FailoverClaimClass::EvidenceBackedFailoverCandidate => Ok(Self {
+            FailoverClaimClass::VerifiedFailoverCandidate => Ok(Self {
                 claim_class,
-                evidence,
+                verification,
             }),
             FailoverClaimClass::ProcessRestartObservation => {
                 Err(FailoverAdmissionError::ProcessRestartIsNotFailoverSuccess)
@@ -424,7 +426,7 @@ pub enum DistributedStateFailureKind {
     StateReplicationNotAdmitted,
     /// consensus or leader election requested without admitted policy.
     ConsensusNotAdmitted,
-    /// automatic failover requested without admitted policy/evidence.
+    /// automatic failover requested without admitted policy and verification.
     FailoverNotProven,
     /// node affinity is required but absent.
     NodeAffinityRequired,
@@ -473,8 +475,8 @@ pub enum ProhibitedDistributedStateBehavior {
     TwoOwnersAcceptedWithoutConflictRule,
     /// replication lag or handoff window is unbounded.
     UnboundedReplicationLagOrHandoffWindow,
-    /// test fake multi-node behavior is used as production distributed state evidence.
-    TestFakeAsProductionDistributedStateEvidence,
+    /// test fake multi-node behavior is used as production distributed state.
+    TestFakeAsProductionDistributedState,
 }
 
 /// v0.2 initial architecture が認める process failure class です。
@@ -486,18 +488,18 @@ pub enum ProcessFailureClass {
     TaskPanicObserved,
     /// process exits unexpectedly.
     ProcessCrashObserved,
-    /// shutdown lacks drain/audit completion evidence.
+    /// shutdown lacks completed drain/audit observation.
     UncleanShutdownDetected,
     /// external supervisor restarted process.
     SupervisorRestartObserved,
     /// entrypoint starts after prior unclean exit.
     StartupAfterUncleanExit,
-    /// controlled crash/restart test report.
-    CrashRecoveryEvidence,
+    /// controlled crash/restart was observed.
+    ControlledCrashRestartObserved,
 }
 
 impl ProcessFailureClass {
-    /// domain state claim の前に restore policy/evidence が必要な failure class です。
+    /// domain state claim の前に restore policy/verification が必要な failure class です。
     pub const fn requires_restore_policy_before_state_claim(self) -> bool {
         match self {
             Self::PanicObserved
@@ -505,7 +507,7 @@ impl ProcessFailureClass {
             | Self::UncleanShutdownDetected
             | Self::SupervisorRestartObserved
             | Self::StartupAfterUncleanExit
-            | Self::CrashRecoveryEvidence => true,
+            | Self::ControlledCrashRestartObserved => true,
             Self::TaskPanicObserved => false,
         }
     }
@@ -515,4 +517,3 @@ impl ProcessFailureClass {
         matches!(self, Self::ProcessCrashObserved)
     }
 }
-

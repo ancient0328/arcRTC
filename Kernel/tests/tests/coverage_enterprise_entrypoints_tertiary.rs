@@ -286,7 +286,7 @@ fn admin_operator_authorization_guards_cover_late_fail_closed_branches() {
             developer_flags[14],
             developer_flags[15],
         ),
-        Err(admin::OperatorAdminAuthorizationError::DeveloperLocalContextUsedAsProductionProof)
+        Err(admin::OperatorAdminAuthorizationError::DeveloperLocalContextUsedAsOperatorAuthorization)
     );
 
     for (index, expected) in [
@@ -327,100 +327,10 @@ fn admin_operator_authorization_guards_cover_late_fail_closed_branches() {
         ),
         Err(admin::OperatorAdminAuthorizationAuditError::CatalogedReasonMissing)
     );
-
-    for (index, expected) in [
-        (
-            0,
-            admin::OperatorAdminAuthorizationEvidenceError::OperatorAdminClassMissing,
-        ),
-        (
-            1,
-            admin::OperatorAdminAuthorizationEvidenceError::ActionClassMissing,
-        ),
-        (
-            2,
-            admin::OperatorAdminAuthorizationEvidenceError::TargetScopeMissing,
-        ),
-        (
-            3,
-            admin::OperatorAdminAuthorizationEvidenceError::CredentialContextClassMissing,
-        ),
-        (
-            4,
-            admin::OperatorAdminAuthorizationEvidenceError::LifetimeExpiryObservationMissing,
-        ),
-        (
-            5,
-            admin::OperatorAdminAuthorizationEvidenceError::AuditEventTypeMissing,
-        ),
-        (
-            6,
-            admin::OperatorAdminAuthorizationEvidenceError::TargetActionEventMissing,
-        ),
-        (
-            7,
-            admin::OperatorAdminAuthorizationEvidenceError::ExpectedOutcomeMissing,
-        ),
-        (
-            8,
-            admin::OperatorAdminAuthorizationEvidenceError::ActualOutcomeMissing,
-        ),
-        (
-            10,
-            admin::OperatorAdminAuthorizationEvidenceError::CloseNotClaimedScopeMissing,
-        ),
-        (
-            11,
-            admin::OperatorAdminAuthorizationEvidenceError::CliExitCodeAdoptedAsEvidence,
-        ),
-        (
-            12,
-            admin::OperatorAdminAuthorizationEvidenceError::
-                AuthorizationDecisionReplacesTargetActionEvent,
-        ),
-        (
-            14,
-            admin::OperatorAdminAuthorizationEvidenceError::RawCredentialEscaped,
-        ),
-    ] {
-        let mut flags = [true; 15];
-        flags[index] = false;
-        assert_eq!(
-            operator_admin_evidence_guard(
-                flags,
-                admin::OperatorAdminClass::OperatorAdminActionContext,
-                admin::OperatorAdminAuthorizationOutcome::Accepted,
-            ),
-            Err(expected)
-        );
-    }
-    let mut evidence_flags = [true; 15];
-    evidence_flags[9] = false;
-    assert_eq!(
-        operator_admin_evidence_guard(
-            evidence_flags,
-            admin::OperatorAdminClass::OperatorAdminActionContext,
-            admin::OperatorAdminAuthorizationOutcome::Failed,
-        ),
-        Err(admin::OperatorAdminAuthorizationEvidenceError::CatalogedReasonMissing)
-    );
-    let mut developer_evidence_flags = [true; 15];
-    developer_evidence_flags[13] = false;
-    assert_eq!(
-        operator_admin_evidence_guard(
-            developer_evidence_flags,
-            admin::OperatorAdminClass::DeveloperLocalContext,
-            admin::OperatorAdminAuthorizationOutcome::Accepted,
-        ),
-        Err(
-            admin::OperatorAdminAuthorizationEvidenceError::
-                DeveloperLocalContextUsedAsProductionProof
-        )
-    );
 }
 
 #[test]
-fn configuration_failure_vocabularies_and_experimental_lifecycle_are_closed() {
+fn configuration_failure_vocabularies_are_closed() {
     for kind in [
         configuration::RuntimeReconfigurationFailureKind::RuntimeReconfigurationNotAllowed,
         configuration::RuntimeReconfigurationFailureKind::ConfigurationGenerationMissing,
@@ -460,52 +370,6 @@ fn configuration_failure_vocabularies_and_experimental_lifecycle_are_closed() {
         assert_cataloged(unsupported.reason_code());
         let _ =
             configuration::FeatureCapabilityFailure::from_unsupported_version_reason(unsupported);
-    }
-
-    for (stage, missing_index, expected) in [
-        (
-            configuration::ExperimentalLifecycleStage::GatedScaffold,
-            2,
-            configuration::ExperimentalLifecycleError::DependencyDirectionEvidenceMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::GatedImplemented,
-            3,
-            configuration::ExperimentalLifecycleError::UnitOrContractEvidenceMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::ControlledIntegration,
-            4,
-            configuration::ExperimentalLifecycleError::IntegrationReportMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::AdoptedContract,
-            5,
-            configuration::ExperimentalLifecycleError::AdoptionCanonicalOrCompatibilityRuleMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::Removed,
-            6,
-            configuration::ExperimentalLifecycleError::RemovalCompatibilityLifecycleMissing,
-        ),
-    ] {
-        let mut flags = [true; 7];
-        flags[missing_index] = false;
-        assert_eq!(
-            configuration::ExperimentalLifecycleGuard::try_new(
-                configuration::ExperimentalLifecycleGuardInput {
-                    stage,
-                    scope_and_owner_fixed: flags[0],
-                    explicit_gate_present_when_scaffold_or_later: flags[1],
-                    dependency_direction_evidence_present_when_scaffold: flags[2],
-                    unit_or_contract_evidence_present_when_implemented: flags[3],
-                    integration_report_present_when_controlled_integration: flags[4],
-                    adr_or_canonical_update_and_compatibility_rule_present_when_adopted: flags[5],
-                    compatibility_or_deprecation_lifecycle_satisfied_when_removed: flags[6],
-                }
-            ),
-            Err(expected)
-        );
     }
 }
 
@@ -607,7 +471,7 @@ fn endpoints_edge_proxy_and_public_endpoint_paths_are_fail_closed() {
         ),
         (
             3,
-            endpoints::EdgeTlsTerminationError::AuditEvidenceRelationMissing,
+            endpoints::EdgeTlsTerminationError::AuditEventRelationMissing,
         ),
         (
             4,
@@ -622,63 +486,10 @@ fn endpoints_edge_proxy_and_public_endpoint_paths_are_fail_closed() {
         flags[index] = false;
         assert_eq!(edge_tls_termination_guard(flags), Err(expected));
     }
-
-    for (index, expected) in [
-        (0, endpoints::EdgeProxyTrustEvidenceError::EdgeClassMissing),
-        (
-            1,
-            endpoints::EdgeProxyTrustEvidenceError::TopologyClassMissing,
-        ),
-        (
-            2,
-            endpoints::EdgeProxyTrustEvidenceError::TrustedUpstreamScopeMissing,
-        ),
-        (
-            3,
-            endpoints::EdgeProxyTrustEvidenceError::AcceptedMetadataClassesMissing,
-        ),
-        (
-            4,
-            endpoints::EdgeProxyTrustEvidenceError::HeaderPrecedenceMissing,
-        ),
-        (5, endpoints::EdgeProxyTrustEvidenceError::HopCountMissing),
-        (
-            6,
-            endpoints::EdgeProxyTrustEvidenceError::TlsTerminationRelationMissing,
-        ),
-        (
-            7,
-            endpoints::EdgeProxyTrustEvidenceError::OriginHostPolicyMissing,
-        ),
-        (
-            8,
-            endpoints::EdgeProxyTrustEvidenceError::ClientAddressUseLimitMissing,
-        ),
-        (
-            9,
-            endpoints::EdgeProxyTrustEvidenceError::CommandProcedureMissing,
-        ),
-        (
-            10,
-            endpoints::EdgeProxyTrustEvidenceError::WorkingDirectoryMissing,
-        ),
-        (
-            11,
-            endpoints::EdgeProxyTrustEvidenceError::RerunConditionMissing,
-        ),
-        (
-            12,
-            endpoints::EdgeProxyTrustEvidenceError::DiagnosticSnippetUsedAsEvidence,
-        ),
-    ] {
-        let mut flags = [true; 13];
-        flags[index] = false;
-        assert_eq!(edge_proxy_evidence_guard(flags), Err(expected));
-    }
 }
 
 #[test]
-fn internal_control_failure_vocabularies_and_evidence_are_closed() {
+fn internal_control_failure_vocabularies_and_audit_are_closed() {
     assert_eq!(
         internal_control::InternalControlPlaneAuditEventType::InternalControlPlaneDecision
             .event_type(),
@@ -776,92 +587,6 @@ fn internal_control_failure_vocabularies_and_evidence_are_closed() {
         ),
         Err(internal_control::InternalControlPlaneAuditError::CatalogedReasonMissing)
     );
-
-    for (index, expected) in [
-        (
-            0,
-            internal_control::InternalControlPlaneEvidenceError::TopologyClassMissing,
-        ),
-        (
-            1,
-            internal_control::InternalControlPlaneEvidenceError::ControlPlaneClassMissing,
-        ),
-        (
-            2,
-            internal_control::InternalControlPlaneEvidenceError::SourceTargetServiceMissing,
-        ),
-        (
-            3,
-            internal_control::InternalControlPlaneEvidenceError::ContractVersionMissing,
-        ),
-        (
-            4,
-            internal_control::InternalControlPlaneEvidenceError::CorrelationIdMissing,
-        ),
-        (
-            5,
-            internal_control::InternalControlPlaneEvidenceError::AuthorizationContextClassMissing,
-        ),
-        (
-            6,
-            internal_control::InternalControlPlaneEvidenceError::InternalServiceTrustPolicyMissing,
-        ),
-        (
-            8,
-            internal_control::InternalControlPlaneEvidenceError::RetryIdempotencyRelationMissing,
-        ),
-        (
-            9,
-            internal_control::InternalControlPlaneEvidenceError::TimeoutCancellationPolicyMissing,
-        ),
-        (
-            10,
-            internal_control::InternalControlPlaneEvidenceError::
-                ServiceDiscoveryResolutionStateMissing,
-        ),
-        (
-            12,
-            internal_control::InternalControlPlaneEvidenceError::DistributedStateOwnerScopeMissing,
-        ),
-        (
-            13,
-            internal_control::InternalControlPlaneEvidenceError::ExpectedOutcomeMissing,
-        ),
-        (
-            14,
-            internal_control::InternalControlPlaneEvidenceError::ActualOutcomeMissing,
-        ),
-        (
-            16,
-            internal_control::InternalControlPlaneEvidenceError::CloseNotClaimedScopeMissing,
-        ),
-        (
-            17,
-            internal_control::InternalControlPlaneEvidenceError::
-                InProcessEvidenceUsedForRemoteControlClaim,
-        ),
-    ] {
-        let mut flags = [true; 18];
-        flags[index] = false;
-        assert_eq!(
-            internal_control_evidence_guard(
-                flags,
-                internal_control::InternalControlPlaneClass::NetworkedPlaneCall,
-                internal_control::InternalControlPlaneOutcome::Success,
-            ),
-            Err(expected)
-        );
-    }
-    let mut evidence_flags = [true; 18];
-    evidence_flags[15] = false;
-    assert_eq!(
-        internal_control_evidence_guard(
-            evidence_flags,
-            internal_control::InternalControlPlaneClass::NetworkedPlaneCall,
-            internal_control::InternalControlPlaneOutcome::Rejected,
-        ),
-        Err(internal_control::InternalControlPlaneEvidenceError::CatalogedReasonMissing)
-    );
 }
 
 #[test]
@@ -934,7 +659,7 @@ fn topology_reason_mappings_and_admission_guards_cover_networked_edges() {
         (
             topology::DeploymentTopologyClass::MultiNodeExperimental,
             11,
-            topology::DeploymentTopologyAdmissionError::ExperimentalAdmissionMissing,
+            topology::DeploymentTopologyAdmissionError::ExperimentalEnablementMissing,
         ),
         (
             topology::DeploymentTopologyClass::SingleProcessLocal,
@@ -944,7 +669,7 @@ fn topology_reason_mappings_and_admission_guards_cover_networked_edges() {
         (
             topology::DeploymentTopologyClass::SingleProcessLocal,
             13,
-            topology::DeploymentTopologyAdmissionError::LocalDevTopologyUsedAsProduction,
+            topology::DeploymentTopologyAdmissionError::LocalDevTopologyEnabledForManagedRuntime,
         ),
     ] {
         let mut flags = [true; 14];
@@ -1015,7 +740,7 @@ fn topology_reason_mappings_and_admission_guards_cover_networked_edges() {
         (13, topology::ServiceDiscoveryResolutionAdmissionError::MeshPolicyUsedAsAuthorization),
         (
             14,
-            topology::ServiceDiscoveryResolutionAdmissionError::TestResolverUsedOutsideTestEvidence,
+            topology::ServiceDiscoveryResolutionAdmissionError::TestResolverUsedOutsideTestScope,
         ),
     ] {
         let mut flags = [true; 15];
@@ -1082,35 +807,6 @@ fn operator_admin_audit_guard(
     )
 }
 
-fn operator_admin_evidence_guard(
-    flags: [bool; 15],
-    operator_admin_class: admin::OperatorAdminClass,
-    outcome: admin::OperatorAdminAuthorizationOutcome,
-) -> Result<
-    admin::OperatorAdminAuthorizationEvidenceGuard,
-    admin::OperatorAdminAuthorizationEvidenceError,
-> {
-    admin::OperatorAdminAuthorizationEvidenceGuard::try_new(
-        operator_admin_class,
-        outcome,
-        flags[0],
-        flags[1],
-        flags[2],
-        flags[3],
-        flags[4],
-        flags[5],
-        flags[6],
-        flags[7],
-        flags[8],
-        flags[9],
-        flags[10],
-        flags[11],
-        flags[12],
-        flags[13],
-        flags[14],
-    )
-}
-
 fn edge_proxy_header_source_guard(
     flags: [bool; 5],
 ) -> Result<endpoints::EdgeProxyHeaderSourceGuard, endpoints::EdgeProxyHeaderSourceError> {
@@ -1139,15 +835,6 @@ fn edge_tls_termination_guard(
     )
 }
 
-fn edge_proxy_evidence_guard(
-    flags: [bool; 13],
-) -> Result<endpoints::EdgeProxyTrustEvidenceGuard, endpoints::EdgeProxyTrustEvidenceError> {
-    endpoints::EdgeProxyTrustEvidenceGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10], flags[11], flags[12],
-    )
-}
-
 fn internal_control_audit_guard(
     flags: [bool; 8],
     outcome: internal_control::InternalControlPlaneOutcome,
@@ -1166,38 +853,6 @@ fn internal_control_audit_guard(
         flags[5],
         flags[6],
         flags[7],
-    )
-}
-
-fn internal_control_evidence_guard(
-    flags: [bool; 18],
-    control_plane_class: internal_control::InternalControlPlaneClass,
-    outcome: internal_control::InternalControlPlaneOutcome,
-) -> Result<
-    internal_control::InternalControlPlaneEvidenceGuard,
-    internal_control::InternalControlPlaneEvidenceError,
-> {
-    internal_control::InternalControlPlaneEvidenceGuard::try_new(
-        control_plane_class,
-        outcome,
-        flags[0],
-        flags[1],
-        flags[2],
-        flags[3],
-        flags[4],
-        flags[5],
-        flags[6],
-        flags[7],
-        flags[8],
-        flags[9],
-        flags[10],
-        flags[11],
-        flags[12],
-        flags[13],
-        flags[14],
-        flags[15],
-        flags[16],
-        flags[17],
     )
 }
 

@@ -57,7 +57,7 @@ pub enum CliCommandClass {
     Sfu,
     /// TURN core command/use case への入口です。
     Turn,
-    /// health/admin Canonical 配下の privileged command です。
+    /// health/admin authorization policy 配下の privileged command です。
     AdminMaintenance,
     /// developer-only inspection command です。domain authority にはしません。
     DeveloperInspection,
@@ -100,8 +100,8 @@ pub enum CliCompositionFailureKind {
     AuthorizationPolicyDenied,
     /// requested feature is outside v0.2 scope.
     FeatureOutOfScope,
-    /// out-of-scope feature lacks ADR/Canonical admission.
-    FeatureAdmissionNotDocumented,
+    /// out-of-scope feature admission is missing or rejected.
+    FeatureAdmissionMissingOrRejected,
 }
 
 impl CliCompositionFailureKind {
@@ -113,7 +113,7 @@ impl CliCompositionFailureKind {
             Self::RuntimeConfigInvalid => "runtime_config_invalid",
             Self::AuthorizationPolicyDenied => "authorization_policy_denied",
             Self::FeatureOutOfScope => "feature_out_of_scope",
-            Self::FeatureAdmissionNotDocumented => "feature_admission_not_documented",
+            Self::FeatureAdmissionMissingOrRejected => "feature_not_supported",
         }
     }
 }
@@ -143,8 +143,8 @@ pub struct CliCompositionGuard {
     cli_does_not_define_domain_decision: bool,
     cli_does_not_define_reason_vocabulary: bool,
     cli_does_not_define_port_trait: bool,
-    demo_defaults_not_used_as_production_policy: bool,
-    out_of_scope_feature_rejected_or_close_not_claimed: bool,
+    demo_defaults_not_used_as_managed_runtime_policy: bool,
+    out_of_scope_feature_admission_missing_or_rejected: bool,
     operator_authorization_satisfied_when_required: bool,
 }
 
@@ -161,9 +161,9 @@ pub enum CliCompositionError {
     CliDefinesReasonVocabulary,
     /// CLI が port trait を定義しています。
     CliDefinesPortTrait,
-    /// demo/default 設定を production policy として扱っています。
-    DemoDefaultAsProductionPolicy,
-    /// out-of-scope feature を ADR/Canonical なしに受理しています。
+    /// demo/default 設定を managed-runtime policy として扱っています。
+    DemoDefaultAsManagedRuntimePolicy,
+    /// out-of-scope feature の admission が missing/rejected です。
     OutOfScopeFeatureAdmitted,
     /// privileged command に operator/admin authorization がありません。
     OperatorAuthorizationMissing,
@@ -178,8 +178,8 @@ impl CliCompositionGuard {
         cli_does_not_define_domain_decision: bool,
         cli_does_not_define_reason_vocabulary: bool,
         cli_does_not_define_port_trait: bool,
-        demo_defaults_not_used_as_production_policy: bool,
-        out_of_scope_feature_rejected_or_close_not_claimed: bool,
+        demo_defaults_not_used_as_managed_runtime_policy: bool,
+        out_of_scope_feature_admission_missing_or_rejected: bool,
         operator_authorization_satisfied_when_required: bool,
     ) -> Result<Self, CliCompositionError> {
         if !cli_input_converted_to_typed_command {
@@ -197,10 +197,10 @@ impl CliCompositionGuard {
         if !cli_does_not_define_port_trait {
             return Err(CliCompositionError::CliDefinesPortTrait);
         }
-        if !demo_defaults_not_used_as_production_policy {
-            return Err(CliCompositionError::DemoDefaultAsProductionPolicy);
+        if !demo_defaults_not_used_as_managed_runtime_policy {
+            return Err(CliCompositionError::DemoDefaultAsManagedRuntimePolicy);
         }
-        if !out_of_scope_feature_rejected_or_close_not_claimed {
+        if !out_of_scope_feature_admission_missing_or_rejected {
             return Err(CliCompositionError::OutOfScopeFeatureAdmitted);
         }
         if command_class.requires_operator_authorization()
@@ -216,8 +216,8 @@ impl CliCompositionGuard {
             cli_does_not_define_domain_decision,
             cli_does_not_define_reason_vocabulary,
             cli_does_not_define_port_trait,
-            demo_defaults_not_used_as_production_policy,
-            out_of_scope_feature_rejected_or_close_not_claimed,
+            demo_defaults_not_used_as_managed_runtime_policy,
+            out_of_scope_feature_admission_missing_or_rejected,
             operator_authorization_satisfied_when_required,
         })
     }
@@ -234,10 +234,10 @@ pub enum ProhibitedCliCompositionBehavior {
     CliDefinesReasonVocabulary,
     /// CLI defines core port trait.
     CliDefinesCorePortTrait,
-    /// demo defaults become production policy.
-    DemoDefaultsBecomeProductionPolicy,
+    /// demo defaults become managed-runtime policy.
+    DemoDefaultsBecomeManagedRuntimePolicy,
     /// privileged command executes without operator/admin authorization.
     PrivilegedCommandWithoutOperatorAuthorization,
-    /// out-of-scope feature is admitted into production scope.
+    /// out-of-scope feature is admitted into managed-runtime scope.
     OutOfScopeFeatureAdmitted,
 }

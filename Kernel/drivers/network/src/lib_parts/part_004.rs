@@ -94,7 +94,7 @@ pub enum TransportSecurityMode {
     RequiredDtlsSrtp,
     /// edge termination with declared downstream protection is required.
     EdgeTerminatedWithDownstreamTrust,
-    /// non-sensitive development-only composition. production readiness evidence には使いません。
+    /// non-sensitive development-only composition. secure runtime mode には使いません。
     DevelopmentOnlyNonSensitive,
 }
 
@@ -339,9 +339,9 @@ pub struct TransportSecuritySecretHandlingGuard {
     raw_transport_secret_material_absent_from_audit_log_trace: bool,
     raw_transport_secret_material_absent_from_metric_label: bool,
     raw_transport_secret_material_absent_from_sdk_public_error: bool,
-    raw_transport_secret_material_absent_from_report_body: bool,
+    raw_transport_secret_material_absent_from_diagnostic_export: bool,
     opaque_secret_source_reference_used: bool,
-    fingerprint_or_hash_policy_allowed_when_reported: bool,
+    fingerprint_or_hash_policy_allows_export: bool,
 }
 
 /// transport secret handling guard の fail-closed error です。
@@ -353,8 +353,8 @@ pub enum TransportSecuritySecretHandlingError {
     RawSecretInObservability,
     /// raw transport secret が SDK public error に入ります。
     RawSecretInSdkPublicError,
-    /// raw transport secret が report body に入ります。
-    RawSecretInReport,
+    /// raw transport secret が diagnostic export に入ります。
+    RawSecretInDiagnosticExport,
     /// opaque reference または policy-approved fingerprint/hash ではありません。
     RedactedReferenceMissing,
 }
@@ -366,9 +366,9 @@ impl TransportSecuritySecretHandlingGuard {
         raw_transport_secret_material_absent_from_audit_log_trace: bool,
         raw_transport_secret_material_absent_from_metric_label: bool,
         raw_transport_secret_material_absent_from_sdk_public_error: bool,
-        raw_transport_secret_material_absent_from_report_body: bool,
+        raw_transport_secret_material_absent_from_diagnostic_export: bool,
         opaque_secret_source_reference_used: bool,
-        fingerprint_or_hash_policy_allowed_when_reported: bool,
+        fingerprint_or_hash_policy_allows_export: bool,
     ) -> Result<Self, TransportSecuritySecretHandlingError> {
         if !raw_transport_secret_material_absent_from_core_state {
             return Err(TransportSecuritySecretHandlingError::RawSecretCrossesToCore);
@@ -381,10 +381,10 @@ impl TransportSecuritySecretHandlingGuard {
         if !raw_transport_secret_material_absent_from_sdk_public_error {
             return Err(TransportSecuritySecretHandlingError::RawSecretInSdkPublicError);
         }
-        if !raw_transport_secret_material_absent_from_report_body {
-            return Err(TransportSecuritySecretHandlingError::RawSecretInReport);
+        if !raw_transport_secret_material_absent_from_diagnostic_export {
+            return Err(TransportSecuritySecretHandlingError::RawSecretInDiagnosticExport);
         }
-        if !opaque_secret_source_reference_used || !fingerprint_or_hash_policy_allowed_when_reported
+        if !opaque_secret_source_reference_used || !fingerprint_or_hash_policy_allows_export
         {
             return Err(TransportSecuritySecretHandlingError::RedactedReferenceMissing);
         }
@@ -394,9 +394,9 @@ impl TransportSecuritySecretHandlingGuard {
             raw_transport_secret_material_absent_from_audit_log_trace,
             raw_transport_secret_material_absent_from_metric_label,
             raw_transport_secret_material_absent_from_sdk_public_error,
-            raw_transport_secret_material_absent_from_report_body,
+            raw_transport_secret_material_absent_from_diagnostic_export,
             opaque_secret_source_reference_used,
-            fingerprint_or_hash_policy_allowed_when_reported,
+            fingerprint_or_hash_policy_allows_export,
         })
     }
 }
@@ -465,8 +465,8 @@ pub struct TransportSecurityPathGuard {
     setup_or_path_failure: bool,
     insecure_fallback_absent: bool,
     failure_mapped_to_cataloged_reason: bool,
-    development_only_non_sensitive_canonical_declared: bool,
-    development_evidence_not_used_for_production_readiness: bool,
+    development_only_non_sensitive_policy_enabled: bool,
+    development_transport_not_used_as_secure_runtime: bool,
 }
 
 /// secure transport path guard の fail-closed error です。
@@ -481,4 +481,3 @@ pub enum TransportSecurityPathError {
     /// development-only composition の制約がありません。
     DevelopmentOnlyBoundaryMissing,
 }
-

@@ -38,7 +38,7 @@ impl RuntimeProfileObservationRef {
         Self { value }
     }
 
-    /// observation ref value です。runtime success claim ではありません。
+    /// observation ref value です。runtime lifecycle success を決定しません。
     pub const fn as_str(&self) -> &'static str {
         self.value
     }

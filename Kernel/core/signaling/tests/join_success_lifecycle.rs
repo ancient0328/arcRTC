@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use arcrtc_core_identity::{OpaqueReference, ParticipantId, ReferenceAuthority, RoomId};
 use arcrtc_core_security::{CredentialPolicyReferenceState, VerifiedCredentialRef};
 use arcrtc_core_signaling::{
@@ -10,19 +8,20 @@ use arcrtc_core_signaling::{
     TimeoutDecision,
 };
 
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
-
 fn reference(value: &str, authority: ReferenceAuthority) -> OpaqueReference {
     OpaqueReference::accept(value, authority).expect("test fixture uses accepted references")
 }
 
 fn room_ref() -> RoomId {
-    RoomId::new(reference("room:sig-01", ReferenceAuthority::CorePolicy))
+    RoomId::new(reference(
+        "room:signaling-lifecycle",
+        ReferenceAuthority::CorePolicy,
+    ))
 }
 
 fn participant_ref() -> ParticipantId {
     ParticipantId::new(reference(
-        "participant:sig-01",
+        "participant:signaling-lifecycle",
         ReferenceAuthority::CorePolicy,
     ))
 }
@@ -30,7 +29,7 @@ fn participant_ref() -> ParticipantId {
 fn credential_ref() -> VerifiedCredentialRef {
     VerifiedCredentialRef::new(
         reference(
-            "credential:sig-01",
+            "credential:signaling-lifecycle",
             ReferenceAuthority::DriverCredentialConversion,
         ),
         CredentialPolicyReferenceState::Present,
@@ -42,14 +41,14 @@ fn membership(state: ParticipantLifecycleState) -> RoomMembershipState {
 }
 
 #[test]
-fn t_sig_01_join_success_lifecycle() {
-    assert_t_sig_01__duplicate_idempotent_command();
-    assert_t_sig_01__leave();
-    assert_t_sig_01__timeout();
-    assert_t_sig_01__rejected_credential();
+fn join_success_lifecycle_preserves_state_transition() {
+    assert_duplicate_idempotent_command();
+    assert_leave();
+    assert_timeout();
+    assert_rejected_credential();
 }
 
-fn assert_t_sig_01__duplicate_idempotent_command() {
+fn assert_duplicate_idempotent_command() {
     let first = apply_membership_command(
         membership(ParticipantLifecycleState::Active),
         MembershipCommand::FirstCommand,
@@ -67,7 +66,7 @@ fn assert_t_sig_01__duplicate_idempotent_command() {
     );
 }
 
-fn assert_t_sig_01__leave() {
+fn assert_leave() {
     let result = apply_membership_command(
         membership(ParticipantLifecycleState::Active),
         MembershipCommand::Leave,
@@ -83,7 +82,7 @@ fn assert_t_sig_01__leave() {
     );
 }
 
-fn assert_t_sig_01__timeout() {
+fn assert_timeout() {
     let result = apply_membership_command(
         membership(ParticipantLifecycleState::Active),
         MembershipCommand::Timeout,
@@ -99,13 +98,16 @@ fn assert_t_sig_01__timeout() {
     );
 }
 
-fn assert_t_sig_01__rejected_credential() {
+fn assert_rejected_credential() {
     let decision = decide_join_admission(JoinAdmissionInput::new(
         credential_ref(),
         room_ref(),
         participant_ref(),
         RoomAdmissionPolicyRef::new(
-            reference("admission:sig-01", ReferenceAuthority::CorePolicy),
+            reference(
+                "admission:signaling-lifecycle",
+                ReferenceAuthority::CorePolicy,
+            ),
             RoomAdmissionPolicyState::NotAcceptingJoin,
         ),
     ));

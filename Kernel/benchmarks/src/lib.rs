@@ -1,7 +1,13 @@
-//! fixed goal V3 の benchmark command surface です。
+//! Kernel runtime の benchmark command surface です。
 //!
-//! Roadmap が固定した `arcrtc-benchmarks` package 名と bench target 名を実体化し、
-//! test crate へ依存せず Kernel production crates の公開 contract を測定します。
+//! `arcrtc-benchmarks` package の workload registry と bench target を実体化し、
+//! test support へ依存せず Kernel production crates の公開 contract を測定します。
+
+mod measurement_window;
+
+pub use measurement_window::{
+    benchmark_lane_window, BenchmarkLaneWindow, BenchmarkMeasurementWindow, BenchmarkWindowError,
+};
 
 use arcrtc_core_identity::{
     AllocationId, ChannelBindId, CredentialRef, OpaqueReference, PacketId, PermissionId,
@@ -133,14 +139,14 @@ const BENCHMARK_CASES: [BenchmarkCriterionCase; 16] = [
     },
 ];
 
-/// Criterion が反復実行する fixed goal V3 benchmark case です。
+/// Criterion が反復実行する Kernel runtime benchmark case です。
 #[derive(Clone, Copy)]
 pub struct BenchmarkCriterionCase {
     /// `BENCH-001` のような scenario ID です。
     pub scenario_id: &'static str,
     /// scenario matrix の表示名です。
     pub label: &'static str,
-    /// Roadmap lane 内での workload class です。
+    /// benchmark registry 内での workload class です。
     pub workload_class: &'static str,
     /// workload が直接参照する Kernel source class です。
     pub source_class: &'static str,
@@ -153,9 +159,9 @@ pub fn criterion_benchmark_cases() -> Vec<BenchmarkCriterionCase> {
     BENCHMARK_CASES.to_vec()
 }
 
-/// Roadmap の load / soak / concurrency lane に対応する slice 指定です。
+/// load / soak / concurrency workload class に対応する slice 指定です。
 ///
-/// BENCH-001..016 の順序は test-side runner の scenario matrix に固定されます。
+/// BENCH-001..016 の順序はこのcrateのexecutable registryが所有します。
 pub fn cases_for_lane(lane: BenchmarkLane) -> Vec<BenchmarkCriterionCase> {
     let cases = criterion_benchmark_cases();
     match lane {
@@ -168,9 +174,26 @@ pub fn cases_for_lane(lane: BenchmarkLane) -> Vec<BenchmarkCriterionCase> {
 /// CI command ID と bench target の対応を明示する閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BenchmarkLane {
+    /// Load benchmark lane です。
     Load,
+    /// Soak benchmark lane です。
     Soak,
+    /// Concurrency benchmark lane です。
     Concurrency,
+}
+
+impl BenchmarkLane {
+    /// Executable benchmark lane の閉集合です。
+    pub const ALL: [Self; 3] = [Self::Load, Self::Soak, Self::Concurrency];
+
+    /// Technical output に使用する安定した lane 名です。
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Load => "load",
+            Self::Soak => "soak",
+            Self::Concurrency => "concurrency",
+        }
+    }
 }
 
 fn signaling_membership_workload() -> u64 {

@@ -107,7 +107,7 @@ fn mutual_trust_proofs_gate_internal_identity_and_secure_media_peer_verification
 }
 
 #[test]
-fn supply_chain_hardening_policy_source_remains_present_but_not_readiness_evidence() {
+fn supply_chain_hardening_policy_has_closed_security_requirements() {
     for section in [
         "[dependency_admission]",
         "[license_admission]",
@@ -120,6 +120,4 @@ fn supply_chain_hardening_policy_source_remains_present_but_not_readiness_eviden
     }
     assert!(SUPPLY_CHAIN_POLICY.contains("release_blocking_severities = [\"critical\", \"high\"]"));
     assert!(SUPPLY_CHAIN_POLICY.contains("signature_ref_required = true"));
-    assert!(SUPPLY_CHAIN_POLICY
-        .contains("non_adoption = \"vulnerability gate policy is not scanner output\""));
 }

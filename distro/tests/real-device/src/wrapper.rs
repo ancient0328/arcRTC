@@ -2,9 +2,8 @@
 #![allow(dead_code)]
 
 use arcrtc_distro_evidence::{
-    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
-    DistroEvidenceRecord, DistroLayer, DistroNonClaimScope,
-    DistroPlane, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
+    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason, DistroEvidenceRecord,
+    DistroLayer, DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
 };
 
 use crate::{
@@ -92,23 +91,17 @@ pub const fn planned_exit_for_dispatch(dispatch: &RealDeviceDispatch) -> RealDev
 }
 
 /// planned exit に対応する実装 reason です。
-pub const fn distro_reason_for_exit(
-    planned_exit: RealDeviceWrapperExit,
-) -> DistroEvidenceReason {
+pub const fn distro_reason_for_exit(planned_exit: RealDeviceWrapperExit) -> DistroEvidenceReason {
     match planned_exit {
         RealDeviceWrapperExit::Success => DistroEvidenceReason::DistroOk,
-        RealDeviceWrapperExit::ScopeMismatch => {
-            DistroEvidenceReason::RealDeviceScopeMismatch
-        }
+        RealDeviceWrapperExit::ScopeMismatch => DistroEvidenceReason::RealDeviceScopeMismatch,
         RealDeviceWrapperExit::PlatformCommandUnavailable => {
             DistroEvidenceReason::RuntimeExecutorError
         }
         RealDeviceWrapperExit::EvidenceValidationFailure => {
             DistroEvidenceReason::EvidenceFieldsIncomplete
         }
-        RealDeviceWrapperExit::CommandScopeMismatch => {
-            DistroEvidenceReason::CommandScopeMismatch
-        }
+        RealDeviceWrapperExit::CommandScopeMismatch => DistroEvidenceReason::CommandScopeMismatch,
     }
 }
 
@@ -121,9 +114,7 @@ pub const fn actual_outcome_for_exit(planned_exit: RealDeviceWrapperExit) -> &'s
             "platform command unavailable in bounded wrapper"
         }
         RealDeviceWrapperExit::EvidenceValidationFailure => "evidence validation failed",
-        RealDeviceWrapperExit::CommandScopeMismatch => {
-            "command working directory outside distro"
-        }
+        RealDeviceWrapperExit::CommandScopeMismatch => "command working directory outside distro",
     }
 }
 
@@ -484,6 +475,7 @@ mod tests {
                 RealDeviceCommandExitStatus::CommandScopeMismatch => RealDeviceCommandOutput {
                     exit_status: RealDeviceCommandExitStatus::CommandScopeMismatch,
                     raw_exit_status: None,
+                    stdout_observation: String::new(),
                     stdout_summary: String::new(),
                     stderr_summary: String::new(),
                     toolchain_runtime_version: "browser runtime".to_owned(),

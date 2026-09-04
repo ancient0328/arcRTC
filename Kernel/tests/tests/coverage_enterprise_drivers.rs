@@ -12,15 +12,13 @@ use arcrtc_core_reason::CatalogedReasonRef;
 use arcrtc_driver_browser::{
     BrowserConcreteApiType, BrowserDriverFailure, BrowserDriverFailureKind,
     BrowserDriverResponsibility, BrowserLifecycleMappingError, BrowserLifecycleMappingGuard,
-    BrowserLifecycleObservation, BrowserOutOfScopeAdmissionError, BrowserOutOfScopeAdmissionGuard,
-    BrowserOutOfScopeFeature, BrowserPlatformBoundaryError, BrowserPlatformBoundaryGuard,
+    BrowserLifecycleObservation, BrowserPlatformBoundaryError, BrowserPlatformBoundaryGuard,
     BrowserTypeConversionError, BrowserTypeConversionGuard,
 };
 use arcrtc_driver_native::{
     NativeConcreteApiType, NativeDriverFailure, NativeDriverFailureKind,
     NativeDriverResponsibility, NativeLifecycleMappingError, NativeLifecycleMappingGuard,
-    NativeLifecycleObservation, NativeOutOfScopeAdmissionError, NativeOutOfScopeAdmissionGuard,
-    NativeOutOfScopeFeature, NativePlatformBoundaryError, NativePlatformBoundaryGuard,
+    NativeLifecycleObservation, NativePlatformBoundaryError, NativePlatformBoundaryGuard,
     NativeTypeConversionError, NativeTypeConversionGuard,
 };
 use arcrtc_driver_network::{
@@ -34,14 +32,15 @@ use arcrtc_driver_network::{
     NetworkIoPreconditions, NetworkIoSurfaceClass, ProhibitedExternalTypeExposure,
     SemanticDelegationError, SemanticDelegationGuard, TransportPeerVerificationRequirement,
     TransportSecurityBackendClass, TransportSecurityConfigurationError,
-    TransportSecurityConfigurationGuard, TransportSecurityEvidenceClass,
-    TransportSecurityEvidenceShape, TransportSecurityEvidenceShapeError, TransportSecurityFailure,
-    TransportSecurityFailureKind, TransportSecurityMode, TransportSecurityPathError,
-    TransportSecurityPathGuard, TransportSecurityProfile, TransportSecuritySecretHandlingError,
-    TransportSecuritySecretHandlingGuard, TurnWireDecodeInput, TurnWireDecodedAttributes,
-    TurnWireEncodeError, TurnWireEncodeInput, TurnWireFailure, TurnWireFailureKind,
-    TurnWireFailureShapeError, TurnWireMethodClass, TurnWireOutputClass, TurnWirePreconditions,
-    WireEnvelopeDecodeInput, WireEnvelopeEncodeError, WireEnvelopeEncodeInput,
+    TransportSecurityConfigurationGuard, TransportSecurityFailure, TransportSecurityFailureKind,
+    TransportSecurityMode, TransportSecurityPathError, TransportSecurityPathGuard,
+    TransportSecurityProfile, TransportSecuritySecretHandlingError,
+    TransportSecuritySecretHandlingGuard, TransportSecurityVerificationClass,
+    TransportSecurityVerificationError, TransportSecurityVerificationGuard, TurnWireDecodeInput,
+    TurnWireDecodedAttributes, TurnWireEncodeError, TurnWireEncodeInput, TurnWireFailure,
+    TurnWireFailureKind, TurnWireFailureShapeError, TurnWireMethodClass, TurnWireOutputClass,
+    TurnWirePreconditions, WireEnvelopeDecodeInput, WireEnvelopeEncodeError,
+    WireEnvelopeEncodeInput,
 };
 use arcrtc_driver_webrtc_str0m::{
     Str0mConversionBoundary, Str0mConversionBoundaryError, Str0mDriverResourceBound,
@@ -328,26 +327,6 @@ fn coverage_browser_and_native_driver_surfaces_exercise_all_guard_branches() {
             BrowserDriverFailure::from_kind(kind)
         );
     }
-    for feature in [
-        BrowserOutOfScopeFeature::CameraMicrophoneCapture,
-        BrowserOutOfScopeFeature::MediaTrackRendering,
-        BrowserOutOfScopeFeature::PeerConnectionPublicSdkAbstraction,
-        BrowserOutOfScopeFeature::ScreenSharing,
-        BrowserOutOfScopeFeature::Recording,
-        BrowserOutOfScopeFeature::Chat,
-        BrowserOutOfScopeFeature::DataChannelApplicationSemantics,
-        BrowserOutOfScopeFeature::UserInterfaceWorkflow,
-        BrowserOutOfScopeFeature::PushNotificationWorkflow,
-        BrowserOutOfScopeFeature::RegulatedWorkflowOwnership,
-        BrowserOutOfScopeFeature::UserAccountOrAuthIssuance,
-    ] {
-        assert!(BrowserOutOfScopeAdmissionGuard::try_new(feature, false, true).is_ok());
-        assert_eq!(
-            BrowserOutOfScopeAdmissionGuard::try_new(feature, false, false),
-            Err(BrowserOutOfScopeAdmissionError::OutOfScopeFeatureAdmitted)
-        );
-    }
-
     for (responsibility, family) in [
         (
             NativeDriverResponsibility::WebSocketHttpClientBinding,
@@ -553,25 +532,6 @@ fn coverage_browser_and_native_driver_surfaces_exercise_all_guard_branches() {
         assert_eq!(
             NativeDriverFailure::from_kind(kind),
             NativeDriverFailure::from_kind(kind)
-        );
-    }
-    for feature in [
-        NativeOutOfScopeFeature::CameraMicrophoneCapture,
-        NativeOutOfScopeFeature::MediaTrackRendering,
-        NativeOutOfScopeFeature::PeerConnectionPublicSdkAbstraction,
-        NativeOutOfScopeFeature::ScreenSharing,
-        NativeOutOfScopeFeature::Recording,
-        NativeOutOfScopeFeature::Chat,
-        NativeOutOfScopeFeature::DataChannelApplicationSemantics,
-        NativeOutOfScopeFeature::UserInterfaceWorkflow,
-        NativeOutOfScopeFeature::PushNotificationWorkflow,
-        NativeOutOfScopeFeature::RegulatedWorkflowOwnership,
-        NativeOutOfScopeFeature::UserAccountOrAuthIssuance,
-    ] {
-        assert!(NativeOutOfScopeAdmissionGuard::try_new(feature, false, true).is_ok());
-        assert_eq!(
-            NativeOutOfScopeAdmissionGuard::try_new(feature, false, false),
-            Err(NativeOutOfScopeAdmissionError::OutOfScopeFeatureAdmitted)
         );
     }
 }
@@ -1463,7 +1423,7 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
     );
     assert_eq!(
         TransportSecuritySecretHandlingGuard::try_new(true, true, true, true, false, true, true),
-        Err(TransportSecuritySecretHandlingError::RawSecretInReport)
+        Err(TransportSecuritySecretHandlingError::RawSecretInDiagnosticExport)
     );
     assert_eq!(
         TransportSecuritySecretHandlingGuard::try_new(true, true, true, true, true, false, true),
@@ -1507,21 +1467,21 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
         Err(TransportSecurityPathError::DevelopmentOnlyBoundaryMissing)
     );
 
-    for evidence_class in [
-        TransportSecurityEvidenceClass::ConfigurationShapeValidation,
-        TransportSecurityEvidenceClass::SecretSourceAvailability,
-        TransportSecurityEvidenceClass::ListenerStartup,
-        TransportSecurityEvidenceClass::PeerVerificationBehavior,
-        TransportSecurityEvidenceClass::InternalServiceIdentityTrustMapping,
-        TransportSecurityEvidenceClass::SessionEstablishment,
-        TransportSecurityEvidenceClass::NegativeSecurityCase,
-        TransportSecurityEvidenceClass::SecretMaterialRedaction,
-        TransportSecurityEvidenceClass::RotationGenerationOverlap,
-        TransportSecurityEvidenceClass::SecureMediaSession,
-        TransportSecurityEvidenceClass::EdgeTerminationDownstreamProtection,
+    for verification_class in [
+        TransportSecurityVerificationClass::ConfigurationShapeValidation,
+        TransportSecurityVerificationClass::SecretSourceAvailability,
+        TransportSecurityVerificationClass::ListenerStartup,
+        TransportSecurityVerificationClass::PeerVerificationBehavior,
+        TransportSecurityVerificationClass::InternalServiceIdentityTrustMapping,
+        TransportSecurityVerificationClass::SessionEstablishment,
+        TransportSecurityVerificationClass::NegativeSecurityCase,
+        TransportSecurityVerificationClass::SecretMaterialRedaction,
+        TransportSecurityVerificationClass::RotationGenerationOverlap,
+        TransportSecurityVerificationClass::SecureMediaSession,
+        TransportSecurityVerificationClass::EdgeTerminationDownstreamProtection,
     ] {
-        assert!(TransportSecurityEvidenceShape::try_new(
-            evidence_class,
+        assert!(TransportSecurityVerificationGuard::try_new(
+            verification_class,
             true,
             true,
             true,
@@ -1535,8 +1495,8 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
         .is_ok());
     }
     assert_eq!(
-        TransportSecurityEvidenceShape::try_new(
-            TransportSecurityEvidenceClass::ConfigurationShapeValidation,
+        TransportSecurityVerificationGuard::try_new(
+            TransportSecurityVerificationClass::ConfigurationShapeValidation,
             false,
             true,
             true,
@@ -1547,11 +1507,11 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
             true,
             true,
         ),
-        Err(TransportSecurityEvidenceShapeError::RequiredEvidenceFieldMissing)
+        Err(TransportSecurityVerificationError::RequiredVerificationInputMissing)
     );
     assert_eq!(
-        TransportSecurityEvidenceShape::try_new(
-            TransportSecurityEvidenceClass::ListenerStartup,
+        TransportSecurityVerificationGuard::try_new(
+            TransportSecurityVerificationClass::ListenerStartup,
             true,
             true,
             true,
@@ -1562,11 +1522,11 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
             true,
             true,
         ),
-        Err(TransportSecurityEvidenceShapeError::ListenerStartupConflatedWithPeerVerification)
+        Err(TransportSecurityVerificationError::ListenerStartupConflatedWithPeerVerification)
     );
     assert_eq!(
-        TransportSecurityEvidenceShape::try_new(
-            TransportSecurityEvidenceClass::PeerVerificationBehavior,
+        TransportSecurityVerificationGuard::try_new(
+            TransportSecurityVerificationClass::PeerVerificationBehavior,
             true,
             true,
             true,
@@ -1577,11 +1537,11 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
             true,
             true,
         ),
-        Err(TransportSecurityEvidenceShapeError::PeerVerificationConflatedWithAuthorization)
+        Err(TransportSecurityVerificationError::PeerVerificationConflatedWithAuthorization)
     );
     assert_eq!(
-        TransportSecurityEvidenceShape::try_new(
-            TransportSecurityEvidenceClass::EdgeTerminationDownstreamProtection,
+        TransportSecurityVerificationGuard::try_new(
+            TransportSecurityVerificationClass::EdgeTerminationDownstreamProtection,
             true,
             true,
             true,
@@ -1592,6 +1552,6 @@ fn coverage_network_transport_security_guards_cover_fail_closed_edges() {
             true,
             true,
         ),
-        Err(TransportSecurityEvidenceShapeError::EdgeTerminationBoundaryMissing)
+        Err(TransportSecurityVerificationError::EdgeTerminationBoundaryMissing)
     );
 }

@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use std::io::BufRead;
 use std::net::UdpSocket;
 use std::process::{Child, Command, Stdio};
@@ -14,8 +12,6 @@ use arcrtc_core_turn::{
 };
 
 const ERROR_RESPONSE: u8 = 0x05;
-
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
 
 struct ServerProc {
     child: Child,
@@ -67,12 +63,12 @@ fn classification_input(
 ) -> TurnSecurityClassificationInput {
     TurnSecurityClassificationInput::new(
         MessageIntegrityPolicyRef::new(
-            reference("integrity-policy:turn-02"),
+            reference("integrity-policy:turn-security"),
             CredentialPolicyReferenceState::Present,
         ),
-        PacketId::new(reference("packet:turn-02")),
+        PacketId::new(reference("packet:turn-security")),
         TurnNonceRef::new(
-            reference("nonce:turn-02"),
+            reference("nonce:turn-security"),
             nonce_state,
             TurnNoncePolicy::new(
                 replay_window_declared,
@@ -107,15 +103,15 @@ fn expected_error(reason: &str) -> Vec<u8> {
 }
 
 #[test]
-fn t_turn_02_security_abuse_fail_closed() {
-    assert_t_turn_02__nonce();
-    assert_t_turn_02__integrity();
-    assert_t_turn_02__replay();
-    assert_t_turn_02__malformed();
-    assert_t_turn_02__amplification_resource_bound();
+fn turn_security_abuse_is_fail_closed() {
+    assert_nonce();
+    assert_integrity();
+    assert_replay();
+    assert_malformed();
+    assert_amplification_resource_bound();
 }
 
-fn assert_t_turn_02__nonce() {
+fn assert_nonce() {
     assert_eq!(
         classify_turn_security(classification_input(
             TurnNonceEvaluationState::Present,
@@ -131,15 +127,15 @@ fn assert_t_turn_02__nonce() {
     );
 }
 
-fn assert_t_turn_02__integrity() {
+fn assert_integrity() {
     let input = classification_input(TurnNonceEvaluationState::Present, true, true, true);
     assert_eq!(
         input.credential_integrity_policy_ref().as_str(),
-        "integrity-policy:turn-02"
+        "integrity-policy:turn-security"
     );
 }
 
-fn assert_t_turn_02__replay() {
+fn assert_replay() {
     assert_eq!(
         classify_turn_security(classification_input(
             TurnNonceEvaluationState::Replayed,
@@ -155,14 +151,14 @@ fn assert_t_turn_02__replay() {
     );
 }
 
-fn assert_t_turn_02__malformed() {
+fn assert_malformed() {
     assert_eq!(
         exchange(&[0x00, 0x03, 0x00]),
         expected_error("malformed_turn_message")
     );
 }
 
-fn assert_t_turn_02__amplification_resource_bound() {
+fn assert_amplification_resource_bound() {
     assert_eq!(
         classify_turn_security(classification_input(
             TurnNonceEvaluationState::Present,

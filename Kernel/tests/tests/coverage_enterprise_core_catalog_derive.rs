@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use arcrtc_core_identity::{
     AllocationId, AuditEventId, ConfigurationScopeRef, CorrelationId, EndpointId, OpaqueReference,
     PacketId, ParticipantId, PermissionId, ReferenceAuthority, RoomId, RouteId, SessionId,
-    StartupRunId, StreamId,
+    StreamId,
 };
 use arcrtc_core_operation as operation;
 use arcrtc_core_quality as quality;
@@ -61,10 +61,6 @@ fn audit_event(value: &str) -> AuditEventId {
 
 fn config_scope(value: &str) -> ConfigurationScopeRef {
     ConfigurationScopeRef::new(reference(value))
-}
-
-fn startup(value: &str) -> StartupRunId {
-    StartupRunId::new(reference(value))
 }
 
 fn touch_hash<T>(value: T)
@@ -133,7 +129,7 @@ fn operation_catalog_derive_and_table_rows_are_executed() {
         operation::DrainSequenceStep::CancelOrJoinRuntimeTasks,
         operation::DrainSequenceStep::DrainBoundedQueues,
         operation::DrainSequenceStep::ReleaseBuffersRelayResourcesSockets,
-        operation::DrainSequenceStep::StopRuntimeAfterEvidencePathAttempt,
+        operation::DrainSequenceStep::StopRuntimeAfterDrainFinalization,
     ] {
         touch_hash(step);
         assert!((1..=10).contains(&step.order()));
@@ -190,28 +186,15 @@ fn operation_catalog_derive_and_table_rows_are_executed() {
         assert!(format!("{rule:?}").contains("required_failure_reasons"));
     }
 
-    touch_hash(operation::ShutdownDrainEvidenceShape::new(
-        correlation("operation-drain-derived"),
-        Some(startup("operation-startup-derived")),
-        operation::ShutdownDrainMode::GracefulDrain,
-        Some(config_scope("operation-config-derived")),
-        operation::ShutdownDrainPlane::NetworkDriver,
-        operation::ShutdownDrainOutcome::Failed,
-        Some(operation::ShutdownDrainFailureKind::NetworkSendFailed),
-        true,
-        true,
-        Some(1),
-    ));
-
     for prohibited in [
         operation::ProhibitedShutdownDrainBehavior::EntrypointsDirectDomainStateMutation,
         operation::ProhibitedShutdownDrainBehavior::DriverSocketCloseAsDomainSuccess,
         operation::ProhibitedShutdownDrainBehavior::FailureHiddenBehindProcessExitCode,
         operation::ProhibitedShutdownDrainBehavior::UncleanTerminationAsGracefulDrain,
         operation::ProhibitedShutdownDrainBehavior::UnboundedDrainOrFlush,
-        operation::ProhibitedShutdownDrainBehavior::FailedFlushAsCloseoutEvidence,
+        operation::ProhibitedShutdownDrainBehavior::FailedFlushAsSuccessfulShutdown,
         operation::ProhibitedShutdownDrainBehavior::CrossPlaneDrainSuccessInference,
-        operation::ProhibitedShutdownDrainBehavior::SplitServiceDrainWithoutControlPlaneEvidence,
+        operation::ProhibitedShutdownDrainBehavior::SplitServiceDrainWithoutControlPlaneAuditRelation,
         operation::ProhibitedShutdownDrainBehavior::ReconfigurationBeforeRequiredDrainRestart,
         operation::ProhibitedShutdownDrainBehavior::DetachedWorkerDuringGracefulDrainClaim,
     ] {
@@ -227,7 +210,6 @@ fn operation_atomicity_ordering_retry_derive_paths_are_executed() {
         operation::AtomicityOwner::DriverSdk,
         operation::AtomicityOwner::CoreDomainCompensation,
         operation::AtomicityOwner::DriverExternalResourceCompensation,
-        operation::AtomicityOwner::Reports,
     ] {
         touch_hash(owner);
     }
@@ -239,7 +221,6 @@ fn operation_atomicity_ordering_retry_derive_paths_are_executed() {
         operation::AtomicityConcern::AuditPersistenceExecution,
         operation::AtomicityConcern::ExternalResponseEmission,
         operation::AtomicityConcern::CompensationDecision,
-        operation::AtomicityConcern::EvidenceAdoption,
     ] {
         touch_hash(concern);
         touch_hash(concern.owner());
@@ -272,7 +253,6 @@ fn operation_atomicity_ordering_retry_derive_paths_are_executed() {
         operation::AtomicStepOutcome::Accepted,
         operation::AtomicStepOutcome::Failed,
         operation::AtomicStepOutcome::NotApplicable,
-        operation::AtomicStepOutcome::CloseNotClaimed,
     ] {
         touch_hash(outcome);
     }
@@ -311,13 +291,6 @@ fn operation_atomicity_ordering_retry_derive_paths_are_executed() {
     ] {
         touch_hash(rule);
     }
-    for rule in [
-        operation::CompensationEvidenceAdoptionRule::RequireCompensationResultBeforeCloseEvidence,
-        operation::CompensationEvidenceAdoptionRule::DriverObservationOrEvidenceLimitation,
-        operation::CompensationEvidenceAdoptionRule::CloseNotClaimed,
-    ] {
-        touch_hash(rule);
-    }
     for status in [
         operation::CompensationStatus::NotRequired,
         operation::CompensationStatus::RequiredAndAvailable,
@@ -332,10 +305,9 @@ fn operation_atomicity_ordering_retry_derive_paths_are_executed() {
         operation::AtomicityFailureKind::CompensationRequired,
         "route transition",
         operation::CompensationOwner::CoreWhenDomainStateChanges,
-        "mark route close-not-claimed",
+        "reject route after compensation failure",
         "atomicity_compensation_decision",
         operation::CompensationExternalResponseRule::ProjectLaterFailure,
-        operation::CompensationEvidenceAdoptionRule::RequireCompensationResultBeforeCloseEvidence,
     ));
     let compensation = operation::AtomicityCompensationDecision::new(
         correlation("operation-atomic-derived"),
@@ -350,20 +322,13 @@ fn operation_atomicity_ordering_retry_derive_paths_are_executed() {
         "atomicity_compensation_decision"
     );
 
-    for class in [
-        operation::PartialSuccessEvidenceClass::ClassifiedPerStep,
-        operation::PartialSuccessEvidenceClass::MissingClassificationNotAdoptable,
-        operation::PartialSuccessEvidenceClass::CloseNotClaimedForFailedStep,
-    ] {
-        touch_hash(class);
-    }
     for prohibited in [
         operation::ProhibitedAtomicityBehavior::DriverTransactionDefinesDomainInvariant,
         operation::ProhibitedAtomicityBehavior::PortIntentAsDriverExecutionSuccess,
         operation::ProhibitedAtomicityBehavior::ExternalResponseAsAuditPersistenceSuccess,
         operation::ProhibitedAtomicityBehavior::CompensationWithoutCoreStateMachineRule,
         operation::ProhibitedAtomicityBehavior::PartialSuccessHiddenBehindFinalSuccess,
-        operation::ProhibitedAtomicityBehavior::FailedAuditPersistenceAsCloseEvidence,
+        operation::ProhibitedAtomicityBehavior::FailedAuditPersistenceAsSuccessfulCommit,
     ] {
         touch_hash(prohibited);
     }
@@ -487,7 +452,7 @@ fn operation_ordering_and_retry_catalogs_are_hash_executed() {
         touch_hash(retry_class);
         touch_hash(retry_class.owner());
         assert_eq!(
-            retry_class.runtime_evidence_allowed(),
+            retry_class.is_runtime_retry_class(),
             !matches!(retry_class, operation::RetryClass::TestOnlyRetry)
         );
     }
@@ -535,8 +500,8 @@ fn operation_ordering_and_retry_catalogs_are_hash_executed() {
         operation::ProhibitedRetryTimeoutCancellationBehavior::CancellationAsAcceptedDomainTransition,
         operation::ProhibitedRetryTimeoutCancellationBehavior::TimeoutAsGenericSuccessOrFreeTextFailure,
         operation::ProhibitedRetryTimeoutCancellationBehavior::UnboundedRetry,
-        operation::ProhibitedRetryTimeoutCancellationBehavior::TestOnlyRetryAsRuntimeEvidence,
-        operation::ProhibitedRetryTimeoutCancellationBehavior::RetryErasesOriginalCorrelationOrFirstAttemptEvidence,
+        operation::ProhibitedRetryTimeoutCancellationBehavior::TestOnlyRetryAsRuntimePolicy,
+        operation::ProhibitedRetryTimeoutCancellationBehavior::RetryErasesOriginalCorrelationOrFirstAttemptIdentity,
         operation::ProhibitedRetryTimeoutCancellationBehavior::RuntimeTaskCancellationAsDomainSuccess,
     ] {
         touch_hash(prohibited);
@@ -898,7 +863,7 @@ fn quality_resource_decision_and_backpressure_fail_closed_edges_execute() {
     for rule in [
         quality::AuditBacklogOverflowRule::EmitSingleReservedOverflowRecord,
         quality::AuditBacklogOverflowRule::RejectNewAuditRequiredPath,
-        quality::AuditBacklogOverflowRule::ProhibitCloseoutEvidence,
+        quality::AuditBacklogOverflowRule::RejectFailedAuditOutcomeAsSuccess,
     ] {
         touch_hash(rule);
     }

@@ -105,7 +105,7 @@ pub struct AdminProbeSurface {
 
 /// admin probe surface を構成します。
 ///
-/// authorization decision、domain success、production readiness proof は生成しません。
+/// authorization decision、domain success、managed-runtime readiness authority は生成しません。
 pub const fn build_admin_probe_surface(input: AdminProbeSurfaceInput) -> AdminProbeSurface {
     AdminProbeSurface {
         probe_class: input.probe_class,

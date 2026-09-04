@@ -11,7 +11,7 @@ fn main() {
         .nth(1)
         .unwrap_or_else(|| String::from("signaling-only"));
 
-    // default scenario は demo 起動面の既定であり、production policy には使いません。
+    // default scenario は demo 起動面の既定であり、managed-runtime policy には使いません。
     let scenario = match token.as_str() {
         "signaling-only" => DemoScenarioClass::SignalingOnly,
         "sfu-composition" => DemoScenarioClass::SfuComposition,
@@ -80,8 +80,8 @@ pub enum DemoCompositionFailureKind {
     RuntimeConfigInvalid,
     /// requested demo feature is outside v0.2 scope.
     FeatureOutOfScope,
-    /// demo feature admission lacks ADR/Canonical.
-    FeatureAdmissionNotDocumented,
+    /// demo feature admission is missing or rejected.
+    FeatureAdmissionMissingOrRejected,
 }
 
 impl DemoCompositionFailureKind {
@@ -92,7 +92,7 @@ impl DemoCompositionFailureKind {
             Self::RuntimeConfigMissing => "runtime_config_missing",
             Self::RuntimeConfigInvalid => "runtime_config_invalid",
             Self::FeatureOutOfScope => "feature_out_of_scope",
-            Self::FeatureAdmissionNotDocumented => "feature_admission_not_documented",
+            Self::FeatureAdmissionMissingOrRejected => "feature_not_supported",
         }
     }
 }
@@ -113,7 +113,7 @@ impl DemoCompositionFailure {
     }
 }
 
-/// demo が production/domain authority にならないことを確認する guard です。
+/// demo が managed-runtime/domain authority にならないことを確認する guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DemoCompositionGuard {
     scenario_class: DemoScenarioClass,
@@ -122,11 +122,11 @@ pub struct DemoCompositionGuard {
     demo_does_not_define_domain_decision: bool,
     demo_does_not_define_reason_vocabulary: bool,
     demo_does_not_define_port_trait: bool,
-    demo_defaults_not_used_as_production_policy: bool,
+    demo_defaults_not_used_as_managed_runtime_policy: bool,
     demo_listener_startup_not_used_as_readiness: bool,
-    close_or_ready_not_claimed_from_demo: bool,
+    demo_run_not_used_as_managed_runtime_authority: bool,
     ui_or_end_user_workflow_absent: bool,
-    out_of_scope_feature_rejected_or_close_not_claimed: bool,
+    out_of_scope_feature_admission_missing_or_rejected: bool,
 }
 
 /// demo composition guard の fail-closed error です。
@@ -142,15 +142,15 @@ pub enum DemoCompositionError {
     DemoDefinesReasonVocabulary,
     /// demo が port trait を定義しています。
     DemoDefinesPortTrait,
-    /// demo/default 設定を production policy として扱っています。
-    DemoDefaultAsProductionPolicy,
+    /// demo/default 設定を managed-runtime policy として扱っています。
+    DemoDefaultAsManagedRuntimePolicy,
     /// listener startup を readiness として扱っています。
     ListenerStartupAsReadiness,
-    /// demo 実行から close/ready を主張しています。
-    DemoAsCloseOrReadyEvidence,
+    /// demo 実行を managed-runtime authority として使っています。
+    DemoUsedAsManagedRuntimeAuthority,
     /// UI/end-user workflow を demo entrypoint が所有しています。
     UiOrEndUserWorkflowOwnedByDemo,
-    /// out-of-scope feature を ADR/Canonical なしに受理しています。
+    /// out-of-scope feature の admission が missing/rejected です。
     OutOfScopeFeatureAdmitted,
 }
 
@@ -163,11 +163,11 @@ impl DemoCompositionGuard {
         demo_does_not_define_domain_decision: bool,
         demo_does_not_define_reason_vocabulary: bool,
         demo_does_not_define_port_trait: bool,
-        demo_defaults_not_used_as_production_policy: bool,
+        demo_defaults_not_used_as_managed_runtime_policy: bool,
         demo_listener_startup_not_used_as_readiness: bool,
-        close_or_ready_not_claimed_from_demo: bool,
+        demo_run_not_used_as_managed_runtime_authority: bool,
         ui_or_end_user_workflow_absent: bool,
-        out_of_scope_feature_rejected_or_close_not_claimed: bool,
+        out_of_scope_feature_admission_missing_or_rejected: bool,
     ) -> Result<Self, DemoCompositionError> {
         if !demo_input_converted_to_typed_command {
             return Err(DemoCompositionError::TypedCommandMissing);
@@ -184,19 +184,19 @@ impl DemoCompositionGuard {
         if !demo_does_not_define_port_trait {
             return Err(DemoCompositionError::DemoDefinesPortTrait);
         }
-        if !demo_defaults_not_used_as_production_policy {
-            return Err(DemoCompositionError::DemoDefaultAsProductionPolicy);
+        if !demo_defaults_not_used_as_managed_runtime_policy {
+            return Err(DemoCompositionError::DemoDefaultAsManagedRuntimePolicy);
         }
         if !demo_listener_startup_not_used_as_readiness {
             return Err(DemoCompositionError::ListenerStartupAsReadiness);
         }
-        if !close_or_ready_not_claimed_from_demo {
-            return Err(DemoCompositionError::DemoAsCloseOrReadyEvidence);
+        if !demo_run_not_used_as_managed_runtime_authority {
+            return Err(DemoCompositionError::DemoUsedAsManagedRuntimeAuthority);
         }
         if !ui_or_end_user_workflow_absent {
             return Err(DemoCompositionError::UiOrEndUserWorkflowOwnedByDemo);
         }
-        if !out_of_scope_feature_rejected_or_close_not_claimed {
+        if !out_of_scope_feature_admission_missing_or_rejected {
             return Err(DemoCompositionError::OutOfScopeFeatureAdmitted);
         }
 
@@ -207,11 +207,11 @@ impl DemoCompositionGuard {
             demo_does_not_define_domain_decision,
             demo_does_not_define_reason_vocabulary,
             demo_does_not_define_port_trait,
-            demo_defaults_not_used_as_production_policy,
+            demo_defaults_not_used_as_managed_runtime_policy,
             demo_listener_startup_not_used_as_readiness,
-            close_or_ready_not_claimed_from_demo,
+            demo_run_not_used_as_managed_runtime_authority,
             ui_or_end_user_workflow_absent,
-            out_of_scope_feature_rejected_or_close_not_claimed,
+            out_of_scope_feature_admission_missing_or_rejected,
         })
     }
 }
@@ -227,14 +227,14 @@ pub enum ProhibitedDemoCompositionBehavior {
     DemoDefinesReasonVocabulary,
     /// demo defines core port trait.
     DemoDefinesCorePortTrait,
-    /// demo defaults become production policy.
-    DemoDefaultsBecomeProductionPolicy,
+    /// demo defaults become managed-runtime policy.
+    DemoDefaultsBecomeManagedRuntimePolicy,
     /// listener startup is treated as readiness.
     ListenerStartupAsReadiness,
-    /// demo run is treated as close/readiness evidence.
-    DemoRunAsCloseOrReadyEvidence,
+    /// demo run is treated as managed-runtime authority.
+    DemoRunUsedAsManagedRuntimeAuthority,
     /// UI/end-user workflow is owned by demo composition.
     UiOrEndUserWorkflowOwnedByDemo,
-    /// out-of-scope feature is admitted into production scope.
+    /// out-of-scope feature is admitted into managed-runtime scope.
     OutOfScopeFeatureAdmitted,
 }

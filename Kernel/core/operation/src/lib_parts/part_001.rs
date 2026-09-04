@@ -6,7 +6,7 @@
 use arcrtc_core_command::CommandIdentity;
 use arcrtc_core_identity::{
     AllocationId, AuditEventId, ConfigurationScopeRef, CorrelationId, EndpointId, PacketId,
-    ParticipantId, PermissionId, RoomId, SessionId, StartupRunId,
+    ParticipantId, PermissionId, RoomId, SessionId,
 };
 
 /// core operation package の所有境界を示す marker です。
@@ -104,12 +104,12 @@ pub enum DrainSequenceStep {
     DrainBoundedQueues,
     /// driver releases buffers, relay resources, and sockets.
     ReleaseBuffersRelayResourcesSockets,
-    /// entrypoints stops runtime after mandatory evidence path is attempted.
-    StopRuntimeAfterEvidencePathAttempt,
+    /// entrypoints finalizes drain state before stopping runtime.
+    StopRuntimeAfterDrainFinalization,
 }
 
 impl DrainSequenceStep {
-    /// Canonical sequence order です。
+    /// source-defined sequence order です。
     pub const fn order(self) -> u8 {
         match self {
             Self::CreateShutdownCorrelationAndRequest => 1,
@@ -121,7 +121,7 @@ impl DrainSequenceStep {
             Self::CancelOrJoinRuntimeTasks => 7,
             Self::DrainBoundedQueues => 8,
             Self::ReleaseBuffersRelayResourcesSockets => 9,
-            Self::StopRuntimeAfterEvidencePathAttempt => 10,
+            Self::StopRuntimeAfterDrainFinalization => 10,
         }
     }
 }
@@ -262,7 +262,7 @@ const FLUSH_DRAIN_FAILURES: &[ShutdownDrainFailureKind] = &[
     ShutdownDrainFailureKind::DriverShutdown,
 ];
 
-/// Canonical plane-specific drain rule catalog です。
+/// source-owned plane-specific drain rule catalog です。
 pub const PLANE_DRAIN_RULES: &[PlaneDrainRule] = &[
     PlaneDrainRule::new(
         ShutdownDrainPlane::Signaling,
@@ -291,50 +291,6 @@ pub const PLANE_DRAIN_RULES: &[PlaneDrainRule] = &[
     ),
 ];
 
-/// shutdown/drain evidence shape です。これは runtime 成功ではなく、必要 field の境界を示します。
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ShutdownDrainEvidenceShape {
-    shutdown_correlation_id: CorrelationId,
-    startup_run_id: Option<StartupRunId>,
-    drain_mode: ShutdownDrainMode,
-    reconfiguration_generation: Option<ConfigurationScopeRef>,
-    affected_plane: ShutdownDrainPlane,
-    outcome: ShutdownDrainOutcome,
-    reason: Option<ShutdownDrainFailureKind>,
-    bounded_flush_or_retry_recorded: bool,
-    runtime_task_join_or_cancel_recorded: bool,
-    unreleased_resource_count: Option<u64>,
-}
-
-impl ShutdownDrainEvidenceShape {
-    /// shutdown/drain evidence に必要な field を持つ shape を作ります。
-    pub const fn new(
-        shutdown_correlation_id: CorrelationId,
-        startup_run_id: Option<StartupRunId>,
-        drain_mode: ShutdownDrainMode,
-        reconfiguration_generation: Option<ConfigurationScopeRef>,
-        affected_plane: ShutdownDrainPlane,
-        outcome: ShutdownDrainOutcome,
-        reason: Option<ShutdownDrainFailureKind>,
-        bounded_flush_or_retry_recorded: bool,
-        runtime_task_join_or_cancel_recorded: bool,
-        unreleased_resource_count: Option<u64>,
-    ) -> Self {
-        Self {
-            shutdown_correlation_id,
-            startup_run_id,
-            drain_mode,
-            reconfiguration_generation,
-            affected_plane,
-            outcome,
-            reason,
-            bounded_flush_or_retry_recorded,
-            runtime_task_join_or_cancel_recorded,
-            unreleased_resource_count,
-        }
-    }
-}
-
 /// shutdown/drain で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedShutdownDrainBehavior {
@@ -348,12 +304,12 @@ pub enum ProhibitedShutdownDrainBehavior {
     UncleanTerminationAsGracefulDrain,
     /// unbounded drain wait or flush queue is allowed.
     UnboundedDrainOrFlush,
-    /// failed audit/persistence flush is used as closeout evidence.
-    FailedFlushAsCloseoutEvidence,
+    /// failed audit/persistence flush is treated as successful shutdown.
+    FailedFlushAsSuccessfulShutdown,
     /// one plane successful drain implies another plane successful drain.
     CrossPlaneDrainSuccessInference,
-    /// split-service drain control lacks internal control-plane correlation/audit evidence.
-    SplitServiceDrainWithoutControlPlaneEvidence,
+    /// split-service drain control lacks an internal control-plane correlation/audit relation.
+    SplitServiceDrainWithoutControlPlaneAuditRelation,
     /// runtime reconfiguration applies before required drain/restart.
     ReconfigurationBeforeRequiredDrainRestart,
     /// detached/unjoined worker remains while graceful drain is claimed.
@@ -373,8 +329,6 @@ pub enum AtomicityOwner {
     CoreDomainCompensation,
     /// external resource cleanup の compensation は driver が所有します。
     DriverExternalResourceCompensation,
-    /// closeout evidence adoption は reports 側の証跡 class です。
-    Reports,
 }
 
 /// atomicity boundary concern の閉集合です。
@@ -392,8 +346,6 @@ pub enum AtomicityConcern {
     ExternalResponseEmission,
     /// compensation decision.
     CompensationDecision,
-    /// evidence adoption.
-    EvidenceAdoption,
 }
 
 impl AtomicityConcern {
@@ -406,7 +358,6 @@ impl AtomicityConcern {
             }
             Self::ExternalResponseEmission => AtomicityOwner::DriverSdk,
             Self::CompensationDecision => AtomicityOwner::CoreDomainCompensation,
-            Self::EvidenceAdoption => AtomicityOwner::Reports,
         }
     }
 }
@@ -416,7 +367,7 @@ impl AtomicityConcern {
 pub enum AtomicityClass {
     /// one core decision without external side effect claim.
     SingleCoreDecision,
-    /// domain decision requires audit evidence.
+    /// domain decision requires durable audit persistence.
     CoreDecisionPlusAuditRequired,
     /// driver execution follows accepted decision.
     CoreDecisionPlusPortIntent,
@@ -468,8 +419,6 @@ pub enum AtomicStepOutcome {
     Failed,
     /// step skipped because it is outside the command path.
     NotApplicable,
-    /// step outcome is not claimed as close evidence.
-    CloseNotClaimed,
 }
 
 /// atomicity / compensation failure mapping key です。
@@ -516,4 +465,3 @@ pub struct AtomicCommitStep {
     outcome: AtomicStepOutcome,
     failure_reason: Option<AtomicityFailureKind>,
 }
-

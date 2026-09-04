@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use std::io::{BufRead, Read, Write};
 use std::net::TcpStream;
 use std::process::{Child, Command, Stdio};
@@ -11,8 +9,6 @@ const PARTICIPANT_LEFT: u8 = 0x03;
 const OFFER_RECEIVED: u8 = 0x04;
 const ANSWER_RECEIVED: u8 = 0x05;
 const ICE_CANDIDATE_RECEIVED: u8 = 0x06;
-
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
 
 struct ServerProc {
     child: Child,
@@ -86,28 +82,28 @@ fn joined_server() -> (ServerProc, String) {
 }
 
 #[test]
-fn t_sig_02_negotiation_flow() {
-    assert_t_sig_02__offer();
-    assert_t_sig_02__answer();
-    assert_t_sig_02__ice_candidate();
-    assert_t_sig_02__reconnect();
-    assert_t_sig_02__leave();
-    assert_t_sig_02__timeout();
+fn negotiation_flow_roundtrip() {
+    assert_offer();
+    assert_answer();
+    assert_ice_candidate();
+    assert_reconnect();
+    assert_leave();
+    assert_timeout();
 }
 
-fn assert_t_sig_02__offer() {
+fn assert_offer() {
     let (mut server, addr) = joined_server();
     assert_eq!(exchange(&addr, &frame(2, "c2")), vec![OFFER_RECEIVED]);
     server.kill_and_wait();
 }
 
-fn assert_t_sig_02__answer() {
+fn assert_answer() {
     let (mut server, addr) = joined_server();
     assert_eq!(exchange(&addr, &frame(3, "c3")), vec![ANSWER_RECEIVED]);
     server.kill_and_wait();
 }
 
-fn assert_t_sig_02__ice_candidate() {
+fn assert_ice_candidate() {
     let (mut server, addr) = joined_server();
     assert_eq!(
         exchange(&addr, &frame(4, "c4")),
@@ -116,13 +112,13 @@ fn assert_t_sig_02__ice_candidate() {
     server.kill_and_wait();
 }
 
-fn assert_t_sig_02__reconnect() {
+fn assert_reconnect() {
     let (mut server, addr) = joined_server();
     assert_eq!(exchange(&addr, &frame(6, "c6")), vec![JOINED]);
     server.kill_and_wait();
 }
 
-fn assert_t_sig_02__leave() {
+fn assert_leave() {
     let (mut server, addr) = joined_server();
     assert_eq!(exchange(&addr, &frame(1, "c7")), vec![PARTICIPANT_LEFT]);
     assert_eq!(
@@ -135,7 +131,7 @@ fn assert_t_sig_02__leave() {
     server.kill_and_wait();
 }
 
-fn assert_t_sig_02__timeout() {
+fn assert_timeout() {
     let (mut server, addr) = ServerProc::spawn();
     assert_eq!(
         exchange(&addr, &[]),

@@ -7,7 +7,7 @@ pub enum PacketRewriteTransformFailureKind {
     PacketRewriteIntentInvalid,
     /// rewrite path tries to own routing/quality semantics.
     PacketRewriteOwnerViolation,
-    /// payload transform requested without admitted Canonical.
+    /// payload transform requested without supported transform policy.
     PayloadTransformNotAdmitted,
     /// codec transcode requested in initial v0.2.
     MediaTranscodeNotSupported,

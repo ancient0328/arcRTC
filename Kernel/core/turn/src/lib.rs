@@ -434,7 +434,7 @@ impl TurnLifecycleRule {
         self.event
     }
 
-    /// Canonical の pre-state tuple notation です。
+    /// lifecycle source contract の pre-state tuple notation です。
     pub const fn allowed_pre_state(&self) -> &'static str {
         self.allowed_pre_state
     }
@@ -494,7 +494,7 @@ const RELAY_REJECTS: &[TurnFailureKind] = &[
 const PERMISSION_NOT_FOUND: &[TurnFailureKind] = &[TurnFailureKind::PermissionNotFound];
 const SUCCESS_ONLY: &[TurnFailureKind] = &[];
 
-/// canonical 由来の TURN lifecycle table です。
+/// source-owned TURN lifecycle table です。
 pub const TURN_LIFECYCLE_RULES: &[TurnLifecycleRule] = &[
     TurnLifecycleRule { event: "Allocate", allowed_pre_state: "allocation=allocation_absent", success_state: "allocation_requested", failure_state: "allocation_rejected", reason_codes: CREDENTIAL_ALLOCATION_REJECTS },
     TurnLifecycleRule { event: "AcceptAllocation", allowed_pre_state: "allocation=allocation_requested", success_state: "allocation_active", failure_state: "allocation_rejected", reason_codes: &[TurnFailureKind::CredentialInvalid, TurnFailureKind::CredentialExpired, TurnFailureKind::AllocationCapacityExceeded] },

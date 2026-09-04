@@ -1,50 +1,43 @@
-# release lane の source policy です。artifact 生成・署名実行・evidence 採用は行いません。
+# release artifact の source policy です。
 
 [dependency_admission]
 owner = "scripts/release"
 policy_id = "dependency-admission"
 admission_mode = "closed-allowlist"
 required_manifest_sources = ["Cargo.lock", "sdk/typescript/pnpm-lock.yaml", "sdk/ios/Package.resolved", "sdk/android/gradle.lockfile"]
-non_adoption = "dependency admission policy is not release readiness proof"
 
 [license_admission]
 owner = "scripts/release"
 policy_id = "license-admission"
 allowed_license_classes = ["permissive", "weak-copyleft-with-notice", "internal"]
 denied_license_classes = ["strong-copyleft", "proprietary-unknown", "unclassified"]
-non_adoption = "license admission policy is not legal approval evidence"
 
 [vulnerability_gate]
 owner = "scripts/release"
 policy_id = "vulnerability-gate"
 severity_classes = ["critical", "high", "medium", "low"]
 release_blocking_severities = ["critical", "high"]
-non_adoption = "vulnerability gate policy is not scanner output"
 
 [sbom]
 owner = "scripts/release"
 policy_id = "sbom"
 required_formats = ["spdx-json", "cyclonedx-json"]
 required_scope = ["rust-workspace", "typescript-sdk", "android-sdk", "ios-sdk"]
-non_adoption = "sbom policy is not generated sbom evidence"
 
 [artifact_digest]
 owner = "scripts/release"
 policy_id = "artifact-digest"
 digest_algorithms = ["sha256"]
 required_digest_fields = ["artifact_name", "artifact_digest", "digest_algorithm"]
-non_adoption = "digest policy is not artifact digest evidence"
 
 [artifact_signature]
 owner = "scripts/release"
 policy_id = "artifact-signature"
 signature_ref_required = true
 signature_ref_classes = ["sigstore-bundle-ref", "kms-signature-ref", "detached-signature-ref"]
-non_adoption = "signature policy is not signature verification evidence"
 
 [provenance]
 owner = "scripts/release"
 policy_id = "provenance"
 required_fields = ["source_snapshot", "provenance_ref"]
 provenance_ref_classes = ["slsa-provenance-ref", "github-attestation-ref", "internal-build-record-ref"]
-non_adoption = "provenance policy is not release provenance evidence"

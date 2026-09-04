@@ -30,17 +30,17 @@
     "signature_ref": {
       "type": "string",
       "minLength": 1,
-      "description": "Opaque reference to signature material; not signature verification evidence."
+      "description": "Opaque reference to signature material."
     },
     "source_snapshot": {
       "type": "string",
       "minLength": 1,
-      "description": "Opaque source snapshot reference; not provenance evidence."
+      "description": "Opaque source snapshot reference."
     },
     "provenance_ref": {
       "type": "string",
       "minLength": 1,
-      "description": "Opaque provenance reference; not release readiness proof."
+      "description": "Opaque provenance reference."
     }
   }
 }

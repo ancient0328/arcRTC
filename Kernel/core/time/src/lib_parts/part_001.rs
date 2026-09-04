@@ -35,8 +35,8 @@ pub enum NormalizedQuantity {
 pub enum NormalizedUnit {
     /// milliseconds as integer.
     MillisecondsInteger,
-    /// UTC epoch milliseconds for evidence only.
-    UtcEpochMillisecondsEvidenceOnly,
+    /// UTC epoch milliseconds for external observation only.
+    UtcEpochMillisecondsObservationOnly,
     /// bytes as integer.
     BytesInteger,
     /// integer count.
@@ -54,11 +54,11 @@ pub enum NormalizedUnit {
 }
 
 impl NormalizedQuantity {
-    /// Canonical で許可された unit です。
+    /// source normalization policy で許可された unit です。
     pub const fn default_unit(self) -> NormalizedUnit {
         match self {
             Self::Duration => NormalizedUnit::MillisecondsInteger,
-            Self::Timestamp => NormalizedUnit::UtcEpochMillisecondsEvidenceOnly,
+            Self::Timestamp => NormalizedUnit::UtcEpochMillisecondsObservationOnly,
             Self::Bytes => NormalizedUnit::BytesInteger,
             Self::PacketCount => NormalizedUnit::IntegerCount,
             Self::Rate => NormalizedUnit::UnitsPerSecond,
@@ -173,8 +173,8 @@ pub enum RawMeasurementOwner {
     Driver,
     /// entrypoints supply wall-clock timestamp observation.
     Entrypoints,
-    /// benchmark docs/reports own benchmark reporting unit.
-    BenchmarkDocsReports,
+    /// benchmark harness owns raw benchmark measurements.
+    BenchmarkHarness,
 }
 
 /// policy decision owner です。
@@ -182,8 +182,6 @@ pub enum RawMeasurementOwner {
 pub enum PolicyDecisionOwner {
     /// core owns policy comparison.
     Core,
-    /// reports own evidence/benchmark claim adoption.
-    Reports,
 }
 
 /// time source class です。
@@ -191,8 +189,8 @@ pub enum PolicyDecisionOwner {
 pub enum TimeSourceClass {
     /// monotonic observation through ClockPort.
     MonotonicClockPort,
-    /// wall-clock timestamp for audit/evidence display only.
-    WallClockEvidenceOnly,
+    /// wall-clock timestamp for runtime observation display only.
+    WallClockObservationOnly,
 }
 
 /// normalized measurement comparison shape です。
@@ -270,15 +268,15 @@ impl TimeNormalizationFailureKind {
     }
 }
 
-/// evidence/report が unit/window を持つかどうかの採用 class です。
+/// measurement が unit/window を持つかどうかの status です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EvidenceUnitWindowAdoption {
+pub enum MeasurementUnitWindowStatus {
     /// raw source and normalized value are both recorded.
-    RawAndNormalizedRecorded,
-    /// normalized value is recorded for claim.
-    NormalizedValueRecorded,
-    /// unit/window missing, not adoptable for claim.
-    MissingUnitWindowNotAdoptable,
+    RawAndNormalizedAvailable,
+    /// normalized value is available.
+    NormalizedValueAvailable,
+    /// unit or window is missing.
+    MissingUnitOrWindow,
 }
 
 /// unit/time normalization 境界で禁止する fail-open 動作です。
@@ -292,12 +290,12 @@ pub enum ProhibitedUnitMeasurementBehavior {
     HiddenFloatPrecisionComparison,
     /// bitrate and byte-rate are conflated.
     BitrateByteRateConflated,
-    /// benchmark report omits unit/window/aggregation.
+    /// benchmark measurement omits unit/window/aggregation.
     BenchmarkWithoutUnitWindowAggregation,
     /// raw platform-specific stats object enters core policy.
     RawPlatformStatsInCorePolicy,
-    /// timezone conversion is treated as synchronization evidence.
-    TimezoneConversionAsSynchronizationEvidence,
+    /// timezone conversion is treated as synchronization proof.
+    TimezoneConversionAsSynchronizationProof,
 }
 
 /// time synchronization / clock skew concern の owner です。
@@ -309,8 +307,6 @@ pub enum TimeSynchronizationOwner {
     CorePolicy,
     /// entrypoints wire selected clock/time-source implementation.
     EntrypointsWiring,
-    /// evidence Canonical owns evidence timestamp claim adoption.
-    EvidenceCanonical,
 }
 
 /// time synchronization / skew boundary concern です。
@@ -326,8 +322,6 @@ pub enum TimeSynchronizationConcern {
     ExternalTimeSource,
     /// timestamp normalization.
     TimestampNormalization,
-    /// evidence timestamp claim.
-    EvidenceTimestampClaim,
 }
 
 impl TimeSynchronizationConcern {
@@ -341,7 +335,6 @@ impl TimeSynchronizationConcern {
                 TimeSynchronizationOwner::DriverRuntimeObservation
             }
             Self::TimestampNormalization => TimeSynchronizationOwner::CorePolicy,
-            Self::EvidenceTimestampClaim => TimeSynchronizationOwner::EvidenceCanonical,
         }
     }
 }
@@ -364,8 +357,8 @@ pub enum TimeTrustClass {
 }
 
 impl TimeTrustClass {
-    /// production/runtime evidence として採用できる class です。
-    pub const fn runtime_evidence_allowed(self) -> bool {
+    /// runtime trust decision を支えられる class です。
+    pub const fn supports_runtime_trust_decision(self) -> bool {
         match self {
             Self::TestDeterministicClock | Self::TimeUntrusted => false,
             Self::SingleProcessMonotonic
@@ -437,8 +430,8 @@ pub enum ClockSkewImpact {
     Ordering,
     /// audit timestamp claim.
     Audit,
-    /// evidence timestamp claim.
-    Evidence,
+    /// verification timestamp impact.
+    Verification,
 }
 
 /// clock skew policy shape です。
@@ -509,4 +502,3 @@ impl ClockSkewPolicy {
         })
     }
 }
-

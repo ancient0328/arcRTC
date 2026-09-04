@@ -60,14 +60,14 @@ impl SecureMediaPolicy {
     }
 }
 
-/// secure media evidence class の分離です。
+/// secure media verification class の分離です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SecureMediaEvidenceClass {
-    /// handshake evidence です。
+pub enum SecureMediaVerificationClass {
+    /// handshake verification です。
     Handshake,
-    /// peer verification evidence です。
+    /// peer verification result です。
     PeerVerification,
-    /// protection state evidence です。
+    /// protection state verification です。
     ProtectionState,
     /// packet forwarding claim scope です。
     PacketForwardingScope,

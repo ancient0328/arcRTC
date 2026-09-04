@@ -1,83 +1,3 @@
-impl DeploymentTopologyEvidenceGuard {
-    /// topology evidence の採用条件を検査します。
-    pub const fn try_new(
-        topology_class_declared: bool,
-        audit_shape_declared: bool,
-        edge_proxy_class_declared_when_ingress_metadata_affects_path: bool,
-        process_entrypoint_set_declared: bool,
-        node_scope_declared: bool,
-        selected_service_endpoints_or_redacted_references_declared: bool,
-        node_affinity_rule_declared_when_relevant: bool,
-        discovery_failure_behavior_declared: bool,
-        discovery_source_cache_fallback_class_declared_when_resolution_affects_evidence: bool,
-        internal_service_trust_class_declared_when_network_identity_affects_evidence: bool,
-        distributed_state_class_and_failover_admission_declared_when_state_can_move: bool,
-        health_readiness_relation_declared: bool,
-        close_not_claimed_scope_declared: bool,
-        single_node_evidence_not_used_as_multi_node_proof: bool,
-    ) -> Result<Self, DeploymentTopologyEvidenceError> {
-        if !topology_class_declared {
-            return Err(DeploymentTopologyEvidenceError::TopologyClassMissing);
-        }
-        if !audit_shape_declared {
-            return Err(DeploymentTopologyEvidenceError::AuditShapeMissing);
-        }
-        if !edge_proxy_class_declared_when_ingress_metadata_affects_path {
-            return Err(DeploymentTopologyEvidenceError::EdgeProxyClassMissing);
-        }
-        if !process_entrypoint_set_declared {
-            return Err(DeploymentTopologyEvidenceError::ProcessEntrypointSetMissing);
-        }
-        if !node_scope_declared {
-            return Err(DeploymentTopologyEvidenceError::NodeScopeMissing);
-        }
-        if !selected_service_endpoints_or_redacted_references_declared {
-            return Err(DeploymentTopologyEvidenceError::SelectedEndpointReferenceMissing);
-        }
-        if !node_affinity_rule_declared_when_relevant {
-            return Err(DeploymentTopologyEvidenceError::NodeAffinityRuleMissing);
-        }
-        if !discovery_failure_behavior_declared {
-            return Err(DeploymentTopologyEvidenceError::DiscoveryFailureBehaviorMissing);
-        }
-        if !discovery_source_cache_fallback_class_declared_when_resolution_affects_evidence {
-            return Err(DeploymentTopologyEvidenceError::DiscoverySourceCacheFallbackMissing);
-        }
-        if !internal_service_trust_class_declared_when_network_identity_affects_evidence {
-            return Err(DeploymentTopologyEvidenceError::InternalServiceTrustClassMissing);
-        }
-        if !distributed_state_class_and_failover_admission_declared_when_state_can_move {
-            return Err(DeploymentTopologyEvidenceError::DistributedStateFailoverAdmissionMissing);
-        }
-        if !health_readiness_relation_declared {
-            return Err(DeploymentTopologyEvidenceError::HealthReadinessRelationMissing);
-        }
-        if !close_not_claimed_scope_declared {
-            return Err(DeploymentTopologyEvidenceError::CloseNotClaimedScopeMissing);
-        }
-        if !single_node_evidence_not_used_as_multi_node_proof {
-            return Err(DeploymentTopologyEvidenceError::SingleNodeEvidenceUsedAsMultiNodeProof);
-        }
-
-        Ok(Self {
-            topology_class_declared,
-            audit_shape_declared,
-            edge_proxy_class_declared_when_ingress_metadata_affects_path,
-            process_entrypoint_set_declared,
-            node_scope_declared,
-            selected_service_endpoints_or_redacted_references_declared,
-            node_affinity_rule_declared_when_relevant,
-            discovery_failure_behavior_declared,
-            discovery_source_cache_fallback_class_declared_when_resolution_affects_evidence,
-            internal_service_trust_class_declared_when_network_identity_affects_evidence,
-            distributed_state_class_and_failover_admission_declared_when_state_can_move,
-            health_readiness_relation_declared,
-            close_not_claimed_scope_declared,
-            single_node_evidence_not_used_as_multi_node_proof,
-        })
-    }
-}
-
 /// topology failure mapping の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DeploymentTopologyFailureKind {
@@ -181,17 +101,17 @@ pub enum ProhibitedDeploymentTopologyBehavior {
     DiscoveryOrTlsStartupTreatedAsInternalTrust,
     /// node-local SFU/TURN state is treated as cluster-global by default.
     NodeLocalStateTreatedAsClusterGlobal,
-    /// failover success is claimed without recovery/replay evidence.
-    FailoverClaimedWithoutRecoveryReplayEvidence,
-    /// failover success is claimed from service discovery fallback alone.
-    FailoverClaimedFromDiscoveryFallbackAlone,
+    /// failover success is accepted without recovery/replay observation.
+    FailoverAcceptedWithoutRecoveryReplayObservation,
+    /// failover success is accepted from service discovery fallback alone.
+    FailoverAcceptedFromDiscoveryFallbackAlone,
     /// replication/consensus is implied by multi-node topology.
     ReplicationConsensusImpliedByMultiNodeTopology,
     /// sticky routing requirement is hidden.
     StickyRoutingRequirementHidden,
-    /// local dev topology is treated as production topology.
-    LocalDevTopologyTreatedAsProduction,
-    /// proxy/LB metadata is treated as trusted topology evidence without policy.
+    /// local dev topology is enabled for managed runtime.
+    LocalDevTopologyEnabledForManagedRuntime,
+    /// proxy/LB metadata is treated as trusted topology input without policy.
     ProxyMetadataTrustedWithoutEdgePolicy,
 }
 
@@ -287,7 +207,7 @@ impl DiscoverySourceClass {
         matches!(self, Self::ServiceMeshResolution)
     }
 
-    /// test evidence にだけ閉じる source です。
+    /// test scope にだけ閉じる source です。
     pub const fn is_test_only(self) -> bool {
         matches!(self, Self::TestResolver)
     }
@@ -414,7 +334,7 @@ pub struct ServiceDiscoveryResolutionAdmissionGuard {
     audit_shape_declared: bool,
     registry_contract_declared_when_required: bool,
     mesh_policy_not_used_as_authorization: bool,
-    test_resolver_evidence_is_test_only: bool,
+    test_resolver_is_test_only: bool,
 }
 
 /// service discovery admission の fail-closed error です。
@@ -450,7 +370,6 @@ pub enum ServiceDiscoveryResolutionAdmissionError {
     RegistryContractMissing,
     /// mesh policy を authorization として扱っています。
     MeshPolicyUsedAsAuthorization,
-    /// test resolver が test evidence の外で使われています。
-    TestResolverUsedOutsideTestEvidence,
+    /// test resolver が test scope の外で使われています。
+    TestResolverUsedOutsideTestScope,
 }
-

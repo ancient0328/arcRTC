@@ -109,12 +109,12 @@ fn parse_counter(line: &str, key: &str) -> usize {
 fn accepted_media_datagrams_emit_ok_outcome() {
     let cases: &[(&str, &[u8])] = &[
         (
-            "MS1-rtp",
+            "accepted-rtp",
             &[
                 0x80, 0x60, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02,
             ],
         ),
-        ("MS1-dtls", &[0x16, 0x00, 0x00, 0x00]),
+        ("accepted-dtls", &[0x16, 0x00, 0x00, 0x00]),
     ];
 
     for (label, input) in cases {
@@ -133,15 +133,15 @@ fn accepted_media_datagrams_emit_ok_outcome() {
 fn adversarial_media_datagrams_fail_closed() {
     let zeroes = [0u8; 20];
     let cases: &[(&str, &[u8])] = &[
-        ("MS2-empty", &[]),
+        ("rejected-empty", &[]),
         (
-            "MS2-garbage",
+            "rejected-garbage",
             &[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF],
         ),
-        ("MS2-short-stun", &[0x00, 0x01, 0x02]),
-        ("MS2-classification-gap", &[0x40, 0x40, 0x40, 0x40]),
-        ("MS2-short-rtp", &[0x80, 0x60]),
-        ("MS2-zero-stun", &zeroes),
+        ("rejected-short-stun", &[0x00, 0x01, 0x02]),
+        ("rejected-classification-gap", &[0x40, 0x40, 0x40, 0x40]),
+        ("rejected-short-rtp", &[0x80, 0x60]),
+        ("rejected-zero-stun", &zeroes),
     ];
 
     for (label, input) in cases {

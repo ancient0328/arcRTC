@@ -480,7 +480,7 @@ const ACK_REJECTS: &[SignalingFailureKind] = &[
     SignalingFailureKind::RoomClosed,
 ];
 
-/// canonical 由来の Signaling transition table です。
+/// source-owned Signaling transition table です。
 pub const SIGNALING_TRANSITION_RULES: &[SignalingTransitionRule] = &[
     SignalingTransitionRule {
         trigger: SignalingTransitionTrigger::JoinRoom,

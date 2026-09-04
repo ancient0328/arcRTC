@@ -1,141 +1,3 @@
-/// health/readiness/liveness evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum HealthAdminEvidenceError {
-    /// command/probe endpoint がありません。
-    CommandProbeEndpointMissing,
-    /// working directory / target entrypoint がありません。
-    WorkingDirectoryTargetEntrypointMissing,
-    /// StartupRunId がありません。
-    StartupRunIdMissing,
-    /// command-scoped evidence の CorrelationId がありません。
-    CorrelationIdMissing,
-    /// probe class がありません。
-    ProbeClassMissing,
-    /// included/excluded checks がありません。
-    IncludedExcludedChecksMissing,
-    /// topology class / node scope がありません。
-    TopologyNodeScopeMissing,
-    /// service discovery source / resolution state がありません。
-    ServiceDiscoveryResolutionMissing,
-    /// distributed state class / failover status がありません。
-    DistributedStateFailoverMissing,
-    /// runtime task class / supervision state がありません。
-    RuntimeTaskSupervisionMissing,
-    /// internal service trust class がありません。
-    InternalServiceTrustMissing,
-    /// expected outcome がありません。
-    ExpectedOutcomeMissing,
-    /// actual outcome がありません。
-    ActualOutcomeMissing,
-    /// non-success の cataloged reason がありません。
-    CatalogedReasonMissing,
-    /// close-not-claimed scope がありません。
-    CloseNotClaimedScopeMissing,
-    /// required fields のない probe output を evidence として採用しています。
-    DiagnosticProbeOutputAdoptedAsEvidence,
-    /// probe success を build/test/runtime/production proof として扱っています。
-    ProbeSuccessUsedAsExternalProof,
-}
-
-impl HealthAdminEvidenceGuard {
-    /// health/readiness/liveness/admin evidence の採用条件を検査します。
-    pub const fn try_new(
-        probe_class: AdminProbeClass,
-        outcome: HealthAdminOutcome,
-        command_or_probe_endpoint_declared: bool,
-        working_directory_or_target_entrypoint_declared: bool,
-        startup_run_id_declared: bool,
-        correlation_id_declared_when_command_scoped: bool,
-        probe_class_declared: bool,
-        included_excluded_checks_declared: bool,
-        topology_node_scope_declared_when_relevant: bool,
-        service_discovery_resolution_declared_when_affects_probe: bool,
-        distributed_state_failover_declared_when_affects_probe: bool,
-        runtime_task_supervision_declared_when_affects_probe: bool,
-        internal_service_trust_declared_when_affects_probe: bool,
-        expected_outcome_declared: bool,
-        actual_outcome_declared: bool,
-        cataloged_reason_declared_for_non_success: bool,
-        close_not_claimed_scope_declared: bool,
-        probe_output_without_required_fields_not_adopted_as_evidence: bool,
-        probe_success_not_used_as_build_test_runtime_or_production_proof: bool,
-    ) -> Result<Self, HealthAdminEvidenceError> {
-        if !command_or_probe_endpoint_declared {
-            return Err(HealthAdminEvidenceError::CommandProbeEndpointMissing);
-        }
-        if !working_directory_or_target_entrypoint_declared {
-            return Err(HealthAdminEvidenceError::WorkingDirectoryTargetEntrypointMissing);
-        }
-        if !startup_run_id_declared {
-            return Err(HealthAdminEvidenceError::StartupRunIdMissing);
-        }
-        if !correlation_id_declared_when_command_scoped {
-            return Err(HealthAdminEvidenceError::CorrelationIdMissing);
-        }
-        if !probe_class_declared {
-            return Err(HealthAdminEvidenceError::ProbeClassMissing);
-        }
-        if !included_excluded_checks_declared {
-            return Err(HealthAdminEvidenceError::IncludedExcludedChecksMissing);
-        }
-        if !topology_node_scope_declared_when_relevant {
-            return Err(HealthAdminEvidenceError::TopologyNodeScopeMissing);
-        }
-        if !service_discovery_resolution_declared_when_affects_probe {
-            return Err(HealthAdminEvidenceError::ServiceDiscoveryResolutionMissing);
-        }
-        if !distributed_state_failover_declared_when_affects_probe {
-            return Err(HealthAdminEvidenceError::DistributedStateFailoverMissing);
-        }
-        if !runtime_task_supervision_declared_when_affects_probe {
-            return Err(HealthAdminEvidenceError::RuntimeTaskSupervisionMissing);
-        }
-        if !internal_service_trust_declared_when_affects_probe {
-            return Err(HealthAdminEvidenceError::InternalServiceTrustMissing);
-        }
-        if !expected_outcome_declared {
-            return Err(HealthAdminEvidenceError::ExpectedOutcomeMissing);
-        }
-        if !actual_outcome_declared {
-            return Err(HealthAdminEvidenceError::ActualOutcomeMissing);
-        }
-        if outcome.requires_reason() && !cataloged_reason_declared_for_non_success {
-            return Err(HealthAdminEvidenceError::CatalogedReasonMissing);
-        }
-        if !close_not_claimed_scope_declared {
-            return Err(HealthAdminEvidenceError::CloseNotClaimedScopeMissing);
-        }
-        if !probe_output_without_required_fields_not_adopted_as_evidence {
-            return Err(HealthAdminEvidenceError::DiagnosticProbeOutputAdoptedAsEvidence);
-        }
-        if !probe_success_not_used_as_build_test_runtime_or_production_proof {
-            return Err(HealthAdminEvidenceError::ProbeSuccessUsedAsExternalProof);
-        }
-
-        Ok(Self {
-            probe_class,
-            outcome,
-            command_or_probe_endpoint_declared,
-            working_directory_or_target_entrypoint_declared,
-            startup_run_id_declared,
-            correlation_id_declared_when_command_scoped,
-            probe_class_declared,
-            included_excluded_checks_declared,
-            topology_node_scope_declared_when_relevant,
-            service_discovery_resolution_declared_when_affects_probe,
-            distributed_state_failover_declared_when_affects_probe,
-            runtime_task_supervision_declared_when_affects_probe,
-            internal_service_trust_declared_when_affects_probe,
-            expected_outcome_declared,
-            actual_outcome_declared,
-            cataloged_reason_declared_for_non_success,
-            close_not_claimed_scope_declared,
-            probe_output_without_required_fields_not_adopted_as_evidence,
-            probe_success_not_used_as_build_test_runtime_or_production_proof,
-        })
-    }
-}
-
 /// health/readiness/liveness/admin failure mapping の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HealthAdminFailureKind {
@@ -273,19 +135,19 @@ pub enum ProhibitedHealthAdminBehavior {
     LivenessSuccessReportedAsDomainAcceptance,
     /// admin command mutates state outside core use case.
     AdminCommandMutatesStateOutsideCoreUseCase,
-    /// admin command executes without operator/admin authorization evidence.
-    AdminCommandExecutesWithoutAuthorizationEvidence,
+    /// admin command executes without operator/admin authorization.
+    AdminCommandExecutesWithoutAuthorization,
     /// maintenance mode is represented only by driver-local flag.
     MaintenanceModeRepresentedOnlyByDriverLocalFlag,
     /// probe response hides failed dependency.
     ProbeResponseHidesFailedDependency,
-    /// readiness output is used as production evidence without an evidence record.
-    ReadinessOutputUsedAsProductionEvidenceWithoutReport,
+    /// readiness output is used as authority outside its declared runtime scope.
+    ReadinessOutputUsedAsExternalAuthority,
     /// single-node readiness is used as multi-node readiness.
     SingleNodeReadinessUsedAsMultiNodeReadiness,
     /// public endpoint connection success is treated as domain readiness.
     PublicEndpointConnectionSuccessTreatedAsDomainReadiness,
-    /// service discovery success is treated as readiness without target dependency/probe evidence.
+    /// service discovery success is treated as readiness without a target dependency probe.
     ServiceDiscoverySuccessTreatedAsReadiness,
     /// failover is treated as healthy from replacement endpoint reachability alone.
     FailoverTreatedHealthyFromEndpointReachability,
@@ -293,8 +155,8 @@ pub enum ProhibitedHealthAdminBehavior {
     WorkerTaskHealthyFromSpawnSuccessAlone,
     /// internal service trust is treated as healthy from endpoint resolution or TLS listener startup alone.
     InternalServiceTrustHealthyFromEndpointOrTlsStartup,
-    /// probe success is used as build/test/runtime proof outside its evidence class.
-    ProbeSuccessUsedAsExternalProof,
+    /// probe success is used outside its declared probe scope.
+    ProbeSuccessUsedOutsideDeclaredScope,
     /// health probe exposes sensitive raw data.
     HealthProbeExposesSensitiveRawData,
 }
@@ -308,14 +170,14 @@ pub enum OperatorAdminClass {
     OperatorAdminActionContext,
     /// operator may request drain/maintenance mode.
     MaintenanceActionContext,
-    /// operator may verify evidence/hash-chain/report.
+    /// operator may verify runtime evidence/hash-chain output.
     EvidenceVerificationContext,
     /// local development helper context.
     DeveloperLocalContext,
 }
 
 impl OperatorAdminClass {
-    /// developer-local context は production/operator evidence ではありません。
+    /// developer-local context は operator authorization に使用できません。
     pub const fn is_developer_local(self) -> bool {
         matches!(self, Self::DeveloperLocalContext)
     }
@@ -370,7 +232,7 @@ impl OperatorAdminClass {
                     | OperatorAdminTargetScopeClass::DeploymentScope
             ) | (
                 Self::EvidenceVerificationContext,
-                OperatorAdminTargetScopeClass::EvidenceReportScope
+                OperatorAdminTargetScopeClass::VerificationOutputScope
             ) | (
                 Self::DeveloperLocalContext,
                 OperatorAdminTargetScopeClass::EntrypointScope
@@ -410,7 +272,7 @@ pub enum OperatorAdminAllowedActionClass {
     AdminAction,
     /// maintenance/drain action.
     MaintenanceAction,
-    /// evidence/hash-chain/report verification action.
+    /// runtime evidence/hash-chain output verification action.
     EvidenceVerificationAction,
     /// driver dependency probe action.
     DriverDependencyProbeAction,
@@ -427,13 +289,13 @@ pub enum OperatorAdminTargetScopeClass {
     NodeScope,
     /// deployment-scoped action.
     DeploymentScope,
-    /// evidence/report-scoped action.
-    EvidenceReportScope,
+    /// verification-output-scoped action.
+    VerificationOutputScope,
     /// explicitly domain-scoped action.
     ExplicitDomainScope,
 }
 
-/// operator/admin authorization outcome の audit/evidence 閉集合です。
+/// operator/admin authorization outcome の runtime/audit 閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OperatorAdminAuthorizationOutcome {
     /// authorization accepted.
@@ -474,7 +336,6 @@ pub struct OperatorAdminAuthorizationGuard {
     communication_participant_authorization_not_reused: bool,
     operator_admin_authorization_not_used_for_participant_domain_action: bool,
     target_action_keeps_core_or_driver_boundary: bool,
-    target_action_event_required_when_execution_claimed: bool,
-    developer_local_context_not_used_as_production_operator_evidence: bool,
+    target_action_event_required_when_execution_requested: bool,
+    developer_local_context_not_used_as_operator_authorization: bool,
 }
-

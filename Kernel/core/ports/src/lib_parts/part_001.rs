@@ -166,7 +166,7 @@ pub enum MetricsSinkInput {
     SubmitQualityMetric(QualityMetric),
 }
 
-/// metrics export acknowledgement です。domain decision evidence ではありません。
+/// metrics export acknowledgement です。domain decision result ではありません。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MetricsExportAcknowledgement {
     accepted_by_sink: bool,
@@ -458,7 +458,7 @@ pub enum PersistencePortIntentError {
     CheckpointRequiresCheckpointEligibleState,
     /// audit intent なのに audit-only state ではありません。
     AuditIntentRequiresAuditOnlyState,
-    /// audit persistence は audit event / compensation evidence に限ります。
+    /// audit persistence は audit event / compensation state record に限ります。
     AuditPersistenceRequiresAuditEventState,
     /// hash-chain persistence は audit hash-chain record に限ります。
     HashChainPersistenceRequiresHashChainState,

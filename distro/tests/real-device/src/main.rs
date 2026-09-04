@@ -6,6 +6,7 @@ mod device_observation;
 mod dispatch;
 mod error;
 mod evidence;
+mod evidence_writer;
 mod platform_executor;
 mod redaction;
 mod wrapper;
@@ -15,6 +16,7 @@ use cli::RealDeviceCli;
 use device_observation::{parse_real_device_observation, RealDeviceObservationError};
 use dispatch::dispatch_kpi_real_device_success_command;
 use evidence::{build_kpi_real_device_success_evidence_record, validate_real_device_profile};
+use evidence_writer::write_real_device_evidence_record;
 use platform_executor::execute_real_device_platform_command;
 use wrapper::{
     all_wrapper_exit_codes, build_kpi_real_device_success_record,
@@ -61,6 +63,13 @@ pub fn run_real_device_wrapper(cli: RealDeviceCli) -> i32 {
         Ok(record) => record,
         Err(_) => return RealDeviceWrapperExit::EvidenceValidationFailure.code(),
     };
+    let distro_root = match std::env::current_dir() {
+        Ok(path) => path,
+        Err(_) => return RealDeviceWrapperExit::EvidenceValidationFailure.code(),
+    };
+    if write_real_device_evidence_record(&distro_root, &record).is_err() {
+        return RealDeviceWrapperExit::EvidenceValidationFailure.code();
+    }
     match serde_json::to_string_pretty(&record) {
         Ok(json) => println!("{json}"),
         Err(_) => return RealDeviceWrapperExit::EvidenceValidationFailure.code(),
@@ -99,9 +108,7 @@ mod tests {
             planned_exit_for_dispatch, preflight_outcome_for_dispatch, RealDeviceWrapperExit,
         },
     };
-    use arcrtc_distro_evidence::{
-        DistroCommandClass, DistroEvidenceReason, DistroNonClaimScope,
-    };
+    use arcrtc_distro_evidence::{DistroCommandClass, DistroEvidenceReason, DistroNonClaimScope};
 
     fn cwd_lock() -> &'static Mutex<()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -136,9 +143,9 @@ mod tests {
                 "adb devices -l",
             ),
             CliDeviceClass::IosPhysical => RealDeviceCommandOutput::success(
-                "== Devices == | User iPhone (26.5) | == Simulators ==",
+                "User iPhone   user-iPhone.coredevice.local   ID   available (paired)   iPhone 15",
                 "",
-                "xcrun xctrace list devices",
+                "xcrun devicectl list devices",
             ),
             CliDeviceClass::IosSimulator => RealDeviceCommandOutput::success(
                 "== Devices == | iPhone 16 Pro (ABC) (Booted)",
@@ -232,8 +239,7 @@ mod tests {
             assert_eq!(
                 distro_reason_for_exit(exit),
                 match exit {
-                    RealDeviceWrapperExit::Success =>
-                        DistroEvidenceReason::DistroOk,
+                    RealDeviceWrapperExit::Success => DistroEvidenceReason::DistroOk,
                     RealDeviceWrapperExit::ScopeMismatch => {
                         DistroEvidenceReason::RealDeviceScopeMismatch
                     }

@@ -1,4 +1,4 @@
-use arcrtc_roadmap_tests::assert_impl_file_contains;
+use arcrtc_kernel_test_suite::assert_impl_file_contains;
 
 #[test]
 fn sfu_server_source_has_udp_send_path_shape() {

@@ -2,8 +2,8 @@
 #![allow(dead_code)]
 
 use arcrtc_distro_evidence::{
-    validate_evidence_record, EvidenceValidationError, DistroCommandClass,
-    DistroEvidenceRecord, DistroNonClaimScope, DISTRO_EVIDENCE_ROOT,
+    validate_evidence_record, DistroCommandClass, DistroEvidenceRecord, DistroNonClaimScope,
+    EvidenceValidationError, DISTRO_EVIDENCE_ROOT,
 };
 
 /// admitted profile の閉集合です。
@@ -259,6 +259,7 @@ fn validate_context(
     }
     match (record.platform, record.platform_command.as_deref()) {
         (RealDevicePlatform::Android, Some("adb devices -l"))
+        | (RealDevicePlatform::Ios, Some("xcrun devicectl list devices"))
         | (RealDevicePlatform::Ios, Some("xcrun xctrace list devices"))
         | (RealDevicePlatform::Ios, Some("xcrun simctl list devices")) => Ok(()),
         (RealDevicePlatform::Browser, None) => Ok(()),
@@ -426,9 +427,8 @@ fn contains_raw_identifier_marker(identifier: &str) -> bool {
 mod tests {
     use super::*;
     use arcrtc_distro_evidence::{
-        DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
-        DistroEvidenceRecord, DistroLayer, DistroNonClaimScope,
-        DistroPlane, DISTRO_COMMAND_ROOT,
+        DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason, DistroEvidenceRecord,
+        DistroLayer, DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT,
     };
 
     fn base(exit_status: Option<i32>) -> DistroEvidenceRecord {

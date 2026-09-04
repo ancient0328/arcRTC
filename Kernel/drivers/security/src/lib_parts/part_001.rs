@@ -113,7 +113,7 @@ pub enum KeyCacheRefreshBoundsError {
 }
 
 impl KeyCacheRefreshBounds {
-    /// Canonical が要求する 5 つの bound をすべて固定します。
+    /// source policy が要求する 5 つの bound をすべて固定します。
     pub const fn try_new(
         maximum_keys: usize,
         maximum_key_material_bytes: usize,
@@ -328,7 +328,7 @@ pub enum TokenVerifierDriverBoundaryError {
     TokenIssuanceMixed,
     /// external error が closed reason に写像されません。
     ExternalErrorNotMapped,
-    /// raw token/key/backend detail が外部 evidence surface に出ます。
+    /// raw token/key/backend detail が外部 audit/observation surface に出ます。
     RawSecurityMaterialExposed,
     /// core に raw token/key を渡しています。
     RawCredentialCrossesToCore,
@@ -381,58 +381,6 @@ impl TokenVerifierDriverBoundaryGuard {
     }
 }
 
-/// rejected token verification audit の shape guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TokenVerificationAuditShape {
-    token_verification_decision_event_recorded: bool,
-    concrete_token_reason_recorded: bool,
-    public_wrapper_does_not_replace_concrete_reason: bool,
-    authorization_mapping_recorded_separately: bool,
-}
-
-/// token verification audit shape の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum TokenVerificationAuditShapeError {
-    /// `token_verification_decision` event がありません。
-    DecisionEventMissing,
-    /// concrete `token_*` reason が記録されていません。
-    ConcreteTokenReasonMissing,
-    /// public wrapper が concrete reason を置換しています。
-    PublicWrapperReplacesConcreteReason,
-    /// authorization context mapping と token verification が混同されています。
-    AuthorizationMappingMixed,
-}
-
-impl TokenVerificationAuditShape {
-    /// token verification rejection の audit chain shape を検査します。
-    pub const fn try_new(
-        token_verification_decision_event_recorded: bool,
-        concrete_token_reason_recorded: bool,
-        public_wrapper_does_not_replace_concrete_reason: bool,
-        authorization_mapping_recorded_separately: bool,
-    ) -> Result<Self, TokenVerificationAuditShapeError> {
-        if !token_verification_decision_event_recorded {
-            return Err(TokenVerificationAuditShapeError::DecisionEventMissing);
-        }
-        if !concrete_token_reason_recorded {
-            return Err(TokenVerificationAuditShapeError::ConcreteTokenReasonMissing);
-        }
-        if !public_wrapper_does_not_replace_concrete_reason {
-            return Err(TokenVerificationAuditShapeError::PublicWrapperReplacesConcreteReason);
-        }
-        if !authorization_mapping_recorded_separately {
-            return Err(TokenVerificationAuditShapeError::AuthorizationMappingMixed);
-        }
-
-        Ok(Self {
-            token_verification_decision_event_recorded,
-            concrete_token_reason_recorded,
-            public_wrapper_does_not_replace_concrete_reason,
-            authorization_mapping_recorded_separately,
-        })
-    }
-}
-
 /// drivers/security が core-owned TokenVerifierPort を実装する marker です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SecurityTokenVerifierDriverPort;
@@ -455,7 +403,7 @@ pub enum ProhibitedSecurityVerifierDriverBehavior {
     RefreshFailureAcceptsToken,
     /// key cache has no bound.
     UnboundedKeyCache,
-    /// raw token/key material is persisted or logged as evidence.
+    /// raw token/key material is persisted or logged in an audit/observation surface.
     RawTokenOrKeyMaterialPersistedOrLogged,
     /// entrypoint-specific role authorization is mixed into verification.
     EntrypointSpecificRoleAuthorizationInVerifier,
@@ -506,7 +454,6 @@ pub struct SecretRotationPolicyGuard {
     revocation_behavior_declared: bool,
     active_credential_session_relation_declared: bool,
     failure_reason_declared: bool,
-    audit_evidence_relation_declared: bool,
+    audit_relation_declared: bool,
     redaction_rule_declared: bool,
 }
-

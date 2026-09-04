@@ -100,7 +100,6 @@ This repository does not claim:
 - native application readiness,
 - completed SFU, TURN, or Signaling product-distro build,
 - benchmark acceptance threshold satisfaction,
-- automatic inheritance of v0.1 behavior.
 
 Benchmark scenarios are measurement and reportability surfaces. Treat benchmark output as scoped measurement unless a separate threshold rule is explicitly provided.
 

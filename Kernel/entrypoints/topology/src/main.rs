@@ -9,7 +9,7 @@ fn main() {
         std::process::exit(2);
     };
 
-    // Roadmap 固定の token 表を、topology surface の既存 enum へだけ写像します。
+    // source-owned token 表を topology surface の既存 enum へ写像します。
     let topology_class = match token.as_str() {
         "single-process-local" => DeploymentTopologyClass::SingleProcessLocal,
         "split-plane-same-host" => DeploymentTopologyClass::SplitPlaneSameHost,
@@ -26,11 +26,11 @@ fn main() {
     };
 
     println!(
-        "topology_class={} requires_explicit_service_endpoint_wiring={} requires_networked_internal_service_relation={} requires_experimental_admission_for_production_claim={} requires_external_dependency_contract={}",
+        "topology_class={} requires_explicit_service_endpoint_wiring={} requires_networked_internal_service_relation={} requires_explicit_experimental_enablement={} requires_external_dependency_contract={}",
         token,
         topology_class.requires_explicit_service_endpoint_wiring(),
         topology_class.requires_networked_internal_service_relation(),
-        topology_class.requires_experimental_admission_for_production_claim(),
+        topology_class.requires_explicit_experimental_enablement(),
         topology_class.requires_external_dependency_contract()
     );
 }

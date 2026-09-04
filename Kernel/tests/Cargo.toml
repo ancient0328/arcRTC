@@ -1,5 +1,5 @@
 [package]
-name = "arcrtc-roadmap-tests"
+name = "arcrtc-kernel-test-suite"
 version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,7 +8,7 @@ publish = false
 
 [package.metadata.arcrtc]
 owner_layer = "testing"
-package_role = "test roadmap executable asset surface"
+package_role = "kernel behavior and source-contract test support"
 allowed_dependency_direction = "testing may inspect implementation source; production source must not depend on testing"
 dependency_class = "test_dependency"
 
@@ -53,14 +53,3 @@ arcrtc-core-turn = { path = "../core/turn" }
 arcrtc-regulated = { path = "../regulated" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
-[dev-dependencies]
-criterion = { version = "0.5", default-features = false }
-
-[[bench]]
-name = "benchmark_scenarios_criterion"
-harness = false
-
-[[bench]]
-name = "v01_ice_shape_criterion"
-harness = false

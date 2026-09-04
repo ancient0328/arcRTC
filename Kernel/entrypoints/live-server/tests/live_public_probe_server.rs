@@ -1,6 +1,3 @@
-// Test Roadmap が `assert_<task>__<target>` 形式を要求するため、この test file に限り許可します。
-#![allow(non_snake_case)]
-
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
 use std::process::{Child, Command, Stdio};
@@ -45,27 +42,27 @@ fn live_public_probe_server_command_plan_covers_probe_surface() {
         .read_line(&mut line)
         .expect("live server should announce base URL");
 
-    let base_addr = assert_t_live_02__live_public_base_url_stdout_line(&line);
+    let base_addr = assert_live_public_base_url_stdout_line(&line);
     let child = ChildGuard::new(child);
 
     let health = http_get(&base_addr, "/health");
-    assert_t_live_02__health_route(&health);
+    assert_health_route(&health);
 
     let readiness = http_get(&base_addr, "/ready");
-    assert_t_live_02__ready_route(&readiness);
+    assert_ready_route(&readiness);
 
     let invalid = http_get(&base_addr, "/not-a-probe");
-    assert_t_live_02__invalid_route_rejection(&invalid);
+    assert_invalid_route_rejection(&invalid);
 
     let shutdown = http_get(&base_addr, "/__arcrtc_shutdown");
-    assert_t_live_02__shutdown_request(&shutdown);
+    assert_shutdown_request(&shutdown);
 
     // shutdown request は process surface の終了観測だけで、readiness 証明にはしません。
     let status = child.wait();
     assert!(!status.success());
 }
 
-fn assert_t_live_02__live_public_base_url_stdout_line(line: &str) -> String {
+fn assert_live_public_base_url_stdout_line(line: &str) -> String {
     let line = line.trim();
     let base_url = line
         .strip_prefix("LIVE_PUBLIC_BASE_URL=http://")
@@ -77,24 +74,24 @@ fn assert_t_live_02__live_public_base_url_stdout_line(line: &str) -> String {
     base_url.to_string()
 }
 
-fn assert_t_live_02__health_route(response: &str) {
+fn assert_health_route(response: &str) {
     assert!(response.starts_with("HTTP/1.1 200 OK"));
     assert!(response.contains("x-arcrtc-body-digest:"));
     assert!(response.ends_with("arcrtc-health-ok"));
 }
 
-fn assert_t_live_02__ready_route(response: &str) {
+fn assert_ready_route(response: &str) {
     assert!(response.starts_with("HTTP/1.1 200 OK"));
     assert!(response.contains("x-arcrtc-body-digest:"));
     assert!(response.ends_with("arcrtc-ready-ok"));
 }
 
-fn assert_t_live_02__invalid_route_rejection(response: &str) {
+fn assert_invalid_route_rejection(response: &str) {
     assert!(response.starts_with("HTTP/1.1 404 OK"));
     assert!(response.ends_with("arcrtc-probe-not-found"));
 }
 
-fn assert_t_live_02__shutdown_request(response: &str) {
+fn assert_shutdown_request(response: &str) {
     assert!(response.starts_with("HTTP/1.1 200 OK"));
     assert!(response.ends_with("arcrtc-shutdown"));
 }

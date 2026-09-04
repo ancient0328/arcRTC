@@ -70,7 +70,7 @@ impl ProductionProfileInput {
 
 /// production profile を typed config observation に変換します。
 ///
-/// entrypoint configuration は domain decision、readiness proof、secret material を生成しません。
+/// entrypoint configuration は domain decision、readiness outcome、secret material を生成しません。
 pub const fn parse_production_profile(
     input: ProductionProfileInput,
 ) -> TypedConfigValidationObservation {

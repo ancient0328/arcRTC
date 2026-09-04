@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use std::io::BufRead;
 use std::net::UdpSocket;
 use std::process::{Child, Command, Stdio};
@@ -102,7 +99,7 @@ fn digest(outcome: &str) -> u64 {
 }
 
 #[test]
-fn assert_t_sfu_03__outbound_response_bytes() {
+fn assert_outbound_response_bytes() {
     let mut server = SfuHarness::start();
     server.establish_secure_media();
     let (response, outcome) = server.exchange(b"ARCRTC-SFU/RTP/FORWARD");
@@ -112,7 +109,7 @@ fn assert_t_sfu_03__outbound_response_bytes() {
 }
 
 #[test]
-fn assert_t_sfu_03__client_recv() {
+fn assert_client_recv() {
     let mut server = SfuHarness::start();
     server.establish_secure_media();
     let (first_response, _first_outcome) = server.exchange(b"ARCRTC-SFU/RTP/FORWARD");
@@ -125,7 +122,7 @@ fn assert_t_sfu_03__client_recv() {
 }
 
 #[test]
-fn assert_t_sfu_03__transmit_digest() {
+fn assert_transmit_digest() {
     let mut server = SfuHarness::start();
     server.establish_secure_media();
     let (_first_response, first_outcome) = server.exchange(b"ARCRTC-SFU/RTP/FORWARD");

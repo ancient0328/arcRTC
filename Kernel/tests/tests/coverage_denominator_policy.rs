@@ -8,7 +8,6 @@ fn coverage_policy_declares_denominator_scope_and_unit() {
         "scope = [\"kernel-rust-workspace\", \"sdk-typescript\", \"sdk-android\", \"sdk-ios\"]"
     ));
     assert!(POLICY.contains("unit = \"assertion\""));
-    assert!(POLICY.contains("denominator policy is not coverage result"));
 }
 
 #[test]
@@ -33,9 +32,7 @@ fn coverage_policy_declares_core_workspace_floor_and_command_id() {
     assert!(POLICY.contains("line_floor_percent = 90"));
     assert!(POLICY.contains("branch_floor_percent = 85"));
     assert!(POLICY.contains("assertion_floor_percent = 100"));
-    assert!(POLICY.contains("coverage floor policy is not measured coverage"));
 
     assert!(POLICY.contains("[command]"));
     assert!(POLICY.contains("coverage_command_id = \"coverage-denominator-check\""));
-    assert!(POLICY.contains("coverage command id source is not command execution evidence"));
 }

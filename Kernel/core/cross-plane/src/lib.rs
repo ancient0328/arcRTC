@@ -181,8 +181,8 @@ pub enum BindingExpiryBehavior {
     RejectNewTargetPlaneAction,
     /// target plane must close through its own state machine.
     TargetPlaneClosesThroughOwnStateMachine,
-    /// expired relation must be recorded as close-not-claimed for affected claim.
-    RecordCloseNotClaimed,
+    /// expired relation must be recorded before target-plane rejection.
+    RecordExpiredRelation,
 }
 
 /// command-scoped binding の replay/idempotency relation です。
@@ -256,8 +256,6 @@ pub enum CrossPlaneBindingOutcome {
     Expired,
     /// failed.
     Failed,
-    /// claim does not adopt cross-plane evidence.
-    CloseNotClaimed,
 }
 
 impl CrossPlaneBindingOutcome {
@@ -268,7 +266,6 @@ impl CrossPlaneBindingOutcome {
             Self::Rejected => "rejected",
             Self::Expired => "expired",
             Self::Failed => "failed",
-            Self::CloseNotClaimed => "close_not_claimed",
         }
     }
 
@@ -276,7 +273,7 @@ impl CrossPlaneBindingOutcome {
     pub const fn requires_reason(self) -> bool {
         match self {
             Self::Accepted => false,
-            Self::Rejected | Self::Expired | Self::Failed | Self::CloseNotClaimed => true,
+            Self::Rejected | Self::Expired | Self::Failed => true,
         }
     }
 }
@@ -458,8 +455,7 @@ impl CrossPlaneBindingDecision {
             CrossPlaneBindingOutcome::Accepted => Self::Materialized(record),
             CrossPlaneBindingOutcome::Rejected
             | CrossPlaneBindingOutcome::Expired
-            | CrossPlaneBindingOutcome::Failed
-            | CrossPlaneBindingOutcome::CloseNotClaimed => Self::Rejected(record),
+            | CrossPlaneBindingOutcome::Failed => Self::Rejected(record),
         }
     }
 
@@ -609,17 +605,6 @@ pub fn attach_cross_plane_relation(
     relation_ref: CrossPlaneRelationRef,
 ) -> CrossPlaneRelationAttachment {
     CrossPlaneRelationAttachment::new(binding_ref, relation_ref)
-}
-
-/// cross-plane evidence に必要な採用 class です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CrossPlaneEvidenceAdoption {
-    /// single-plane evidence だけであり cross-plane evidence には採用しません。
-    SinglePlaneOnly,
-    /// source/target reference と関連 decision event を持つため採用可能です。
-    CrossPlaneBindingEvidence,
-    /// affected claim は close-not-claimed として扱います。
-    CloseNotClaimed,
 }
 
 /// cross-plane で禁止する暗黙同一視です。

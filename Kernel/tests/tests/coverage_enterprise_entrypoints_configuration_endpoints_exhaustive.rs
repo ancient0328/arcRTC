@@ -38,7 +38,7 @@ where
 }
 
 fn bundle_guard(
-    flags: [bool; 15],
+    flags: [bool; 13],
 ) -> Result<
     configuration::ConfigurationBundleValidationGuard,
     configuration::ConfigurationBundleValidationError,
@@ -58,28 +58,6 @@ fn bundle_guard(
         flags[10],
         flags[11],
         flags[12],
-        flags[13],
-        flags[14],
-    )
-}
-
-fn profile_evidence_guard(
-    flags: [bool; 8],
-) -> Result<
-    configuration::ConfigurationProfileEvidenceGuard,
-    configuration::ConfigurationProfileEvidenceError,
-> {
-    configuration::ConfigurationProfileEvidenceGuard::try_new(
-        configuration::ConfigurationProfileClass::ProductionCandidate,
-        configuration::ConfigurationProfileEvidenceClaimClass::RuntimeClaim,
-        flags[0],
-        flags[1],
-        flags[2],
-        flags[3],
-        flags[4],
-        flags[5],
-        flags[6],
-        flags[7],
     )
 }
 
@@ -89,7 +67,7 @@ fn runtime_admission_guard(
     owner: ConfigurationOwner,
     current: configuration::RuntimeConfigurationGenerationState,
     proposed: configuration::RuntimeConfigurationGenerationState,
-    flags: [bool; 12],
+    flags: [bool; 11],
 ) -> Result<
     configuration::RuntimeReconfigurationAdmissionGuard,
     configuration::RuntimeReconfigurationAdmissionError,
@@ -112,28 +90,7 @@ fn runtime_admission_guard(
         flags[8],
         flags[9],
         flags[10],
-        flags[11],
-        true,
     )
-}
-
-fn capability_input(
-    surface: configuration::CapabilityDeclarationSurface,
-    owner: ConfigurationOwner,
-    authority: configuration::FeatureCapabilityAuthorityOwner,
-    flags: [bool; 6],
-) -> configuration::CapabilityDeclarationGuardInput {
-    configuration::CapabilityDeclarationGuardInput {
-        surface,
-        configuration_wiring_owner: owner,
-        authority_owner: authority,
-        accepted_contract_version_declared: flags[0],
-        optional_behavior_declared: flags[1],
-        fallback_when_absent_declared: flags[2],
-        required_absent_reason_declared: flags[3],
-        sdk_parity_requirement_declared_when_client_visible: flags[4],
-        evidence_class_required_before_adoption_declared: flags[5],
-    }
 }
 
 fn feature_admission_guard(
@@ -147,22 +104,6 @@ fn feature_admission_guard(
         flag_class, flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7],
         flags[8], flags[9], flags[10],
     )
-}
-
-fn experimental_input(
-    stage: configuration::ExperimentalLifecycleStage,
-    flags: [bool; 7],
-) -> configuration::ExperimentalLifecycleGuardInput {
-    configuration::ExperimentalLifecycleGuardInput {
-        stage,
-        scope_and_owner_fixed: flags[0],
-        explicit_gate_present_when_scaffold_or_later: flags[1],
-        dependency_direction_evidence_present_when_scaffold: flags[2],
-        unit_or_contract_evidence_present_when_implemented: flags[3],
-        integration_report_present_when_controlled_integration: flags[4],
-        adr_or_canonical_update_and_compatibility_rule_present_when_adopted: flags[5],
-        compatibility_or_deprecation_lifecycle_satisfied_when_removed: flags[6],
-    }
 }
 
 fn endpoint_declaration_guard(
@@ -204,15 +145,6 @@ fn lifecycle_guard(
     )
 }
 
-fn public_endpoint_evidence_guard(
-    flags: [bool; 10],
-) -> Result<endpoints::PublicEndpointEvidenceGuard, endpoints::PublicEndpointEvidenceError> {
-    endpoints::PublicEndpointEvidenceGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9],
-    )
-}
-
 fn edge_trust_admission_guard(
     edge: endpoints::EdgeProxyClass,
     metadata: endpoints::TrustedMetadataClass,
@@ -224,15 +156,6 @@ fn edge_trust_admission_guard(
     )
 }
 
-fn edge_trust_evidence_guard(
-    flags: [bool; 13],
-) -> Result<endpoints::EdgeProxyTrustEvidenceGuard, endpoints::EdgeProxyTrustEvidenceError> {
-    endpoints::EdgeProxyTrustEvidenceGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10], flags[11], flags[12],
-    )
-}
-
 #[test]
 fn configuration_closed_vocabularies_and_reason_catalogs_are_exercised() {
     let _surface = configuration::EntrypointConfigurationSurface;
@@ -241,63 +164,6 @@ fn configuration_closed_vocabularies_and_reason_catalogs_are_exercised() {
         CoreConfigurationSurface,
         CoreFeaturesSurface,
     ));
-
-    for (profile, claim, report_present) in [
-        (
-            configuration::ConfigurationProfileClass::DevelopmentLocal,
-            configuration::ConfigurationProfileEvidenceClaimClass::LocalManualEvidence,
-            false,
-        ),
-        (
-            configuration::ConfigurationProfileClass::TestDeterministic,
-            configuration::ConfigurationProfileEvidenceClaimClass::TestEvidence,
-            false,
-        ),
-        (
-            configuration::ConfigurationProfileClass::IntegrationControlled,
-            configuration::ConfigurationProfileEvidenceClaimClass::IntegrationEvidence,
-            false,
-        ),
-        (
-            configuration::ConfigurationProfileClass::BenchmarkControlled,
-            configuration::ConfigurationProfileEvidenceClaimClass::BenchmarkEvidence,
-            false,
-        ),
-        (
-            configuration::ConfigurationProfileClass::ProductionCandidate,
-            configuration::ConfigurationProfileEvidenceClaimClass::RuntimeClaim,
-            true,
-        ),
-        (
-            configuration::ConfigurationProfileClass::ProductionCandidate,
-            configuration::ConfigurationProfileEvidenceClaimClass::ProductionEvidence,
-            true,
-        ),
-    ] {
-        assert_copy_debug_hash(profile);
-        assert_copy_debug_hash(claim);
-        let rule = profile.adoption_rule();
-        assert_copy_debug_hash(rule);
-        assert_eq!(rule.admits_claim(claim, report_present), Ok(()));
-    }
-    assert_eq!(
-        configuration::ConfigurationProfileClass::ProductionCandidate
-            .adoption_rule()
-            .admits_claim(
-                configuration::ConfigurationProfileEvidenceClaimClass::RuntimeClaim,
-                false,
-            ),
-        Err(configuration::ConfigurationProfileEvidenceError::ExplicitEvidenceReportReferenceMissing)
-    );
-    assert_eq!(
-        configuration::ConfigurationProfileClass::ProductionCandidate
-            .adoption_rule()
-            .admits_claim(
-                configuration::ConfigurationProfileEvidenceClaimClass::TestEvidence,
-                true,
-            ),
-        Err(configuration::ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-    );
 
     for bundle in [
         configuration::ConfigurationBundleClass::CorePolicy,
@@ -371,11 +237,11 @@ fn configuration_closed_vocabularies_and_reason_catalogs_are_exercised() {
         configuration::ProhibitedConfigurationProfileBundleBehavior::MissingRequiredBundleFallsBackToDefault,
         configuration::ProhibitedConfigurationProfileBundleBehavior::TestProfileBecomesProductionProfile,
         configuration::ProhibitedConfigurationProfileBundleBehavior::FeatureFlagEnablesExperimentalSurfaceWithoutLifecycle,
-        configuration::ProhibitedConfigurationProfileBundleBehavior::ProfileEvidenceOmitsProfileClass,
+        configuration::ProhibitedConfigurationProfileBundleBehavior::ProfileSelectionOmitsProfileClass,
         configuration::ProhibitedConfigurationProfileBundleBehavior::ImplicitTopologySecretOrSupplyChainBundle,
         configuration::ProhibitedConfigurationProfileBundleBehavior::ImplicitDiscoveryOrDistributedStateBundle,
         configuration::ProhibitedConfigurationProfileBundleBehavior::ImplicitInternalTrustOrRuntimeTaskBundle,
-        configuration::ProhibitedConfigurationProfileBundleBehavior::BuildReleaseClaimWithoutSupplyChainEvidence,
+        configuration::ProhibitedConfigurationProfileBundleBehavior::BuildReleaseSelectionOmitsSupplyChainIdentity,
         configuration::ProhibitedConfigurationProfileBundleBehavior::StartupValidationAsRuntimeHotSwapPermission,
     ] {
         assert_copy_debug_hash(prohibited);
@@ -384,7 +250,7 @@ fn configuration_closed_vocabularies_and_reason_catalogs_are_exercised() {
 
 #[test]
 fn configuration_guards_cover_success_and_fail_closed_branches() {
-    assert_copy_debug_hash(bundle_guard([true; 15]).expect("bundle guard admits complete input"));
+    assert_copy_debug_hash(bundle_guard([true; 13]).expect("bundle guard admits complete input"));
     for (index, expected) in [
         (0, configuration::ConfigurationBundleValidationError::EntrypointCompositionBundleMissing),
         (1, configuration::ConfigurationBundleValidationError::DriverRuntimeBundleInvalid),
@@ -397,55 +263,16 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
         (8, configuration::ConfigurationBundleValidationError::InternalServiceTrustMissing),
         (9, configuration::ConfigurationBundleValidationError::RuntimeTaskMissing),
         (10, configuration::ConfigurationBundleValidationError::SecretRotationPolicyMissing),
-        (11, configuration::ConfigurationBundleValidationError::SupplyChainEvidenceMissing),
-        (12, configuration::ConfigurationBundleValidationError::ProfileEvidenceClassMissing),
-        (13, configuration::ConfigurationBundleValidationError::PartialAcceptanceNotAdmitted),
+        (11, configuration::ConfigurationBundleValidationError::PartialAcceptanceNotAllowed),
         (
-            14,
+            12,
             configuration::ConfigurationBundleValidationError::StartupValidationAsRuntimeHotSwapPermission,
         ),
     ] {
-        let mut flags = [true; 15];
+        let mut flags = [true; 13];
         flags[index] = false;
         assert_eq!(bundle_guard(flags), Err(expected));
     }
-
-    assert_copy_debug_hash(
-        profile_evidence_guard([true; 8]).expect("profile evidence admits complete input"),
-    );
-    for (index, expected) in [
-        (0, configuration::ConfigurationProfileEvidenceError::ProfileClassMissing),
-        (1, configuration::ConfigurationProfileEvidenceError::RawSecretMaterialInEvidence),
-        (2, configuration::ConfigurationProfileEvidenceError::ExplicitEvidenceReportReferenceMissing),
-        (3, configuration::ConfigurationProfileEvidenceError::EvidencePromotedWithoutNewReport),
-        (5, configuration::ConfigurationProfileEvidenceError::SupplyChainIdentityMissing),
-        (7, configuration::ConfigurationProfileEvidenceError::RuntimeChangeEvidenceMissing),
-    ] {
-        let mut flags = [true; 8];
-        if index == 5 {
-            flags[4] = true;
-        }
-        if index == 7 {
-            flags[6] = true;
-        }
-        flags[index] = false;
-        assert_eq!(profile_evidence_guard(flags), Err(expected));
-    }
-    assert_eq!(
-        configuration::ConfigurationProfileEvidenceGuard::try_new(
-            configuration::ConfigurationProfileClass::BenchmarkControlled,
-            configuration::ConfigurationProfileEvidenceClaimClass::RuntimeClaim,
-            true,
-            true,
-            true,
-            true,
-            false,
-            false,
-            false,
-            false,
-        ),
-        Err(configuration::ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-    );
 
     assert_eq!(
         configuration::RuntimeReconfigurationAuditEventType::RuntimeReconfigurationDecision
@@ -459,7 +286,7 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
             ConfigurationOwner::Drivers,
             configuration::RuntimeConfigurationGenerationState::CurrentGeneration,
             configuration::RuntimeConfigurationGenerationState::PendingGeneration,
-            [true; 12],
+            [true; 11],
         )
         .expect("runtime reconfiguration admits complete input"),
     );
@@ -548,7 +375,7 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
             ConfigurationOwner::Entrypoints,
             configuration::RuntimeConfigurationGenerationState::CurrentGeneration,
             configuration::RuntimeConfigurationGenerationState::PendingGeneration,
-            [true; 12],
+            [true; 11],
         ),
         Err(configuration::RuntimeReconfigurationAdmissionError::TargetOwnerMismatch)
     );
@@ -578,29 +405,25 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
             configuration::RuntimeReconfigurationAdmissionError::RollbackBehaviorMissing,
         ),
         (
-            6,
-            configuration::RuntimeReconfigurationAdmissionError::EvidenceClassMissing,
-        ),
-        (
             7,
-            configuration::RuntimeReconfigurationAdmissionError::CloseNotClaimedScopeMissing,
+            configuration::RuntimeReconfigurationAdmissionError::TargetPolicyDoesNotAdmitClass,
         ),
         (
-            9,
-            configuration::RuntimeReconfigurationAdmissionError::TargetCanonicalDoesNotAdmitClass,
-        ),
-        (
-            10,
+            8,
             configuration::RuntimeReconfigurationAdmissionError::ClassSpecificRuleMissing,
         ),
         (
-            11,
-            configuration::RuntimeReconfigurationAdmissionError::TestProfileSwapEvidenceNotTestOnly,
+            9,
+            configuration::RuntimeReconfigurationAdmissionError::TestProfileSwapUsedOutsideTestScope,
+        ),
+        (
+            10,
+            configuration::RuntimeReconfigurationAdmissionError::RawPayloadInGenerationState,
         ),
     ] {
-        let mut flags = [true; 12];
+        let mut flags = [true; 11];
         flags[index] = false;
-        let class = if index == 11 {
+        let class = if index == 9 {
             configuration::RuntimeReconfigurationClass::TestProfileSwap
         } else {
             configuration::RuntimeReconfigurationClass::SecretRotationReload
@@ -624,7 +447,7 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
             ConfigurationOwner::Core,
             configuration::RuntimeConfigurationGenerationState::CurrentGeneration,
             configuration::RuntimeConfigurationGenerationState::PendingGeneration,
-            [true; 12],
+            [true; 11],
         ),
         Err(configuration::RuntimeReconfigurationAdmissionError::ReconfigurationClassNotAdmitted)
     );
@@ -635,7 +458,7 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
             ConfigurationOwner::Drivers,
             configuration::RuntimeConfigurationGenerationState::PendingGeneration,
             configuration::RuntimeConfigurationGenerationState::PendingGeneration,
-            [true; 12],
+            [true; 11],
         ),
         Err(configuration::RuntimeReconfigurationAdmissionError::CurrentGenerationStateInvalid)
     );
@@ -646,7 +469,7 @@ fn configuration_guards_cover_success_and_fail_closed_branches() {
             ConfigurationOwner::Drivers,
             configuration::RuntimeConfigurationGenerationState::CurrentGeneration,
             configuration::RuntimeConfigurationGenerationState::RejectedGeneration,
-            [true; 12],
+            [true; 11],
         ),
         Err(configuration::RuntimeReconfigurationAdmissionError::ProposedGenerationStateInvalid)
     );
@@ -742,111 +565,7 @@ fn configuration_feature_capability_guards_are_exhaustive() {
     assert!(
         configuration::RuntimeReconfigurationClass::SecretRotationReload.admits_runtime_apply()
     );
-    assert!(configuration::RuntimeReconfigurationClass::TestProfileSwap.is_test_evidence_only());
-
-    for (surface, owner) in [
-        (
-            configuration::CapabilityDeclarationSurface::CoreProtocol,
-            configuration::FeatureCapabilityAuthorityOwner::Core,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::FeatureFlagValue,
-            configuration::FeatureCapabilityAuthorityOwner::EntrypointsConfig,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::DriverImplementationSelection,
-            configuration::FeatureCapabilityAuthorityOwner::EntrypointsComposition,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::SdkCapabilityExposure,
-            configuration::FeatureCapabilityAuthorityOwner::Sdk,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::ExperimentalLifecycleDecision,
-            configuration::FeatureCapabilityAuthorityOwner::AdrCanonical,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::OutOfScopeFeatureAdmission,
-            configuration::FeatureCapabilityAuthorityOwner::AdrCanonical,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::RuntimeEnablementEvidence,
-            configuration::FeatureCapabilityAuthorityOwner::Reports,
-        ),
-        (
-            configuration::CapabilityDeclarationSurface::RuntimeFlagProfileChange,
-            configuration::FeatureCapabilityAuthorityOwner::RuntimeReconfigurationCanonical,
-        ),
-    ] {
-        assert_copy_debug_hash(surface);
-        assert_copy_debug_hash(owner);
-        assert!(surface.authority_owner_matches(owner));
-        assert_copy_debug_hash(
-            configuration::CapabilityDeclarationGuard::try_new(capability_input(
-                surface,
-                ConfigurationOwner::Entrypoints,
-                owner,
-                [true; 6],
-            ))
-            .expect("capability declaration admits complete input"),
-        );
-    }
-    assert_eq!(
-        configuration::CapabilityDeclarationGuard::try_new(capability_input(
-            configuration::CapabilityDeclarationSurface::FeatureFlagValue,
-            ConfigurationOwner::Core,
-            configuration::FeatureCapabilityAuthorityOwner::EntrypointsConfig,
-            [true; 6],
-        )),
-        Err(configuration::CapabilityDeclarationError::ConfigurationWiringOwnerMismatch)
-    );
-    assert_eq!(
-        configuration::CapabilityDeclarationGuard::try_new(capability_input(
-            configuration::CapabilityDeclarationSurface::FeatureFlagValue,
-            ConfigurationOwner::Entrypoints,
-            configuration::FeatureCapabilityAuthorityOwner::Core,
-            [true; 6],
-        )),
-        Err(configuration::CapabilityDeclarationError::SurfaceAuthorityOwnerMismatch)
-    );
-    for (index, expected) in [
-        (
-            0,
-            configuration::CapabilityDeclarationError::AcceptedContractVersionMissing,
-        ),
-        (
-            1,
-            configuration::CapabilityDeclarationError::OptionalBehaviorMissing,
-        ),
-        (
-            2,
-            configuration::CapabilityDeclarationError::FallbackWhenAbsentMissing,
-        ),
-        (
-            3,
-            configuration::CapabilityDeclarationError::RequiredAbsentReasonMissing,
-        ),
-        (
-            4,
-            configuration::CapabilityDeclarationError::SdkParityRequirementMissing,
-        ),
-        (
-            5,
-            configuration::CapabilityDeclarationError::EvidenceClassRequirementMissing,
-        ),
-    ] {
-        let mut flags = [true; 6];
-        flags[index] = false;
-        assert_eq!(
-            configuration::CapabilityDeclarationGuard::try_new(capability_input(
-                configuration::CapabilityDeclarationSurface::FeatureFlagValue,
-                ConfigurationOwner::Entrypoints,
-                configuration::FeatureCapabilityAuthorityOwner::EntrypointsConfig,
-                flags,
-            )),
-            Err(expected)
-        );
-    }
+    assert!(configuration::RuntimeReconfigurationClass::TestProfileSwap.is_test_only());
 
     for flag in [
         configuration::FeatureFlagClass::DriverSelection,
@@ -874,9 +593,9 @@ fn configuration_feature_capability_guards_are_exhaustive() {
         ),
         (5, configuration::FeatureCapabilityAdmissionError::AbsentCapabilityFallsBackSilently),
         (6, configuration::FeatureCapabilityAdmissionError::ExperimentalSurfaceGateMissing),
-        (7, configuration::FeatureCapabilityAdmissionError::OutOfScopeAdmissionCanonicalMissing),
+        (7, configuration::FeatureCapabilityAdmissionError::OutOfScopeAdmissionDecisionMissing),
         (8, configuration::FeatureCapabilityAdmissionError::SdkCapabilityServerContractMismatch),
-        (9, configuration::FeatureCapabilityAdmissionError::TestOnlyGateUsedOutsideTestEvidence),
+        (9, configuration::FeatureCapabilityAdmissionError::TestOnlyGateUsedOutsideTestScope),
         (
             10,
             configuration::FeatureCapabilityAdmissionError::RuntimeFlagChangeLacksReconfigurationScope,
@@ -890,65 +609,6 @@ fn configuration_feature_capability_guards_are_exhaustive() {
             configuration::FeatureFlagClass::DriverSelection
         };
         assert_eq!(feature_admission_guard(flag, flags), Err(expected));
-    }
-
-    for stage in [
-        configuration::ExperimentalLifecycleStage::DraftDocumented,
-        configuration::ExperimentalLifecycleStage::GatedScaffold,
-        configuration::ExperimentalLifecycleStage::GatedImplemented,
-        configuration::ExperimentalLifecycleStage::ControlledIntegration,
-        configuration::ExperimentalLifecycleStage::AdoptedContract,
-        configuration::ExperimentalLifecycleStage::Removed,
-    ] {
-        assert_copy_debug_hash(stage);
-        assert_copy_debug_hash(
-            configuration::ExperimentalLifecycleGuard::try_new(experimental_input(
-                stage, [true; 7],
-            ))
-            .expect("experimental lifecycle admits complete input"),
-        );
-    }
-    for (stage, flags, expected) in [
-        (
-            configuration::ExperimentalLifecycleStage::DraftDocumented,
-            [false, true, true, true, true, true, true],
-            configuration::ExperimentalLifecycleError::ScopeOrOwnerMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::GatedScaffold,
-            [true, false, true, true, true, true, true],
-            configuration::ExperimentalLifecycleError::ExplicitGateMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::GatedScaffold,
-            [true, true, false, true, true, true, true],
-            configuration::ExperimentalLifecycleError::DependencyDirectionEvidenceMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::GatedImplemented,
-            [true, true, true, false, true, true, true],
-            configuration::ExperimentalLifecycleError::UnitOrContractEvidenceMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::ControlledIntegration,
-            [true, true, true, true, false, true, true],
-            configuration::ExperimentalLifecycleError::IntegrationReportMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::AdoptedContract,
-            [true, true, true, true, true, false, true],
-            configuration::ExperimentalLifecycleError::AdoptionCanonicalOrCompatibilityRuleMissing,
-        ),
-        (
-            configuration::ExperimentalLifecycleStage::Removed,
-            [true, true, true, true, true, true, false],
-            configuration::ExperimentalLifecycleError::RemovalCompatibilityLifecycleMissing,
-        ),
-    ] {
-        assert_eq!(
-            configuration::ExperimentalLifecycleGuard::try_new(experimental_input(stage, flags)),
-            Err(expected)
-        );
     }
 
     for kind in [
@@ -967,40 +627,6 @@ fn configuration_feature_capability_guards_are_exhaustive() {
             kind,
         ));
     }
-    assert_copy_debug_hash(
-        configuration::RuntimeReconfigurationEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, true, true, true,
-        )
-        .expect("runtime reconfiguration evidence admits complete input"),
-    );
-    for (index, expected) in [
-        (0, configuration::RuntimeReconfigurationEvidenceError::ReconfigurationClassMissing),
-        (1, configuration::RuntimeReconfigurationEvidenceError::TargetSurfaceMissing),
-        (2, configuration::RuntimeReconfigurationEvidenceError::CurrentGenerationReferenceMissing),
-        (3, configuration::RuntimeReconfigurationEvidenceError::ProposedGenerationReferenceMissing),
-        (4, configuration::RuntimeReconfigurationEvidenceError::ValidationProcedureMissing),
-        (5, configuration::RuntimeReconfigurationEvidenceError::ApplyScopeMissing),
-        (6, configuration::RuntimeReconfigurationEvidenceError::AffectedActiveScopeMissing),
-        (7, configuration::RuntimeReconfigurationEvidenceError::DrainOrRestartDecisionMissing),
-        (8, configuration::RuntimeReconfigurationEvidenceError::RollbackStatusMissing),
-        (9, configuration::RuntimeReconfigurationEvidenceError::AuditEventReferenceMissing),
-        (10, configuration::RuntimeReconfigurationEvidenceError::RerunConditionMissing),
-        (
-            11,
-            configuration::RuntimeReconfigurationEvidenceError::StartupEvidenceUsedAsRuntimeReconfigurationEvidence,
-        ),
-    ] {
-        let mut flags = [true; 12];
-        flags[index] = false;
-        assert_eq!(
-            configuration::RuntimeReconfigurationEvidenceGuard::try_new(
-                flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7],
-                flags[8], flags[9], flags[10], flags[11],
-            ),
-            Err(expected)
-        );
-    }
-
     for kind in [
         configuration::FeatureCapabilityFailureKind::CapabilityNotEnabled,
         configuration::FeatureCapabilityFailureKind::RuntimeConfigInvalid,
@@ -1139,7 +765,7 @@ fn endpoints_closed_vocabularies_and_reason_catalogs_are_exercised() {
         endpoints::ProhibitedPublicEndpointBehavior::WebSocketUpgradeTreatedAsParticipantAdmission,
         endpoints::ProhibitedPublicEndpointBehavior::ListenerBindTreatedAsDomainSuccess,
         endpoints::ProhibitedPublicEndpointBehavior::PublicErrorHidesCatalogedCoreReason,
-        endpoints::ProhibitedPublicEndpointBehavior::EndpointClassAddedByNamingConvention,
+        endpoints::ProhibitedPublicEndpointBehavior::EndpointClassAddedWithoutSourceContract,
         endpoints::ProhibitedPublicEndpointBehavior::ProxyMetadataChangesSeparationWithoutTrustAdmission,
         endpoints::ProhibitedPublicEndpointBehavior::DiscoveryChangesSeparationWithoutEndpointAdmission,
     ] {
@@ -1230,7 +856,7 @@ fn endpoints_closed_vocabularies_and_reason_catalogs_are_exercised() {
 }
 
 #[test]
-fn endpoint_declaration_lifecycle_and_evidence_guards_are_exhaustive() {
+fn endpoint_declaration_and_lifecycle_guards_are_exhaustive() {
     assert_copy_debug_hash(
         endpoint_declaration_guard(
             endpoints::PublicEndpointClass::SignalingPublic,
@@ -1418,7 +1044,7 @@ fn endpoint_declaration_lifecycle_and_evidence_guards_are_exhaustive() {
             true,
             true,
         )
-        .expect("private endpoint stays non-public with private auth canonical"),
+        .expect("private endpoint stays non-public with private authorization policy"),
     );
     assert_eq!(
         endpoints::PublicInternalEndpointSeparationGuard::try_new(
@@ -1448,7 +1074,7 @@ fn endpoint_declaration_lifecycle_and_evidence_guards_are_exhaustive() {
             false,
             true,
         ),
-        Err(endpoints::PublicInternalEndpointSeparationError::PrivateRouteAuthorizationCanonicalMissing)
+        Err(endpoints::PublicInternalEndpointSeparationError::PrivateRouteAuthorizationPolicyMissing)
     );
     assert_eq!(
         endpoints::PublicInternalEndpointSeparationGuard::try_new(
@@ -1460,54 +1086,6 @@ fn endpoint_declaration_lifecycle_and_evidence_guards_are_exhaustive() {
         ),
         Err(endpoints::PublicInternalEndpointSeparationError::PublicEndpointInheritsInternalServiceTrust)
     );
-
-    assert_copy_debug_hash(
-        public_endpoint_evidence_guard([true; 10])
-            .expect("public endpoint evidence admits complete input"),
-    );
-    for (index, expected) in [
-        (
-            0,
-            endpoints::PublicEndpointEvidenceError::EndpointClassMissing,
-        ),
-        (1, endpoints::PublicEndpointEvidenceError::ProtocolMissing),
-        (
-            2,
-            endpoints::PublicEndpointEvidenceError::ListenerOwnerMissing,
-        ),
-        (
-            3,
-            endpoints::PublicEndpointEvidenceError::TargetContractMissing,
-        ),
-        (
-            4,
-            endpoints::PublicEndpointEvidenceError::AuthSecurityProfileMissing,
-        ),
-        (
-            5,
-            endpoints::PublicEndpointEvidenceError::BoundPolicyMissing,
-        ),
-        (
-            6,
-            endpoints::PublicEndpointEvidenceError::CorrelationRuleMissing,
-        ),
-        (
-            7,
-            endpoints::PublicEndpointEvidenceError::LifecycleTransitionMissing,
-        ),
-        (
-            8,
-            endpoints::PublicEndpointEvidenceError::DiscoveryEvidenceMissing,
-        ),
-        (
-            9,
-            endpoints::PublicEndpointEvidenceError::ListenerStartupUsedAsReadinessEvidence,
-        ),
-    ] {
-        let mut flags = [true; 10];
-        flags[index] = false;
-        assert_eq!(public_endpoint_evidence_guard(flags), Err(expected));
-    }
 }
 
 #[test]
@@ -1559,7 +1137,7 @@ fn endpoint_edge_proxy_guards_are_exhaustive() {
             endpoints::TrustedMetadataClass::ForwardedFor,
             [true, true, true, true, true, true, true, true, true, true, true, true, false,],
         ),
-        Err(endpoints::EdgeProxyTrustAdmissionError::TestEdgeUsedOutsideTestEvidence)
+        Err(endpoints::EdgeProxyTrustAdmissionError::TestEdgeUsedOutsideTestScope)
     );
 
     assert_copy_debug_hash(
@@ -1683,7 +1261,7 @@ fn endpoint_edge_proxy_guards_are_exhaustive() {
         (
             endpoints::EdgeTlsTerminationClass::TrustedEdgeTerminatesWithProtectedBackend,
             [true, true, true, false, true, true],
-            endpoints::EdgeTlsTerminationError::AuditEvidenceRelationMissing,
+            endpoints::EdgeTlsTerminationError::AuditEventRelationMissing,
         ),
         (
             endpoints::EdgeTlsTerminationClass::TrustedEdgeTerminatesWithProtectedBackend,
@@ -1702,61 +1280,5 @@ fn endpoint_edge_proxy_guards_are_exhaustive() {
             ),
             Err(expected)
         );
-    }
-
-    assert_copy_debug_hash(
-        edge_trust_evidence_guard([true; 13]).expect("edge trust evidence admits complete input"),
-    );
-    for (index, expected) in [
-        (0, endpoints::EdgeProxyTrustEvidenceError::EdgeClassMissing),
-        (
-            1,
-            endpoints::EdgeProxyTrustEvidenceError::TopologyClassMissing,
-        ),
-        (
-            2,
-            endpoints::EdgeProxyTrustEvidenceError::TrustedUpstreamScopeMissing,
-        ),
-        (
-            3,
-            endpoints::EdgeProxyTrustEvidenceError::AcceptedMetadataClassesMissing,
-        ),
-        (
-            4,
-            endpoints::EdgeProxyTrustEvidenceError::HeaderPrecedenceMissing,
-        ),
-        (5, endpoints::EdgeProxyTrustEvidenceError::HopCountMissing),
-        (
-            6,
-            endpoints::EdgeProxyTrustEvidenceError::TlsTerminationRelationMissing,
-        ),
-        (
-            7,
-            endpoints::EdgeProxyTrustEvidenceError::OriginHostPolicyMissing,
-        ),
-        (
-            8,
-            endpoints::EdgeProxyTrustEvidenceError::ClientAddressUseLimitMissing,
-        ),
-        (
-            9,
-            endpoints::EdgeProxyTrustEvidenceError::CommandProcedureMissing,
-        ),
-        (
-            10,
-            endpoints::EdgeProxyTrustEvidenceError::WorkingDirectoryMissing,
-        ),
-        (
-            11,
-            endpoints::EdgeProxyTrustEvidenceError::RerunConditionMissing,
-        ),
-        (
-            12,
-            endpoints::EdgeProxyTrustEvidenceError::DiagnosticSnippetUsedAsEvidence,
-        ),
-    ] {
-        let mut flags = [true; 13];
-        flags[index] = false;
-        assert_eq!(edge_trust_evidence_guard(flags), Err(expected));
     }
 }

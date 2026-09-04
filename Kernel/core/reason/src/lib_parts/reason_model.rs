@@ -178,7 +178,7 @@ impl<Details> Reason<Details> {
     }
 }
 
-/// canonical に登録された reason definition だけを検索します。
+/// closed source catalog に登録された reason definition だけを検索します。
 pub fn find_reason_definition(code: &str) -> Option<&'static ReasonDefinition> {
     REASON_DEFINITIONS
         .iter()
@@ -283,4 +283,3 @@ fn reason_metadata(code: ReasonCode, category: ReasonCategory) -> ReasonMetadata
         _ => category.default_metadata(),
     }
 }
-

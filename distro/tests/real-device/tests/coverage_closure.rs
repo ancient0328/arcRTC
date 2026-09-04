@@ -18,9 +18,8 @@ mod redaction;
 mod wrapper;
 
 use arcrtc_distro_evidence::{
-    validate_evidence_record, EvidenceValidationError, DistroCommandClass,
-    DistroEnvironmentClass, DistroEvidenceReason, DistroEvidenceRecord,
-    DistroLayer, DistroNonClaimScope, DistroPlane,
+    validate_evidence_record, DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
+    DistroEvidenceRecord, DistroLayer, DistroNonClaimScope, DistroPlane, EvidenceValidationError,
     DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
 };
 use cli::{CliDeviceClass, CliPlatform};
@@ -234,9 +233,9 @@ fn real_device_observation_covers_platform_success_and_failure_branches() {
     assert!(parse_real_device_observation(
         &ios,
         &RealDeviceCommandOutput::success(
-            "== Devices == | User iPhone (26.5) | == Simulators ==",
+            "User iPhone   user-iPhone.coredevice.local   ID   available (paired)   iPhone 15",
             "",
-            "xcrun xctrace list devices",
+            "xcrun devicectl list devices",
         ),
     )
     .is_ok());

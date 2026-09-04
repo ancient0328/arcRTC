@@ -20,13 +20,13 @@ fn assert_case(args: &[&str], stdout: &str, stderr: &str, code: i32) {
 fn topology_bin_startup_cases_match_fixed_surface() {
     assert_case(
         &["split-plane-networked"],
-        "topology_class=split-plane-networked requires_explicit_service_endpoint_wiring=true requires_networked_internal_service_relation=true requires_experimental_admission_for_production_claim=false requires_external_dependency_contract=false",
+        "topology_class=split-plane-networked requires_explicit_service_endpoint_wiring=true requires_networked_internal_service_relation=true requires_explicit_experimental_enablement=false requires_external_dependency_contract=false",
         "",
         0,
     );
     assert_case(
         &["single-process-local"],
-        "topology_class=single-process-local requires_explicit_service_endpoint_wiring=false requires_networked_internal_service_relation=false requires_experimental_admission_for_production_claim=false requires_external_dependency_contract=false",
+        "topology_class=single-process-local requires_explicit_service_endpoint_wiring=false requires_networked_internal_service_relation=false requires_explicit_experimental_enablement=false requires_external_dependency_contract=false",
         "",
         0,
     );

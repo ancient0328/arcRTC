@@ -265,7 +265,7 @@ fn binary_entrypoint_composition_guards_are_fail_closed_without_source_changes()
         (4, cli_main::CliCompositionError::CliDefinesPortTrait),
         (
             5,
-            cli_main::CliCompositionError::DemoDefaultAsProductionPolicy,
+            cli_main::CliCompositionError::DemoDefaultAsManagedRuntimePolicy,
         ),
         (6, cli_main::CliCompositionError::OutOfScopeFeatureAdmitted),
     ] {
@@ -292,7 +292,7 @@ fn binary_entrypoint_composition_guards_are_fail_closed_without_source_changes()
         (4, demo_main::DemoCompositionError::DemoDefinesPortTrait),
         (
             5,
-            demo_main::DemoCompositionError::DemoDefaultAsProductionPolicy,
+            demo_main::DemoCompositionError::DemoDefaultAsManagedRuntimePolicy,
         ),
         (
             6,
@@ -300,7 +300,7 @@ fn binary_entrypoint_composition_guards_are_fail_closed_without_source_changes()
         ),
         (
             7,
-            demo_main::DemoCompositionError::DemoAsCloseOrReadyEvidence,
+            demo_main::DemoCompositionError::DemoUsedAsManagedRuntimeAuthority,
         ),
         (
             8,
@@ -385,7 +385,7 @@ fn binary_entrypoint_failure_reasons_are_cataloged() {
         cli_main::CliCompositionFailureKind::RuntimeConfigInvalid,
         cli_main::CliCompositionFailureKind::AuthorizationPolicyDenied,
         cli_main::CliCompositionFailureKind::FeatureOutOfScope,
-        cli_main::CliCompositionFailureKind::FeatureAdmissionNotDocumented,
+        cli_main::CliCompositionFailureKind::FeatureAdmissionMissingOrRejected,
     ] {
         assert_eq!(
             cataloged(kind.reason_code()).definition().code().as_str(),
@@ -399,7 +399,7 @@ fn binary_entrypoint_failure_reasons_are_cataloged() {
         demo_main::DemoCompositionFailureKind::RuntimeConfigMissing,
         demo_main::DemoCompositionFailureKind::RuntimeConfigInvalid,
         demo_main::DemoCompositionFailureKind::FeatureOutOfScope,
-        demo_main::DemoCompositionFailureKind::FeatureAdmissionNotDocumented,
+        demo_main::DemoCompositionFailureKind::FeatureAdmissionMissingOrRejected,
     ] {
         assert_eq!(
             cataloged(kind.reason_code()).definition().code().as_str(),
@@ -433,7 +433,7 @@ fn binary_entrypoint_failure_reasons_are_cataloged() {
 
 #[test]
 fn admin_secondary_guards_cover_late_fail_closed_branches() {
-    let readiness_ok = [true; 19];
+    let readiness_ok = [true; 17];
     assert!(admin_readiness(readiness_ok, admin::HealthAdminOutcome::Satisfied).is_ok());
     for (index, expected) in [
         (
@@ -461,10 +461,6 @@ fn admin_secondary_guards_cover_late_fail_closed_branches() {
             admin::ReadinessCompositionError::IncludedDependencyChecksMissing,
         ),
         (12, admin::ReadinessCompositionError::ExcludedChecksMissing),
-        (
-            16,
-            admin::ReadinessCompositionError::CloseNotClaimedScopeMissing,
-        ),
     ] {
         let mut flags = readiness_ok;
         flags[index] = false;
@@ -498,14 +494,10 @@ fn admin_secondary_guards_cover_late_fail_closed_branches() {
         ),
         (
             7,
-            admin::AdminMaintenanceCommandError::CloseoutWithoutEvidenceReport,
-        ),
-        (
-            8,
             admin::AdminMaintenanceCommandError::MaintenanceStatusDriverLocalOnly,
         ),
     ] {
-        let mut flags = [true; 9];
+        let mut flags = [true; 8];
         flags[index] = false;
         assert_eq!(admin_maintenance(flags), Err(expected));
     }
@@ -575,64 +567,6 @@ fn admin_secondary_guards_cover_late_fail_closed_branches() {
         ),
         Err(admin::HealthAdminAuditError::CorrelationIdMissing)
     );
-
-    let evidence_ok = [true; 17];
-    assert!(admin_health_evidence(evidence_ok, admin::HealthAdminOutcome::Satisfied).is_ok());
-    for (index, expected) in [
-        (
-            0,
-            admin::HealthAdminEvidenceError::CommandProbeEndpointMissing,
-        ),
-        (
-            1,
-            admin::HealthAdminEvidenceError::WorkingDirectoryTargetEntrypointMissing,
-        ),
-        (2, admin::HealthAdminEvidenceError::StartupRunIdMissing),
-        (3, admin::HealthAdminEvidenceError::CorrelationIdMissing),
-        (4, admin::HealthAdminEvidenceError::ProbeClassMissing),
-        (
-            5,
-            admin::HealthAdminEvidenceError::IncludedExcludedChecksMissing,
-        ),
-        (6, admin::HealthAdminEvidenceError::TopologyNodeScopeMissing),
-        (
-            7,
-            admin::HealthAdminEvidenceError::ServiceDiscoveryResolutionMissing,
-        ),
-        (
-            8,
-            admin::HealthAdminEvidenceError::DistributedStateFailoverMissing,
-        ),
-        (
-            9,
-            admin::HealthAdminEvidenceError::RuntimeTaskSupervisionMissing,
-        ),
-        (
-            10,
-            admin::HealthAdminEvidenceError::InternalServiceTrustMissing,
-        ),
-        (11, admin::HealthAdminEvidenceError::ExpectedOutcomeMissing),
-        (12, admin::HealthAdminEvidenceError::ActualOutcomeMissing),
-        (
-            14,
-            admin::HealthAdminEvidenceError::CloseNotClaimedScopeMissing,
-        ),
-        (
-            15,
-            admin::HealthAdminEvidenceError::DiagnosticProbeOutputAdoptedAsEvidence,
-        ),
-        (
-            16,
-            admin::HealthAdminEvidenceError::ProbeSuccessUsedAsExternalProof,
-        ),
-    ] {
-        let mut flags = evidence_ok;
-        flags[index] = false;
-        assert_eq!(
-            admin_health_evidence(flags, admin::HealthAdminOutcome::Satisfied),
-            Err(expected)
-        );
-    }
 }
 
 #[test]
@@ -641,38 +575,7 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
     let _wiring =
         configuration::ConfigurationWiringSet::new(CoreConfigurationSurface, CoreFeaturesSurface);
 
-    for (profile, admitted_claim) in [
-        (
-            configuration::ConfigurationProfileClass::DevelopmentLocal,
-            configuration::ConfigurationProfileEvidenceClaimClass::LocalManualEvidence,
-        ),
-        (
-            configuration::ConfigurationProfileClass::TestDeterministic,
-            configuration::ConfigurationProfileEvidenceClaimClass::TestEvidence,
-        ),
-        (
-            configuration::ConfigurationProfileClass::IntegrationControlled,
-            configuration::ConfigurationProfileEvidenceClaimClass::IntegrationEvidence,
-        ),
-        (
-            configuration::ConfigurationProfileClass::BenchmarkControlled,
-            configuration::ConfigurationProfileEvidenceClaimClass::BenchmarkEvidence,
-        ),
-    ] {
-        assert!(profile
-            .adoption_rule()
-            .admits_claim(admitted_claim, false)
-            .is_ok());
-        assert_eq!(
-            profile.adoption_rule().admits_claim(
-                configuration::ConfigurationProfileEvidenceClaimClass::RuntimeClaim,
-                true
-            ),
-            Err(configuration::ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-        );
-    }
-
-    let bundle_ok = [true; 15];
+    let bundle_ok = [true; 13];
     for (index, expected) in [
         (
             0,
@@ -713,18 +616,10 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
         ),
         (
             11,
-            configuration::ConfigurationBundleValidationError::SupplyChainEvidenceMissing,
+            configuration::ConfigurationBundleValidationError::PartialAcceptanceNotAllowed,
         ),
         (
             12,
-            configuration::ConfigurationBundleValidationError::ProfileEvidenceClassMissing,
-        ),
-        (
-            13,
-            configuration::ConfigurationBundleValidationError::PartialAcceptanceNotAdmitted,
-        ),
-        (
-            14,
             configuration::ConfigurationBundleValidationError::StartupValidationAsRuntimeHotSwapPermission,
         ),
     ] {
@@ -741,7 +636,7 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
     assert!(
         configuration::RuntimeReconfigurationClass::MaintenanceModeSwitch.admits_runtime_apply()
     );
-    assert!(configuration::RuntimeReconfigurationClass::TestProfileSwap.is_test_evidence_only());
+    assert!(configuration::RuntimeReconfigurationClass::TestProfileSwap.is_test_only());
 
     for (surface, owner) in [
         (
@@ -781,7 +676,7 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
     }
 
     assert_eq!(
-        configuration_reconfiguration_admission([true; 13]),
+        configuration_reconfiguration_admission([true; 11]),
         Ok(
             configuration::RuntimeReconfigurationAdmissionGuard::try_new(
                 configuration::RuntimeReconfigurationClass::SecretRotationReload,
@@ -796,8 +691,6 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
                 true,
                 true,
                 configuration::RuntimeReconfigurationAuditEventType::RuntimeReconfigurationDecision,
-                true,
-                true,
                 true,
                 true,
                 true,
@@ -833,35 +726,25 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
             configuration::RuntimeReconfigurationAdmissionError::RollbackBehaviorMissing,
         ),
         (
-            6,
-            configuration::RuntimeReconfigurationAdmissionError::EvidenceClassMissing,
-        ),
-        (
             7,
-            configuration::RuntimeReconfigurationAdmissionError::CloseNotClaimedScopeMissing,
+            configuration::RuntimeReconfigurationAdmissionError::TargetPolicyDoesNotAdmitClass,
         ),
         (
-            9,
-            configuration::RuntimeReconfigurationAdmissionError::TargetCanonicalDoesNotAdmitClass,
-        ),
-        (
-            10,
+            8,
             configuration::RuntimeReconfigurationAdmissionError::ClassSpecificRuleMissing,
         ),
         (
-            12,
-            configuration::RuntimeReconfigurationAdmissionError::RawPayloadInGenerationEvidence,
+            10,
+            configuration::RuntimeReconfigurationAdmissionError::RawPayloadInGenerationState,
         ),
     ] {
-        let mut flags = [true; 13];
+        let mut flags = [true; 11];
         flags[index] = false;
         assert_eq!(
             configuration_reconfiguration_admission(flags),
             Err(expected)
         );
     }
-    let mut startup_only = [true; 13];
-    startup_only[8] = true;
     assert_eq!(
         configuration::RuntimeReconfigurationAdmissionGuard::try_new(
             configuration::RuntimeReconfigurationClass::StartupOnly,
@@ -877,8 +760,6 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
             true,
             configuration::RuntimeReconfigurationAuditEventType::RuntimeReconfigurationDecision,
             true,
-            true,
-            startup_only[8],
             true,
             true,
             true,
@@ -921,7 +802,7 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
         ),
         (
             3,
-            configuration::RuntimeReconfigurationRollbackError::RollbackEvidenceMissing,
+            configuration::RuntimeReconfigurationRollbackError::RollbackOutcomeMissing,
         ),
         (
             4,
@@ -946,13 +827,6 @@ fn configuration_secondary_guards_cover_mapping_and_fail_closed_branches() {
     ] {
         assert!(!flag.may_change_core_decision());
     }
-    assert!(
-        configuration::CapabilityDeclarationSurface::RuntimeFlagProfileChange
-            .authority_owner_matches(
-                configuration::FeatureCapabilityAuthorityOwner::RuntimeReconfigurationCanonical
-            )
-    );
-
     for kind in [
         configuration::FeatureCapabilityFailureKind::RuntimeConfigInvalid,
         configuration::FeatureCapabilityFailureKind::CorePolicyConfigInvalid,
@@ -1043,7 +917,7 @@ fn endpoints_secondary_public_api_covers_closed_mappings() {
             true,
         ),
         Err(
-            endpoints::PublicInternalEndpointSeparationError::PrivateRouteAuthorizationCanonicalMissing
+            endpoints::PublicInternalEndpointSeparationError::PrivateRouteAuthorizationPolicyMissing
         )
     );
 
@@ -1274,7 +1148,7 @@ fn topology_secondary_public_api_covers_closed_mappings() {
     assert!(topology::DeploymentTopologyClass::SplitPlaneNetworked
         .requires_networked_internal_service_relation());
     assert!(topology::DeploymentTopologyClass::MultiNodeExperimental
-        .requires_experimental_admission_for_production_claim());
+        .requires_explicit_experimental_enablement());
     assert!(topology::DeploymentTopologyClass::ExternalManagedDependency
         .requires_external_dependency_contract());
     assert_eq!(
@@ -1325,7 +1199,6 @@ fn topology_secondary_public_api_covers_closed_mappings() {
             failover_behavior_declared: false,
             unavailable_node_reason_declared: true,
             recovery_replay_relation_declared: true,
-            evidence_class_declared: true,
             wrong_node_access_fails_closed_without_distributed_state_policy: true,
         }),
         Err(topology::NodeAffinityPolicyError::FailoverBehaviorMissing)
@@ -1429,7 +1302,7 @@ fn resident_config(
 }
 
 fn admin_readiness(
-    flags: [bool; 19],
+    flags: [bool; 17],
     outcome: admin::HealthAdminOutcome,
 ) -> Result<admin::ReadinessCompositionGuard, admin::ReadinessCompositionError> {
     admin::ReadinessCompositionGuard::try_new(
@@ -1452,13 +1325,11 @@ fn admin_readiness(
         flags[14],
         flags[15],
         flags[16],
-        flags[17],
-        flags[18],
     )
 }
 
 fn admin_maintenance(
-    flags: [bool; 9],
+    flags: [bool; 8],
 ) -> Result<admin::AdminMaintenanceCommandGuard, admin::AdminMaintenanceCommandError> {
     admin::AdminMaintenanceCommandGuard::try_new(
         admin::AdminMaintenanceActionClass::RequestDrainShutdown,
@@ -1470,39 +1341,11 @@ fn admin_maintenance(
         flags[5],
         flags[6],
         flags[7],
-        flags[8],
-    )
-}
-
-fn admin_health_evidence(
-    flags: [bool; 17],
-    outcome: admin::HealthAdminOutcome,
-) -> Result<admin::HealthAdminEvidenceGuard, admin::HealthAdminEvidenceError> {
-    admin::HealthAdminEvidenceGuard::try_new(
-        admin::AdminProbeClass::DriverDependencyReadiness,
-        outcome,
-        flags[0],
-        flags[1],
-        flags[2],
-        flags[3],
-        flags[4],
-        flags[5],
-        flags[6],
-        flags[7],
-        flags[8],
-        flags[9],
-        flags[10],
-        flags[11],
-        flags[12],
-        flags[13],
-        flags[14],
-        flags[15],
-        flags[16],
     )
 }
 
 fn configuration_bundle(
-    flags: [bool; 15],
+    flags: [bool; 13],
 ) -> Result<
     configuration::ConfigurationBundleValidationGuard,
     configuration::ConfigurationBundleValidationError,
@@ -1522,13 +1365,11 @@ fn configuration_bundle(
         flags[10],
         flags[11],
         flags[12],
-        flags[13],
-        flags[14],
     )
 }
 
 fn configuration_reconfiguration_admission(
-    flags: [bool; 13],
+    flags: [bool; 11],
 ) -> Result<
     configuration::RuntimeReconfigurationAdmissionGuard,
     configuration::RuntimeReconfigurationAdmissionError,
@@ -1551,8 +1392,6 @@ fn configuration_reconfiguration_admission(
         flags[8],
         flags[9],
         flags[10],
-        flags[11],
-        flags[12],
     )
 }
 

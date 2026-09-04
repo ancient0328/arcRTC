@@ -14,19 +14,26 @@ fn root() -> PathBuf {
 
 #[test]
 fn kpi_real_device_result_does_not_admit_live_readiness() {
-    let output = Command::new(env!(
-        "CARGO_BIN_EXE_arcrtc-distro-real-device-tests"
-    ))
-    .current_dir(root())
-    .args([
-        "browser",
-        "--profile",
-        "reference-local",
-        "--device-class",
-        "desktop-browser",
-    ])
-    .output()
-    .expect("wrapper binary must execute");
+    let isolated_root = std::env::temp_dir()
+        .join(format!(
+            "arcrtc-real-device-non-claim-{}",
+            std::process::id()
+        ))
+        .join("distro");
+    let _ = fs::remove_dir_all(isolated_root.parent().expect("temporary parent"));
+    fs::create_dir_all(&isolated_root).expect("isolated distro root must be created");
+    let output = Command::new(env!("CARGO_BIN_EXE_arcrtc-distro-real-device-tests"))
+        .current_dir(&isolated_root)
+        .args([
+            "browser",
+            "--profile",
+            "reference-local",
+            "--device-class",
+            "desktop-browser",
+        ])
+        .output()
+        .expect("wrapper binary must execute");
+    let _ = fs::remove_dir_all(isolated_root.parent().expect("temporary parent"));
     assert_eq!(output.status.code(), Some(0));
 
     let record: Value =

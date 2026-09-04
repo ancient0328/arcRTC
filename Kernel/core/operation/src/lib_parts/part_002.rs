@@ -33,17 +33,6 @@ pub enum CompensationExternalResponseRule {
     NoExternalResponse,
 }
 
-/// compensation の evidence adoption rule です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CompensationEvidenceAdoptionRule {
-    /// compensation result is required before close evidence can be adopted.
-    RequireCompensationResultBeforeCloseEvidence,
-    /// later failure is driver observation or evidence limitation only.
-    DriverObservationOrEvidenceLimitation,
-    /// affected scope is close-not-claimed.
-    CloseNotClaimed,
-}
-
 /// compensation status です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CompensationStatus {
@@ -68,7 +57,6 @@ pub struct CompensationRule {
     allowed_compensating_transition: &'static str,
     audit_event_relation: &'static str,
     external_response_rule: CompensationExternalResponseRule,
-    evidence_adoption_rule: CompensationEvidenceAdoptionRule,
 }
 
 impl CompensationRule {
@@ -80,7 +68,6 @@ impl CompensationRule {
         allowed_compensating_transition: &'static str,
         audit_event_relation: &'static str,
         external_response_rule: CompensationExternalResponseRule,
-        evidence_adoption_rule: CompensationEvidenceAdoptionRule,
     ) -> Self {
         Self {
             triggering_failure,
@@ -89,7 +76,6 @@ impl CompensationRule {
             allowed_compensating_transition,
             audit_event_relation,
             external_response_rule,
-            evidence_adoption_rule,
         }
     }
 }
@@ -128,17 +114,6 @@ impl AtomicityCompensationDecision {
     }
 }
 
-/// partial success evidence に必要な分類です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PartialSuccessEvidenceClass {
-    /// per-step outcome があり close evidence 候補にできます。
-    ClassifiedPerStep,
-    /// partial success classification がないため採用不可です。
-    MissingClassificationNotAdoptable,
-    /// failed step の scope を close-not-claimed にします。
-    CloseNotClaimedForFailedStep,
-}
-
 /// atomicity 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedAtomicityBehavior {
@@ -152,8 +127,8 @@ pub enum ProhibitedAtomicityBehavior {
     CompensationWithoutCoreStateMachineRule,
     /// partial success is hidden behind final success.
     PartialSuccessHiddenBehindFinalSuccess,
-    /// failed audit/persistence step is used as close evidence.
-    FailedAuditPersistenceAsCloseEvidence,
+    /// failed audit/persistence step is treated as successful commit.
+    FailedAuditPersistenceAsSuccessfulCommit,
 }
 
 /// concurrency / ordering / lock boundary concern の owner です。
@@ -434,7 +409,7 @@ pub enum RetryTimeoutOwner {
     DriverSdk,
     /// entrypoints initiate shutdown cancellation.
     Entrypoints,
-    /// testing scope is not runtime evidence.
+    /// testing-only policy scope.
     TestingScope,
 }
 
@@ -481,9 +456,9 @@ pub enum RetryClass {
     IdempotentCommandReplay,
     /// send/receive operation retry, bounded and audited when failure affects decision.
     DriverTransportRetry,
-    /// bounded retry store governed by persistence/resource Canonical.
+    /// bounded retry store governed by persistence/resource policy.
     PersistenceRetry,
-    /// bounded sink retry, not a substitute for audit evidence.
+    /// bounded sink retry, not a substitute for a durable audit record.
     AuditSinkRetry,
     /// testing-only retry behavior.
     TestOnlyRetry,
@@ -501,8 +476,8 @@ impl RetryClass {
         }
     }
 
-    /// runtime evidence として採用できる retry class です。
-    pub const fn runtime_evidence_allowed(self) -> bool {
+    /// runtime retry policy で使用できる class です。
+    pub const fn is_runtime_retry_class(self) -> bool {
         match self {
             Self::TestOnlyRetry => false,
             Self::NoRetry
@@ -513,4 +488,3 @@ impl RetryClass {
         }
     }
 }
-

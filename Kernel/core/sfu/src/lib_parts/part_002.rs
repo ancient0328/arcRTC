@@ -101,7 +101,7 @@ const DROP_REJECTS: &[SfuFailureKind] = &[
     SfuFailureKind::TargetUnavailable,
 ];
 
-/// canonical 由来の SFU transition table です。
+/// source-owned SFU transition table です。
 pub const SFU_TRANSITION_RULES: &[SfuTransitionRule] = &[
     SfuTransitionRule { trigger: SfuTransitionTrigger::ObserveEndpoint, allowed_pre_state: "session=sfu_session_open", success_effect: SfuStateEffect::Endpoint(SfuEndpointState::Observed), reject_reasons: SESSION_NOT_ACCEPTING },
     SfuTransitionRule { trigger: SfuTransitionTrigger::BeginEndpointAdmission, allowed_pre_state: "session=sfu_session_open; endpoint=endpoint_observed", success_effect: SfuStateEffect::Endpoint(SfuEndpointState::AdmissionPending), reject_reasons: BEGIN_ENDPOINT_REJECTS },
@@ -500,4 +500,3 @@ impl PacketRewriteTransformIntent {
         self.class
     }
 }
-

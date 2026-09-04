@@ -96,7 +96,7 @@ const RUNTIME_TASK_OWNER: ResourceOwnerTuple = ResourceOwnerTuple::new(
     ResourceExecutionOwner::TaskLifecycleDecisionPhysicalOwnerExecution,
 );
 
-/// v0.2 initial canonical の required bound catalog です。
+/// v0.2 source policy の required bound catalog です。
 pub const REQUIRED_RESOURCE_BOUNDS: &[RequiredResourceBound] = &[
     RequiredResourceBound::new(
         ResourceBoundKind::ActiveRoomSet,
@@ -441,4 +441,3 @@ impl ResourceBoundClosedAction {
         self.owner_tuple
     }
 }
-

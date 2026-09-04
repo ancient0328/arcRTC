@@ -16,9 +16,8 @@ mod redaction;
 mod success;
 
 use arcrtc_distro_evidence::{
-    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
-    DistroEvidenceRecord, DistroLayer, DistroNonClaimScope,
-    DistroPlane, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
+    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason, DistroEvidenceRecord,
+    DistroLayer, DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
 };
 use cli::{CliDeviceClass, CliPlatform};
 use dispatch::dispatch_kpi_real_device_success_command;
@@ -265,7 +264,7 @@ fn success_record(row: SuccessMatrixRow, exit_status: i32) -> RealDeviceEvidence
         platform_command: match row.platform {
             CliPlatform::Android => Some("adb devices -l".to_owned()),
             CliPlatform::Ios if row.device_class == RealDeviceClass::IosPhysical => {
-                Some("xcrun xctrace list devices".to_owned())
+                Some("xcrun devicectl list devices".to_owned())
             }
             CliPlatform::Ios => Some("xcrun simctl list devices".to_owned()),
             CliPlatform::Browser => None,

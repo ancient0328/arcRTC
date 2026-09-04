@@ -12,8 +12,8 @@ public enum ArcRtcIosSdkSurface {
 
     public static let projection = SdkPublicApiProjection(
         platform: .ios,
-        sourceContractVersion: .v0_2,
-        sourceContract: .signalingContractCanonical,
+        sourceProtocolVersion: .v0_2,
+        sourceProtocol: .signalingProtocol,
         projectionClass: .platformApiProjection,
         generatedArtifactIsSemanticAuthority: false,
         commands: commandKinds,
@@ -51,8 +51,8 @@ public enum ArcRtcIosSdkSurface {
         }
 
         return projection.platform == .ios
-            && projection.sourceContractVersion == .v0_2
-            && projection.sourceContract == .signalingContractCanonical
+            && projection.sourceProtocolVersion == .v0_2
+            && projection.sourceProtocol == .signalingProtocol
             && projection.projectionClass == .platformApiProjection
             && !projection.generatedArtifactIsSemanticAuthority
             && projection.commands == commandKinds
@@ -64,4 +64,3 @@ public enum ArcRtcIosSdkSurface {
             && projection.outOfScopeFeatures == outOfScopeFeatures
     }
 }
-

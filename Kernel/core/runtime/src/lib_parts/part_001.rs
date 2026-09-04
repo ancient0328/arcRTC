@@ -38,7 +38,7 @@ impl RuntimeOwnership {
 }
 
 impl RuntimeAbstractionSurface {
-    /// Canonical の ownership tuple です。
+    /// source-owned ownership tuple です。
     pub const fn ownership(self) -> RuntimeOwnership {
         match self {
             Self::ClockPort => RuntimeOwnership::new(
@@ -249,8 +249,8 @@ pub enum ProhibitedRuntimeClockRandomnessBehavior {
     RandomGeneratorOwnsIdentitySemantics,
     /// entrypoints silently substitute defaults after required configuration missing.
     EntrypointsSilentlySubstituteRuntimeDefaults,
-    /// deterministic test clock/RNG is used as production-readiness evidence.
-    DeterministicTestClockRngAsProductionEvidence,
+    /// deterministic test clock/RNG is used in the production runtime.
+    DeterministicTestClockRngInProductionRuntime,
     /// runtime worker state owns domain state.
     RuntimeWorkerOwnsDomainState,
     /// detached task or worker supervision is implicit.
@@ -393,8 +393,8 @@ pub enum RuntimeTaskInputReferenceClass {
 /// task output observation class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RuntimeTaskOutputObservation {
-    /// no task evidence is claimed.
-    NoTaskEvidenceClaim,
+    /// no task output observation is available.
+    NoTaskObservation,
     /// spawn accepted observation.
     SpawnObserved,
     /// join/wait observation.
@@ -416,7 +416,7 @@ pub enum CancellationPropagationRule {
     ParentScopeEndsThenBoundedJoinOrCancel,
     /// command-scoped cancellation preserves prior core decision.
     PreservePriorCoreDecision,
-    /// shutdown/drain relation follows shutdown drain Canonical.
+    /// shutdown/drain relation follows shutdown drain policy.
     FollowsShutdownDrain,
 }
 

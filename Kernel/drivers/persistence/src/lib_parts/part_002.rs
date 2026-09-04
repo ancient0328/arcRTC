@@ -38,99 +38,6 @@ impl SchemaMigrationFailure {
     }
 }
 
-/// migration report に必要な shape です。実測 report 本体は evidence record 側が所有します。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SchemaMigrationReportShape {
-    has_correlation_or_startup_ref: bool,
-    has_target_driver_and_store_class: bool,
-    has_migration_class: bool,
-    has_source_and_target_version: bool,
-    has_canonical_format_version_when_claimed: bool,
-    has_reproducible_procedure: bool,
-    has_result_and_reason_for_non_success: bool,
-    has_rollback_status: bool,
-    has_sensitive_data_redaction_statement: bool,
-}
-
-/// migration report shape の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SchemaMigrationReportShapeError {
-    /// correlation ID or startup run ID がありません。
-    CorrelationOrStartupRefMissing,
-    /// target driver / store class がありません。
-    TargetDriverStoreMissing,
-    /// migration class がありません。
-    MigrationClassMissing,
-    /// source / target version がありません。
-    VersionMissing,
-    /// digest / compatibility evidence claim に必要な canonical format/version がありません。
-    CanonicalFormatVersionMissing,
-    /// reproducible procedure がありません。
-    ReproducibleProcedureMissing,
-    /// result / non-success reason がありません。
-    ResultOrReasonMissing,
-    /// rollback status がありません。
-    RollbackStatusMissing,
-    /// sensitive-data redaction statement がありません。
-    RedactionStatementMissing,
-}
-
-impl SchemaMigrationReportShape {
-    /// migration report を evidence として採用できる最小 shape を確認します。
-    pub const fn try_new(
-        has_correlation_or_startup_ref: bool,
-        has_target_driver_and_store_class: bool,
-        has_migration_class: bool,
-        has_source_and_target_version: bool,
-        has_canonical_format_version_when_claimed: bool,
-        digest_or_compatibility_evidence_claimed: bool,
-        has_reproducible_procedure: bool,
-        has_result_and_reason_for_non_success: bool,
-        has_rollback_status: bool,
-        has_sensitive_data_redaction_statement: bool,
-    ) -> Result<Self, SchemaMigrationReportShapeError> {
-        if !has_correlation_or_startup_ref {
-            return Err(SchemaMigrationReportShapeError::CorrelationOrStartupRefMissing);
-        }
-        if !has_target_driver_and_store_class {
-            return Err(SchemaMigrationReportShapeError::TargetDriverStoreMissing);
-        }
-        if !has_migration_class {
-            return Err(SchemaMigrationReportShapeError::MigrationClassMissing);
-        }
-        if !has_source_and_target_version {
-            return Err(SchemaMigrationReportShapeError::VersionMissing);
-        }
-        if digest_or_compatibility_evidence_claimed && !has_canonical_format_version_when_claimed {
-            return Err(SchemaMigrationReportShapeError::CanonicalFormatVersionMissing);
-        }
-        if !has_reproducible_procedure {
-            return Err(SchemaMigrationReportShapeError::ReproducibleProcedureMissing);
-        }
-        if !has_result_and_reason_for_non_success {
-            return Err(SchemaMigrationReportShapeError::ResultOrReasonMissing);
-        }
-        if !has_rollback_status {
-            return Err(SchemaMigrationReportShapeError::RollbackStatusMissing);
-        }
-        if !has_sensitive_data_redaction_statement {
-            return Err(SchemaMigrationReportShapeError::RedactionStatementMissing);
-        }
-
-        Ok(Self {
-            has_correlation_or_startup_ref,
-            has_target_driver_and_store_class,
-            has_migration_class,
-            has_source_and_target_version,
-            has_canonical_format_version_when_claimed,
-            has_reproducible_procedure,
-            has_result_and_reason_for_non_success,
-            has_rollback_status,
-            has_sensitive_data_redaction_statement,
-        })
-    }
-}
-
 /// schema migration lifecycle 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedSchemaMigrationBehavior {
@@ -148,8 +55,8 @@ pub enum ProhibitedSchemaMigrationBehavior {
     StorageLayoutAsCanonicalSerialization,
     /// rollback plan is omitted for forward migration.
     RollbackPlanOmitted,
-    /// migration snapshot is adopted as backup/restore evidence without artifact classification.
-    MigrationSnapshotAsBackupRestoreEvidence,
+    /// migration snapshot is treated as restore proof without artifact classification.
+    MigrationSnapshotAsRestoreProof,
 }
 
 /// v0.2 で許可する export / backup artifact class です。
@@ -163,8 +70,6 @@ pub enum ExportBackupArtifactClass {
     PersistenceSnapshot,
     /// typed configuration/profile/policy bundle export.
     ConfigurationExport,
-    /// rerunnable report-support material.
-    EvidenceBundle,
     /// schema/migration support snapshot.
     SchemaMigrationSnapshot,
 }
@@ -191,7 +96,7 @@ pub enum ArtifactRetentionClass {
     GovernanceControlled,
 }
 
-/// export / backup artifact の integrity evidence class です。
+/// export / backup artifact の integrity verification class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactIntegrityClass {
     /// digest / hash over artifact bytes.
@@ -209,115 +114,13 @@ pub enum ArtifactIntegrityClass {
 pub enum RestoreReplayApplicability {
     /// restore/replay input としては使いません。
     NotIntendedForRestoreReplay,
-    /// restore input 候補だが owning Canonical admission が必要です。
-    RequiresRestoreCanonicalAdmission,
-    /// replay verification input 候補だが owning Canonical admission が必要です。
-    RequiresReplayCanonicalAdmission,
+    /// source restore policy で許可された restore input です。
+    RestoreInput,
+    /// source replay policy で許可された verification input です。
+    ReplayVerificationInput,
 }
 
-/// export / backup artifact admission shape です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ExportBackupArtifactAdmission {
-    artifact_class: ExportBackupArtifactClass,
-    redaction_class: ArtifactRedactionClass,
-    retention_class: ArtifactRetentionClass,
-    integrity_class: ArtifactIntegrityClass,
-    restore_replay_applicability: RestoreReplayApplicability,
-    integrity_reference_or_non_digest_reason_recorded: bool,
-    schema_or_format_version_applicable: bool,
-    schema_or_format_version_recorded: bool,
-    generation_procedure_recorded: bool,
-    working_directory_or_owner_recorded: bool,
-    source_scope_and_time_phase_recorded: bool,
-    correlation_id_recorded: bool,
-    concrete_storage_owner_recorded: bool,
-    rerun_condition_recorded: bool,
-}
-
-/// artifact admission の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ExportBackupArtifactAdmissionError {
-    /// generation command / procedure がありません。
-    GenerationProcedureMissing,
-    /// working directory or driver/tool owner がありません。
-    WorkingDirectoryOrOwnerMissing,
-    /// source scope / time phase がありません。
-    SourceScopeTimePhaseMissing,
-    /// correlation ID がありません。
-    CorrelationIdMissing,
-    /// concrete storage location owner がありません。
-    ConcreteStorageOwnerMissing,
-    /// rerun / regeneration condition がありません。
-    RerunConditionMissing,
-    /// integrity reference or explicit non-digest reason がありません。
-    IntegrityEvidenceMissing,
-    /// applicable schema / format version がありません。
-    SchemaFormatVersionMissing,
-}
-
-impl ExportBackupArtifactAdmission {
-    /// artifact を evidence 候補として扱うための最小 admission shape を確認します。
-    pub const fn try_new(
-        artifact_class: ExportBackupArtifactClass,
-        redaction_class: ArtifactRedactionClass,
-        retention_class: ArtifactRetentionClass,
-        integrity_class: ArtifactIntegrityClass,
-        restore_replay_applicability: RestoreReplayApplicability,
-        integrity_reference_or_non_digest_reason_recorded: bool,
-        schema_or_format_version_applicable: bool,
-        schema_or_format_version_recorded: bool,
-        generation_procedure_recorded: bool,
-        working_directory_or_owner_recorded: bool,
-        source_scope_and_time_phase_recorded: bool,
-        correlation_id_recorded: bool,
-        concrete_storage_owner_recorded: bool,
-        rerun_condition_recorded: bool,
-    ) -> Result<Self, ExportBackupArtifactAdmissionError> {
-        if !generation_procedure_recorded {
-            return Err(ExportBackupArtifactAdmissionError::GenerationProcedureMissing);
-        }
-        if !working_directory_or_owner_recorded {
-            return Err(ExportBackupArtifactAdmissionError::WorkingDirectoryOrOwnerMissing);
-        }
-        if !source_scope_and_time_phase_recorded {
-            return Err(ExportBackupArtifactAdmissionError::SourceScopeTimePhaseMissing);
-        }
-        if !correlation_id_recorded {
-            return Err(ExportBackupArtifactAdmissionError::CorrelationIdMissing);
-        }
-        if !concrete_storage_owner_recorded {
-            return Err(ExportBackupArtifactAdmissionError::ConcreteStorageOwnerMissing);
-        }
-        if !rerun_condition_recorded {
-            return Err(ExportBackupArtifactAdmissionError::RerunConditionMissing);
-        }
-        if !integrity_reference_or_non_digest_reason_recorded {
-            return Err(ExportBackupArtifactAdmissionError::IntegrityEvidenceMissing);
-        }
-        if schema_or_format_version_applicable && !schema_or_format_version_recorded {
-            return Err(ExportBackupArtifactAdmissionError::SchemaFormatVersionMissing);
-        }
-
-        Ok(Self {
-            artifact_class,
-            redaction_class,
-            retention_class,
-            integrity_class,
-            restore_replay_applicability,
-            integrity_reference_or_non_digest_reason_recorded,
-            schema_or_format_version_applicable,
-            schema_or_format_version_recorded,
-            generation_procedure_recorded,
-            working_directory_or_owner_recorded,
-            source_scope_and_time_phase_recorded,
-            correlation_id_recorded,
-            concrete_storage_owner_recorded,
-            rerun_condition_recorded,
-        })
-    }
-}
-
-/// sensitive data を一般 export / backup evidence へ入れないための guard です。
+/// sensitive data を一般 export / backup artifact へ入れないための guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArtifactSensitiveDataGuard {
     raw_secret_absent: bool,
@@ -366,7 +169,7 @@ impl ArtifactSensitiveDataGuard {
     }
 }
 
-/// integrity evidence class の混同を防ぐ guard です。
+/// integrity verification class の混同を防ぐ guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArtifactIntegrityGuard {
     integrity_class: ArtifactIntegrityClass,
@@ -412,43 +215,45 @@ impl ArtifactIntegrityGuard {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArtifactRestoreImportGuard {
     applicability: RestoreReplayApplicability,
-    owning_canonical_admission_recorded: bool,
-    restore_or_replay_evidence_recorded: bool,
+    source_policy_allows_use: bool,
+    restore_or_replay_verification_completed: bool,
 }
 
 /// restore/import guard の fail-closed error です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactRestoreImportGuardError {
-    /// restore/import/replay admission がありません。
-    RestoreImportAdmissionMissing,
-    /// restore/replay evidence がありません。
-    RestoreReplayEvidenceMissing,
+    /// source restore/replay policy が使用を許可していません。
+    RestoreReplayPolicyDenied,
+    /// restore/replay verification が完了していません。
+    RestoreReplayVerificationMissing,
 }
 
 impl ArtifactRestoreImportGuard {
     /// artifact presence と restore/import/replay admission を分離します。
     pub const fn try_new(
         applicability: RestoreReplayApplicability,
-        owning_canonical_admission_recorded: bool,
-        restore_or_replay_evidence_recorded: bool,
+        source_policy_allows_use: bool,
+        restore_or_replay_verification_completed: bool,
     ) -> Result<Self, ArtifactRestoreImportGuardError> {
         match applicability {
             RestoreReplayApplicability::NotIntendedForRestoreReplay => {}
-            RestoreReplayApplicability::RequiresRestoreCanonicalAdmission
-            | RestoreReplayApplicability::RequiresReplayCanonicalAdmission => {
-                if !owning_canonical_admission_recorded {
-                    return Err(ArtifactRestoreImportGuardError::RestoreImportAdmissionMissing);
+            RestoreReplayApplicability::RestoreInput
+            | RestoreReplayApplicability::ReplayVerificationInput => {
+                if !source_policy_allows_use {
+                    return Err(ArtifactRestoreImportGuardError::RestoreReplayPolicyDenied);
                 }
-                if !restore_or_replay_evidence_recorded {
-                    return Err(ArtifactRestoreImportGuardError::RestoreReplayEvidenceMissing);
+                if !restore_or_replay_verification_completed {
+                    return Err(
+                        ArtifactRestoreImportGuardError::RestoreReplayVerificationMissing,
+                    );
                 }
             }
         }
 
         Ok(Self {
             applicability,
-            owning_canonical_admission_recorded,
-            restore_or_replay_evidence_recorded,
+            source_policy_allows_use,
+            restore_or_replay_verification_completed,
         })
     }
 }
@@ -458,7 +263,7 @@ impl ArtifactRestoreImportGuard {
 pub enum ExportBackupArtifactFailureKind {
     /// export or backup surface is not admitted.
     ExportSurfaceNotAllowed,
-    /// artifact requires redaction before adoption.
+    /// artifact requires redaction before export.
     ExportRedactionRequired,
     /// artifact cannot be generated or fetched.
     BackupArtifactUnavailable,
@@ -509,4 +314,3 @@ pub struct ExportBackupArtifactAuditShape {
     correlation_id_recorded: bool,
     storage_or_tool_owner_recorded: bool,
 }
-

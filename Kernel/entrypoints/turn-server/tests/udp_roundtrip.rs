@@ -93,7 +93,7 @@ fn assert_error_response(label: &str, input: &[u8], reason: &str) {
 #[test]
 fn well_formed_binding_request_returns_unsupported_method() {
     assert_error_response(
-        "TU1-binding",
+        "binding-request",
         STUN_BINDING_REQUEST,
         "unsupported_turn_method",
     );
@@ -136,37 +136,37 @@ fn adversarial_datagrams_fail_closed() {
     let over_bound = vec![0x00; 2049];
 
     let cases: Vec<(&str, Vec<u8>, &str)> = vec![
-        ("TU2-cookie", malformed_cookie, "malformed_turn_message"),
         (
-            "TU2-short-header",
+            "malformed-cookie",
+            malformed_cookie,
+            "malformed_turn_message",
+        ),
+        (
+            "short-header",
             vec![0x00, 0x03, 0x00],
             "malformed_turn_message",
         ),
+        ("length-conflict", length_conflict, "malformed_turn_message"),
         (
-            "TU2-length-conflict",
-            length_conflict,
-            "malformed_turn_message",
-        ),
-        (
-            "TU2-non-multiple-length",
+            "non-multiple-length",
             non_multiple_length,
             "malformed_turn_message",
         ),
-        ("TU2-non-stun-type", non_stun_type, "malformed_turn_message"),
-        ("TU2-unknown-type", unknown_type, "unsupported_turn_method"),
-        ("TU2-over-bound", over_bound, "frame_size_bound_exceeded"),
+        ("non-stun-type", non_stun_type, "malformed_turn_message"),
+        ("unknown-type", unknown_type, "unsupported_turn_method"),
+        ("over-bound", over_bound, "frame_size_bound_exceeded"),
         (
-            "TU2-create-permission-missing-attribute",
+            "create-permission-missing-attribute",
             create_permission,
             "malformed_turn_message",
         ),
         (
-            "TU2-allocate-without-credential",
+            "allocate-without-credential",
             allocate_without_credential,
             "credential_missing",
         ),
         (
-            "TU2-refresh-without-allocation",
+            "refresh-without-allocation",
             refresh_without_allocation,
             "allocation_not_found",
         ),

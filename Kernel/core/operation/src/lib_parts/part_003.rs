@@ -114,8 +114,8 @@ pub enum CancellationSource {
 pub enum CancellationHandling {
     /// no domain state mutation.
     NoDomainStateMutation,
-    /// preserve already accepted/rejected decision evidence.
-    PreservePriorDecisionEvidence,
+    /// preserve an already accepted/rejected decision result.
+    PreservePriorDecisionResult,
     /// follow cross-plane shutdown drain canonical.
     FollowShutdownDrain,
     /// convert to operation_cancelled or driver_shutdown.
@@ -129,7 +129,7 @@ impl CancellationSource {
     pub const fn handling(self) -> CancellationHandling {
         match self {
             Self::ClientBeforeDriverCoreBoundary => CancellationHandling::NoDomainStateMutation,
-            Self::ClientAfterCoreEntry => CancellationHandling::PreservePriorDecisionEvidence,
+            Self::ClientAfterCoreEntry => CancellationHandling::PreservePriorDecisionResult,
             Self::EntrypointShutdown => CancellationHandling::FollowShutdownDrain,
             Self::RuntimeTaskCancelled => CancellationHandling::ConvertToCatalogedRuntimeReason,
             Self::TestHarnessCancelled => CancellationHandling::TestOutcomeOnly,
@@ -140,50 +140,50 @@ impl CancellationSource {
 /// retry を許可するための precondition set です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RetryPreconditions {
-    reason_retryable_or_canonical_allowed: bool,
+    reason_retryable_or_policy_allowed: bool,
     command_idempotent_or_driver_local_before_domain_acceptance: bool,
     retry_bound_declared: bool,
     retry_duration_declared: bool,
     correlation_and_original_command_identity_preserved: bool,
-    evidence_distinguishes_first_and_retry_attempt: bool,
+    attempt_identity_distinguishes_first_and_retry: bool,
     privacy_redaction_boundary_preserved: bool,
 }
 
 impl RetryPreconditions {
     /// retry precondition set を作ります。
     pub const fn new(
-        reason_retryable_or_canonical_allowed: bool,
+        reason_retryable_or_policy_allowed: bool,
         command_idempotent_or_driver_local_before_domain_acceptance: bool,
         retry_bound_declared: bool,
         retry_duration_declared: bool,
         correlation_and_original_command_identity_preserved: bool,
-        evidence_distinguishes_first_and_retry_attempt: bool,
+        attempt_identity_distinguishes_first_and_retry: bool,
         privacy_redaction_boundary_preserved: bool,
     ) -> Self {
         Self {
-            reason_retryable_or_canonical_allowed,
+            reason_retryable_or_policy_allowed,
             command_idempotent_or_driver_local_before_domain_acceptance,
             retry_bound_declared,
             retry_duration_declared,
             correlation_and_original_command_identity_preserved,
-            evidence_distinguishes_first_and_retry_attempt,
+            attempt_identity_distinguishes_first_and_retry,
             privacy_redaction_boundary_preserved,
         }
     }
 
     /// retry を許可できるかどうかです。
     pub const fn allows_retry(self) -> bool {
-        self.reason_retryable_or_canonical_allowed
+        self.reason_retryable_or_policy_allowed
             && self.command_idempotent_or_driver_local_before_domain_acceptance
             && self.retry_bound_declared
             && self.retry_duration_declared
             && self.correlation_and_original_command_identity_preserved
-            && self.evidence_distinguishes_first_and_retry_attempt
+            && self.attempt_identity_distinguishes_first_and_retry
             && self.privacy_redaction_boundary_preserved
     }
 }
 
-/// retry attempt の identity/evidence shape です。
+/// retry attempt の identity/observation shape です。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RetryAttemptShape<TargetReference, ActorReference> {
     retry_class: RetryClass,
@@ -225,10 +225,10 @@ pub enum ProhibitedRetryTimeoutCancellationBehavior {
     TimeoutAsGenericSuccessOrFreeTextFailure,
     /// unbounded retry loop or unbounded retry store.
     UnboundedRetry,
-    /// test-only retry behavior is used as runtime evidence.
-    TestOnlyRetryAsRuntimeEvidence,
-    /// retry erases original correlation or first-attempt evidence.
-    RetryErasesOriginalCorrelationOrFirstAttemptEvidence,
+    /// test-only retry behavior is used as runtime policy.
+    TestOnlyRetryAsRuntimePolicy,
+    /// retry erases original correlation or first-attempt identity.
+    RetryErasesOriginalCorrelationOrFirstAttemptIdentity,
     /// runtime task cancellation is treated as successful domain lifecycle transition.
     RuntimeTaskCancellationAsDomainSuccess,
 }

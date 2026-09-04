@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use arcrtc_core_identity::{OpaqueReference, ReferenceAuthority, RouteId};
 use arcrtc_core_sfu::{
     apply_sfu_forwarding, ForwardingDecision, PublicationDecision, SfuEndpointState,
@@ -37,7 +34,7 @@ fn request(
 }
 
 #[test]
-fn assert_t_sfu_02__publication() {
+fn assert_publication() {
     let decision = apply_sfu_forwarding(
         state(SfuRouteState::Selected),
         request(
@@ -53,7 +50,7 @@ fn assert_t_sfu_02__publication() {
 }
 
 #[test]
-fn assert_t_sfu_02__subscription() {
+fn assert_subscription() {
     let decision = apply_sfu_forwarding(
         state(SfuRouteState::Selected),
         request(
@@ -69,7 +66,7 @@ fn assert_t_sfu_02__subscription() {
 }
 
 #[test]
-fn assert_t_sfu_02__forwarding_selected() {
+fn assert_forwarding_selected() {
     let decision = apply_sfu_forwarding(
         state(SfuRouteState::Selected),
         request(
@@ -87,7 +84,7 @@ fn assert_t_sfu_02__forwarding_selected() {
 }
 
 #[test]
-fn assert_t_sfu_02__forwarding_dropped() {
+fn assert_forwarding_dropped() {
     let decision = apply_sfu_forwarding(
         state(SfuRouteState::Dropped),
         request(
@@ -103,7 +100,7 @@ fn assert_t_sfu_02__forwarding_dropped() {
 }
 
 #[test]
-fn assert_t_sfu_02__forwarding_failed() {
+fn assert_forwarding_failed() {
     let decision = apply_sfu_forwarding(
         state(SfuRouteState::Closed),
         request(

@@ -275,7 +275,7 @@ pub enum IdempotencyFailureKind {
     IdempotencyWindowExpired,
     /// command class が replay を許可しません。
     ReplayNotAllowed,
-    /// response replay evidence/cache unavailable です。
+    /// response replay cache unavailable です。
     ResponseReplayNotAvailable,
     /// canonical payload digest を生成できません。
     CanonicalSerializationFailed,

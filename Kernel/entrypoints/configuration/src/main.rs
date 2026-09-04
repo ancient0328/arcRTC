@@ -9,7 +9,7 @@ fn main() {
         std::process::exit(2);
     };
 
-    // profile token の選択結果を表示するだけで、runtime/prod claim にはしません。
+    // profile token の source-owned runtime selection を表示します。
     let class = match token.as_str() {
         "development-local" => ConfigurationProfileClass::DevelopmentLocal,
         "test-deterministic" => ConfigurationProfileClass::TestDeterministic,
@@ -25,6 +25,5 @@ fn main() {
         }
     };
 
-    let rule = class.adoption_rule();
-    println!("profile_class={token} adoption_rule={rule:?}");
+    println!("profile_class={token} selected_profile={class:?}");
 }

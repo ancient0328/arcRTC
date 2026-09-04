@@ -90,7 +90,6 @@ fn command_decision(
         state_transition: command::StateTransitionSummary::NoStateChange,
         port_intents: Vec::new(),
         audit_projection: command::AuditProjectionRequirement::Required,
-        evidence_class: command::DecisionEvidenceClass::SourceDecisionOnly,
     })
     .expect("decision shape is valid")
 }
@@ -170,7 +169,7 @@ fn configuration_domain_and_features_surfaces_execute_closed_vocabularies() {
         None,
         features::ExcludedFeatureClass::RecordingWorkflow,
         features::FeatureRequestedSurface::Entrypoints,
-        features::FeatureAdmissionDecisionClass::CloseNotClaimed,
+        features::FeatureAdmissionDecisionClass::Rejected,
         Some(features::FeatureAdmissionFailureKind::RecordingNotSupported),
     );
     assert_eq!(
@@ -183,23 +182,8 @@ fn configuration_domain_and_features_surfaces_execute_closed_vocabularies() {
     );
     assert_eq!(
         rejected.decision_class(),
-        features::FeatureAdmissionDecisionClass::CloseNotClaimed
+        features::FeatureAdmissionDecisionClass::Rejected
     );
-
-    for requirement in [
-        features::FutureAdmissionRequirement::FeatureClass,
-        features::FutureAdmissionRequirement::OwnerPackageLayer,
-        features::FutureAdmissionRequirement::GenericCoreRelation,
-        features::FutureAdmissionRequirement::PublicSdkApiSurface,
-        features::FutureAdmissionRequirement::DriverRuntimeDependencyBoundary,
-        features::FutureAdmissionRequirement::SecurityPrivacyRedactionBoundary,
-        features::FutureAdmissionRequirement::ReasonCatalogAdditions,
-        features::FutureAdmissionRequirement::AuditEventRelation,
-        features::FutureAdmissionRequirement::EvidenceClass,
-        features::FutureAdmissionRequirement::MigrationDeprecationRelation,
-    ] {
-        assert!(format!("{requirement:?}").len() > 3);
-    }
 }
 
 #[test]
@@ -379,35 +363,35 @@ fn signaling_transition_table_and_contract_errors_are_executed() {
 #[test]
 fn protocol_versioning_digest_and_semantic_envelope_fail_closed_paths_execute() {
     let fully_defined = protocol::CanonicalEncodingRuleSet::new(
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
         protocol::UnknownFieldHandling::Reject,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
     );
-    assert!(fully_defined.usable_for_canonical_evidence());
+    assert!(fully_defined.is_complete_for_canonical_encoding());
     let incomplete = protocol::CanonicalEncodingRuleSet::new(
-        protocol::CanonicalRuleStatus::RequiresAdrOrCanonical,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Unspecified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
         protocol::UnknownFieldHandling::IgnoredOnlyWhenCompatibilityAllows,
-        protocol::CanonicalRuleStatus::Defined,
-        protocol::CanonicalRuleStatus::Defined,
+        protocol::CanonicalRuleStatus::Specified,
+        protocol::CanonicalRuleStatus::Specified,
     );
-    assert!(!incomplete.usable_for_canonical_evidence());
+    assert!(!incomplete.is_complete_for_canonical_encoding());
 
     for data_class in [
         protocol::CanonicalDataClass::AuditEventHashInput,
@@ -520,15 +504,12 @@ fn protocol_versioning_digest_and_semantic_envelope_fail_closed_paths_execute() 
         range,
         vec![
             protocol::DeprecationLifecycleStep::IdentifyAffectedSurfaceAndVersion,
-            protocol::DeprecationLifecycleStep::RecordAdrOrCanonicalUpdate,
             protocol::DeprecationLifecycleStep::DefineUnsupportedVersionBehavior,
             protocol::DeprecationLifecycleStep::UpdateSdkParityAndDriverMapping,
-            protocol::DeprecationLifecycleStep::AddCompatibilityNegativePlan,
-            protocol::DeprecationLifecycleStep::RecordExecutionEvidence,
-            protocol::DeprecationLifecycleStep::RemoveAfterDocumentedCondition,
+            protocol::DeprecationLifecycleStep::RemoveAfterCompatibilityWindow,
         ],
     );
-    assert_eq!(deprecation.lifecycle_steps().len(), 7);
+    assert_eq!(deprecation.lifecycle_steps().len(), 4);
 
     let payload = protocol::CoreSemanticPayloadModel::new(
         protocol::CoreSemanticPayloadClass::OpaqueCoreReference,
@@ -755,7 +736,7 @@ fn transport_negotiation_ice_and_secure_media_surfaces_execute() {
         assert!(format!("{policy:?}").len() > 3);
     }
     for meaning in [
-        transport::IceObservationMeaning::DiagnosticEvidenceOnly,
+        transport::IceObservationMeaning::DiagnosticObservationOnly,
         transport::IceObservationMeaning::NotSignalingRelaySuccess,
         transport::IceObservationMeaning::NotCrossPlaneBinding,
     ] {
@@ -790,10 +771,10 @@ fn transport_negotiation_ice_and_secure_media_surfaces_execute() {
         assert!(format!("{class:?}").len() > 3);
     }
     for evidence in [
-        transport::SecureMediaEvidenceClass::Handshake,
-        transport::SecureMediaEvidenceClass::PeerVerification,
-        transport::SecureMediaEvidenceClass::ProtectionState,
-        transport::SecureMediaEvidenceClass::PacketForwardingScope,
+        transport::SecureMediaVerificationClass::Handshake,
+        transport::SecureMediaVerificationClass::PeerVerification,
+        transport::SecureMediaVerificationClass::ProtectionState,
+        transport::SecureMediaVerificationClass::PacketForwardingScope,
     ] {
         assert!(format!("{evidence:?}").len() > 3);
     }
@@ -900,7 +881,7 @@ fn runtime_task_lifecycle_and_time_policy_fail_closed_paths_execute() {
             None,
             runtime::RuntimeTaskOwningLayer::Entrypoints,
             runtime::RuntimeTaskInputReferenceClass::None,
-            runtime::RuntimeTaskOutputObservation::NoTaskEvidenceClaim,
+            runtime::RuntimeTaskOutputObservation::NoTaskObservation,
             runtime::CancellationPropagationRule::NotApplicable,
             false,
             false,
@@ -1088,7 +1069,7 @@ fn runtime_task_lifecycle_and_time_policy_fail_closed_paths_execute() {
             time::PrecisionClass::DeclaredPrecisionLabel("ms"),
             time::SamplingWindow::PolicyLabel("startup-window"),
             time::TrustedTimeSourceClass::LocalWallClock,
-            time::ClockSkewImpact::Evidence,
+            time::ClockSkewImpact::Verification,
         ),
         Err(time::ClockSkewPolicyError::ExternalSourceClassRequired)
     );
@@ -1102,8 +1083,8 @@ fn runtime_task_lifecycle_and_time_policy_fail_closed_paths_execute() {
         time::ClockSkewImpact::Audit,
     )
     .expect("bounded skew policy");
-    assert!(time::TimeTrustClass::ExternalTrustedTimeSource.runtime_evidence_allowed());
-    assert!(!time::TimeTrustClass::TimeUntrusted.runtime_evidence_allowed());
+    assert!(time::TimeTrustClass::ExternalTrustedTimeSource.supports_runtime_trust_decision());
+    assert!(!time::TimeTrustClass::TimeUntrusted.supports_runtime_trust_decision());
     assert!(time::TimeTrustClass::MultiNodeBoundedSkew.supports_cross_node_comparison());
     assert!(!time::TimeTrustClass::SingleNodeWallClock.supports_cross_node_comparison());
 
@@ -1201,7 +1182,6 @@ fn cross_plane_binding_references_and_outcomes_are_executed() {
         cross_plane::CrossPlaneBindingOutcome::Rejected,
         cross_plane::CrossPlaneBindingOutcome::Expired,
         cross_plane::CrossPlaneBindingOutcome::Failed,
-        cross_plane::CrossPlaneBindingOutcome::CloseNotClaimed,
     ] {
         assert!(!outcome.code().is_empty());
         assert_eq!(
@@ -1235,13 +1215,6 @@ fn cross_plane_binding_references_and_outcomes_are_executed() {
     );
     assert_eq!(decision.audit_event_type(), "cross_plane_binding_decision");
 
-    for adoption in [
-        cross_plane::CrossPlaneEvidenceAdoption::SinglePlaneOnly,
-        cross_plane::CrossPlaneEvidenceAdoption::CrossPlaneBindingEvidence,
-        cross_plane::CrossPlaneEvidenceAdoption::CloseNotClaimed,
-    ] {
-        assert!(format!("{adoption:?}").len() > 3);
-    }
     for prohibited in [
         cross_plane::ProhibitedCrossPlaneEquivalence::SignalingJoinAsSfuAdmission,
         cross_plane::ProhibitedCrossPlaneEquivalence::TokenOrAuthorizationAsPlaneBinding,

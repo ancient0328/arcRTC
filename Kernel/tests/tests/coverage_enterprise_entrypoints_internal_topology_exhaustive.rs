@@ -155,7 +155,7 @@ fn internal_control_identity_mapping_closes_all_guard_branches() {
         ),
         (
             15,
-            internal_control::InternalServiceIdentityMappingError::NonOpaqueOrUnredactedEvidenceMaterial,
+            internal_control::InternalServiceIdentityMappingError::NonOpaqueOrUnredactedIdentityMaterial,
         ),
     ] {
         let mut flags = [true; 18];
@@ -209,7 +209,9 @@ fn internal_control_identity_mapping_closes_all_guard_branches() {
             internal_control::ServiceIdentityProofReferenceClass::TestIdentityReference,
             test_flags,
         ),
-        Err(internal_control::InternalServiceIdentityMappingError::TestIdentityUsedOutsideTestEvidence)
+        Err(
+            internal_control::InternalServiceIdentityMappingError::TestIdentityUsedOutsideTestScope
+        )
     );
 
     let mut in_process_flags = [true; 18];
@@ -222,13 +224,13 @@ fn internal_control_identity_mapping_closes_all_guard_branches() {
         ),
         Err(
             internal_control::InternalServiceIdentityMappingError::
-                IdentityNotRequiredUsedOutsideInProcessEvidence
+                IdentityNotRequiredUsedOutsideInProcessScope
         )
     );
 }
 
 #[test]
-fn internal_control_contract_audit_and_evidence_success_paths_are_exercised() {
+fn internal_control_contract_and_audit_success_paths_are_exercised() {
     for control_class in [
         internal_control::InternalControlPlaneClass::InProcessPlaneCall,
         internal_control::InternalControlPlaneClass::SameHostPlaneCall,
@@ -357,16 +359,10 @@ fn internal_control_contract_audit_and_evidence_success_paths_are_exercised() {
         internal_control::InternalControlPlaneOutcome::Success,
     )
     .is_ok());
-    assert!(internal_control_evidence_guard(
-        [true; 18],
-        internal_control::InternalControlPlaneClass::NetworkedPlaneCall,
-        internal_control::InternalControlPlaneOutcome::Success,
-    )
-    .is_ok());
 }
 
 #[test]
-fn internal_control_trust_audit_evidence_and_sequence_are_fail_closed() {
+fn internal_control_trust_audit_and_sequence_are_fail_closed() {
     assert_eq!(
         internal_control::InternalServiceTrustAuditEventType::InternalServiceTrustDecision
             .event_type(),
@@ -488,56 +484,6 @@ fn internal_control_trust_audit_evidence_and_sequence_are_fail_closed() {
         ),
         Err(internal_control::InternalServiceTrustAuditError::CatalogedReasonMissing)
     );
-
-    assert!(trust_evidence_guard([true; 17]).is_ok());
-    for (index, expected) in [
-        (0, internal_control::InternalServiceTrustEvidenceError::TrustClassMissing),
-        (
-            1,
-            internal_control::InternalServiceTrustEvidenceError::SourceTargetServiceMissing,
-        ),
-        (2, internal_control::InternalServiceTrustEvidenceError::TopologyClassMissing),
-        (
-            3,
-            internal_control::InternalServiceTrustEvidenceError::EndpointResolutionStateMissing,
-        ),
-        (
-            4,
-            internal_control::InternalServiceTrustEvidenceError::PeerVerificationClassMissing,
-        ),
-        (5, internal_control::InternalServiceTrustEvidenceError::ProofReferenceClassMissing),
-        (
-            6,
-            internal_control::InternalServiceTrustEvidenceError::TrustPolicyReferenceMissing,
-        ),
-        (
-            7,
-            internal_control::InternalServiceTrustEvidenceError::ScopeContractRelationMissing,
-        ),
-        (
-            8,
-            internal_control::InternalServiceTrustEvidenceError::LifetimeExpiryFreshnessRuleMissing,
-        ),
-        (
-            9,
-            internal_control::InternalServiceTrustEvidenceError::
-                InternalControlAuthorizationRelationMissing,
-        ),
-        (10, internal_control::InternalServiceTrustEvidenceError::CommandProcedureMissing),
-        (11, internal_control::InternalServiceTrustEvidenceError::WorkingDirectoryMissing),
-        (12, internal_control::InternalServiceTrustEvidenceError::ExpectedOutcomeMissing),
-        (13, internal_control::InternalServiceTrustEvidenceError::ActualOutcomeMissing),
-        (14, internal_control::InternalServiceTrustEvidenceError::CatalogedReasonMissing),
-        (15, internal_control::InternalServiceTrustEvidenceError::CloseNotClaimedScopeMissing),
-        (
-            16,
-            internal_control::InternalServiceTrustEvidenceError::DiagnosticLogsUsedAsEvidence,
-        ),
-    ] {
-        let mut flags = [true; 17];
-        flags[index] = false;
-        assert_eq!(trust_evidence_guard(flags), Err(expected));
-    }
 }
 
 #[test]
@@ -594,7 +540,7 @@ fn internal_control_reason_catalog_and_prohibited_vocabulary_are_closed() {
             PublicEndpointCredentialReusedAsInternalServiceIdentity,
         internal_control::ProhibitedInternalServiceTrustBehavior::RawServiceCredentialMaterialEscapes,
         internal_control::ProhibitedInternalServiceTrustBehavior::
-            InProcessIdentityEvidenceReusedAsNetworkedTrustEvidence,
+            InProcessIdentityReusedAsNetworkedTrust,
         internal_control::ProhibitedInternalServiceTrustBehavior::TrustFailureRecordedAsFreeTextOnly,
     ] {
         assert!(format!("{:?}", behavior).len() > 10);
@@ -619,7 +565,7 @@ fn internal_control_reason_catalog_and_prohibited_vocabulary_are_closed() {
         internal_control::ProhibitedInternalControlPlaneBehavior::
             ServiceToServiceFailureRecordedAsFreeTextOnly,
         internal_control::ProhibitedInternalControlPlaneBehavior::
-            InProcessEvidenceUsedAsRemoteControlEvidence,
+            InProcessRelationUsedAsRemoteControl,
     ] {
         assert!(format!("{:?}", behavior).len() > 10);
     }
@@ -679,7 +625,7 @@ fn topology_closed_vocabulary_const_fns_and_reason_catalog_are_exhaustive() {
             networked
         );
         assert_eq!(
-            topology_class.requires_experimental_admission_for_production_claim(),
+            topology_class.requires_explicit_experimental_enablement(),
             experimental
         );
         assert_eq!(
@@ -933,7 +879,7 @@ fn topology_deployment_guards_cover_success_and_fail_closed_branches() {
         assert_eq!(deployment_audit_guard(flags), Err(expected));
     }
 
-    assert!(node_affinity_guard([true; 7]).is_ok());
+    assert!(node_affinity_guard([true; 6]).is_ok());
     for (index, expected) in [
         (0, topology::NodeAffinityPolicyError::AffinityKeyMissing),
         (1, topology::NodeAffinityPolicyError::OwningNodeScopeMissing),
@@ -949,13 +895,12 @@ fn topology_deployment_guards_cover_success_and_fail_closed_branches() {
             4,
             topology::NodeAffinityPolicyError::RecoveryReplayRelationMissing,
         ),
-        (5, topology::NodeAffinityPolicyError::EvidenceClassMissing),
         (
-            6,
+            5,
             topology::NodeAffinityPolicyError::WrongNodeAccessNotFailClosed,
         ),
     ] {
-        let mut flags = [true; 7];
+        let mut flags = [true; 6];
         flags[index] = false;
         assert_eq!(node_affinity_guard(flags), Err(expected));
     }
@@ -989,76 +934,12 @@ fn topology_deployment_guards_cover_success_and_fail_closed_branches() {
         ),
         (
             6,
-            topology::TopologyServiceDiscoveryRelationError::NetworkedEndpointTrustEvidenceMissing,
+            topology::TopologyServiceDiscoveryRelationError::NetworkedEndpointTrustRelationMissing,
         ),
     ] {
         let mut flags = [true; 7];
         flags[index] = false;
         assert_eq!(topology_relation_guard(flags), Err(expected));
-    }
-
-    assert!(deployment_evidence_guard([true; 14]).is_ok());
-    for (index, expected) in [
-        (
-            0,
-            topology::DeploymentTopologyEvidenceError::TopologyClassMissing,
-        ),
-        (
-            1,
-            topology::DeploymentTopologyEvidenceError::AuditShapeMissing,
-        ),
-        (
-            2,
-            topology::DeploymentTopologyEvidenceError::EdgeProxyClassMissing,
-        ),
-        (
-            3,
-            topology::DeploymentTopologyEvidenceError::ProcessEntrypointSetMissing,
-        ),
-        (
-            4,
-            topology::DeploymentTopologyEvidenceError::NodeScopeMissing,
-        ),
-        (
-            5,
-            topology::DeploymentTopologyEvidenceError::SelectedEndpointReferenceMissing,
-        ),
-        (
-            6,
-            topology::DeploymentTopologyEvidenceError::NodeAffinityRuleMissing,
-        ),
-        (
-            7,
-            topology::DeploymentTopologyEvidenceError::DiscoveryFailureBehaviorMissing,
-        ),
-        (
-            8,
-            topology::DeploymentTopologyEvidenceError::DiscoverySourceCacheFallbackMissing,
-        ),
-        (
-            9,
-            topology::DeploymentTopologyEvidenceError::InternalServiceTrustClassMissing,
-        ),
-        (
-            10,
-            topology::DeploymentTopologyEvidenceError::DistributedStateFailoverAdmissionMissing,
-        ),
-        (
-            11,
-            topology::DeploymentTopologyEvidenceError::HealthReadinessRelationMissing,
-        ),
-        (
-            12,
-            topology::DeploymentTopologyEvidenceError::CloseNotClaimedScopeMissing,
-        ),
-        (
-            13,
-            topology::DeploymentTopologyEvidenceError::SingleNodeEvidenceUsedAsMultiNodeProof,
-        ),
-    ] {
-        let mut flags = [true; 14];
-        flags[index] = false;
-        assert_eq!(deployment_evidence_guard(flags), Err(expected));
     }
 }
 
@@ -1113,7 +994,7 @@ fn topology_service_discovery_guards_cover_success_and_fail_closed_branches() {
         ),
         (
             5,
-            topology::EndpointFallbackPolicyError::EvidenceLimitationMissing,
+            topology::EndpointFallbackPolicyError::FallbackScopeLimitationMissing,
         ),
         (
             6,
@@ -1180,74 +1061,6 @@ fn topology_service_discovery_guards_cover_success_and_fail_closed_branches() {
         ),
         Err(topology::ServiceDiscoveryAuditError::CatalogedReasonMissing)
     );
-
-    assert!(service_discovery_evidence_guard([true; 15]).is_ok());
-    for (index, expected) in [
-        (
-            0,
-            topology::ServiceDiscoveryResolutionEvidenceError::DiscoverySourceClassMissing,
-        ),
-        (
-            1,
-            topology::ServiceDiscoveryResolutionEvidenceError::AuditShapeMissing,
-        ),
-        (
-            2,
-            topology::ServiceDiscoveryResolutionEvidenceError::TopologyClassMissing,
-        ),
-        (
-            3,
-            topology::ServiceDiscoveryResolutionEvidenceError::TargetServiceMissing,
-        ),
-        (
-            4,
-            topology::ServiceDiscoveryResolutionEvidenceError::EndpointScopeMissing,
-        ),
-        (
-            5,
-            topology::ServiceDiscoveryResolutionEvidenceError::EndpointReferenceMissing,
-        ),
-        (
-            6,
-            topology::ServiceDiscoveryResolutionEvidenceError::TtlCacheRuleMissing,
-        ),
-        (
-            7,
-            topology::ServiceDiscoveryResolutionEvidenceError::StalenessStateMissing,
-        ),
-        (
-            8,
-            topology::ServiceDiscoveryResolutionEvidenceError::FallbackBehaviorMissing,
-        ),
-        (
-            9,
-            topology::ServiceDiscoveryResolutionEvidenceError::ContractVersionReferenceMissing,
-        ),
-        (
-            10,
-            topology::ServiceDiscoveryResolutionEvidenceError::CommandProcedureMissing,
-        ),
-        (
-            11,
-            topology::ServiceDiscoveryResolutionEvidenceError::WorkingDirectoryMissing,
-        ),
-        (
-            12,
-            topology::ServiceDiscoveryResolutionEvidenceError::RerunConditionMissing,
-        ),
-        (
-            13,
-            topology::ServiceDiscoveryResolutionEvidenceError::ServiceIdentityTrustRelationMissing,
-        ),
-        (
-            14,
-            topology::ServiceDiscoveryResolutionEvidenceError::DiagnosticOutputUsedAsEvidence,
-        ),
-    ] {
-        let mut flags = [true; 15];
-        flags[index] = false;
-        assert_eq!(service_discovery_evidence_guard(flags), Err(expected));
-    }
 }
 
 #[test]
@@ -1257,11 +1070,11 @@ fn topology_prohibited_vocabulary_is_exercised_without_source_changes() {
         topology::ProhibitedDeploymentTopologyBehavior::ServiceDiscoveryOwnsDomainDecision,
         topology::ProhibitedDeploymentTopologyBehavior::DiscoveryOrTlsStartupTreatedAsInternalTrust,
         topology::ProhibitedDeploymentTopologyBehavior::NodeLocalStateTreatedAsClusterGlobal,
-        topology::ProhibitedDeploymentTopologyBehavior::FailoverClaimedWithoutRecoveryReplayEvidence,
-        topology::ProhibitedDeploymentTopologyBehavior::FailoverClaimedFromDiscoveryFallbackAlone,
+        topology::ProhibitedDeploymentTopologyBehavior::FailoverAcceptedWithoutRecoveryReplayObservation,
+        topology::ProhibitedDeploymentTopologyBehavior::FailoverAcceptedFromDiscoveryFallbackAlone,
         topology::ProhibitedDeploymentTopologyBehavior::ReplicationConsensusImpliedByMultiNodeTopology,
         topology::ProhibitedDeploymentTopologyBehavior::StickyRoutingRequirementHidden,
-        topology::ProhibitedDeploymentTopologyBehavior::LocalDevTopologyTreatedAsProduction,
+        topology::ProhibitedDeploymentTopologyBehavior::LocalDevTopologyEnabledForManagedRuntime,
         topology::ProhibitedDeploymentTopologyBehavior::ProxyMetadataTrustedWithoutEdgePolicy,
     ] {
         assert!(format!("{:?}", behavior).len() > 8);
@@ -1271,14 +1084,14 @@ fn topology_prohibited_vocabulary_is_exercised_without_source_changes() {
         topology::ProhibitedServiceDiscoveryResolutionBehavior::ServiceDiscoveryOwnsDomainDecision,
         topology::ProhibitedServiceDiscoveryResolutionBehavior::
             FallbackEndpointUsedWithoutPolicyAndAuditReason,
-        topology::ProhibitedServiceDiscoveryResolutionBehavior::StaleCachedEndpointUsedAsFreshEvidence,
+        topology::ProhibitedServiceDiscoveryResolutionBehavior::StaleCachedEndpointUsedAsFreshResolution,
         topology::ProhibitedServiceDiscoveryResolutionBehavior::
             ResolvedInternalEndpointExposedPublicByNaming,
         topology::ProhibitedServiceDiscoveryResolutionBehavior::MeshPolicyBecomesApplicationAuthorization,
         topology::ProhibitedServiceDiscoveryResolutionBehavior::
             ResolvedEndpointTreatedAsTrustedServiceIdentity,
         topology::ProhibitedServiceDiscoveryResolutionBehavior::
-            InProcessEvidenceReusedAsNetworkedDiscoveryEvidence,
+            InProcessResolutionReusedAsNetworkedDiscovery,
     ] {
         assert!(format!("{:?}", behavior).len() > 8);
     }
@@ -1353,18 +1166,6 @@ fn trust_audit_guard(
     )
 }
 
-fn trust_evidence_guard(
-    flags: [bool; 17],
-) -> Result<
-    internal_control::InternalServiceTrustEvidenceGuard,
-    internal_control::InternalServiceTrustEvidenceError,
-> {
-    internal_control::InternalServiceTrustEvidenceGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10], flags[11], flags[12], flags[13], flags[14], flags[15], flags[16],
-    )
-}
-
 fn contract_guard(
     control_plane_class: internal_control::InternalControlPlaneClass,
     message_class: internal_control::InternalControlMessageClass,
@@ -1428,38 +1229,6 @@ fn internal_control_audit_guard(
     )
 }
 
-fn internal_control_evidence_guard(
-    flags: [bool; 18],
-    control_plane_class: internal_control::InternalControlPlaneClass,
-    outcome: internal_control::InternalControlPlaneOutcome,
-) -> Result<
-    internal_control::InternalControlPlaneEvidenceGuard,
-    internal_control::InternalControlPlaneEvidenceError,
-> {
-    internal_control::InternalControlPlaneEvidenceGuard::try_new(
-        control_plane_class,
-        outcome,
-        flags[0],
-        flags[1],
-        flags[2],
-        flags[3],
-        flags[4],
-        flags[5],
-        flags[6],
-        flags[7],
-        flags[8],
-        flags[9],
-        flags[10],
-        flags[11],
-        flags[12],
-        flags[13],
-        flags[14],
-        flags[15],
-        flags[16],
-        flags[17],
-    )
-}
-
 fn topology_admission_guard(
     topology_class: topology::DeploymentTopologyClass,
     flags: [bool; 14],
@@ -1497,7 +1266,7 @@ fn deployment_audit_guard(
 }
 
 fn node_affinity_guard(
-    flags: [bool; 7],
+    flags: [bool; 6],
 ) -> Result<topology::NodeAffinityPolicyGuard, topology::NodeAffinityPolicyError> {
     topology::NodeAffinityPolicyGuard::try_new(topology::NodeAffinityPolicyGuardInput {
         state_class: topology::NodeLocalStateClass::RoomState,
@@ -1506,8 +1275,7 @@ fn node_affinity_guard(
         failover_behavior_declared: flags[2],
         unavailable_node_reason_declared: flags[3],
         recovery_replay_relation_declared: flags[4],
-        evidence_class_declared: flags[5],
-        wrong_node_access_fails_closed_without_distributed_state_policy: flags[6],
+        wrong_node_access_fails_closed_without_distributed_state_policy: flags[5],
     })
 }
 
@@ -1519,15 +1287,6 @@ fn topology_relation_guard(
 > {
     topology::TopologyServiceDiscoveryRelationGuard::try_new(
         flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6],
-    )
-}
-
-fn deployment_evidence_guard(
-    flags: [bool; 14],
-) -> Result<topology::DeploymentTopologyEvidenceGuard, topology::DeploymentTopologyEvidenceError> {
-    topology::DeploymentTopologyEvidenceGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10], flags[11], flags[12], flags[13],
     )
 }
 
@@ -1588,17 +1347,5 @@ fn service_discovery_audit_guard(
         flags[6],
         flags[7],
         flags[8],
-    )
-}
-
-fn service_discovery_evidence_guard(
-    flags: [bool; 15],
-) -> Result<
-    topology::ServiceDiscoveryResolutionEvidenceGuard,
-    topology::ServiceDiscoveryResolutionEvidenceError,
-> {
-    topology::ServiceDiscoveryResolutionEvidenceGuard::try_new(
-        flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], flags[6], flags[7], flags[8],
-        flags[9], flags[10], flags[11], flags[12], flags[13], flags[14],
     )
 }

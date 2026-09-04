@@ -1,11 +1,10 @@
-# coverage denominator の source policy です。測定実行や semantic readiness proof は持ちません。
+# coverage denominator と threshold の source policy です。
 
 [denominator]
 owner = "tools/coverage"
 policy_id = "coverage-denominator"
 scope = ["kernel-rust-workspace", "sdk-typescript", "sdk-android", "sdk-ios"]
 unit = "assertion"
-non_adoption = "denominator policy is not coverage result"
 
 [assertion_classification]
 owner = "tools/coverage"
@@ -24,9 +23,7 @@ owner = "tools/coverage"
 line_floor_percent = 90
 branch_floor_percent = 85
 assertion_floor_percent = 100
-non_adoption = "coverage floor policy is not measured coverage"
 
 [command]
 owner = "tools/coverage"
 coverage_command_id = "coverage-denominator-check"
-non_adoption = "coverage command id source is not command execution evidence"

@@ -42,7 +42,7 @@ pub fn parse_real_device_observation(
     if output.exit_status != RealDeviceCommandExitStatus::Success {
         return Err(RealDeviceObservationError::CommandNotSuccessful);
     }
-    if !is_required_device_observed(dispatch.device_class, &output.stdout_summary) {
+    if !is_required_device_observed(dispatch.device_class, &output.stdout_observation) {
         return Err(RealDeviceObservationError::RequiredDeviceNotObserved);
     }
     let redacted_device_identifier = redact_real_device_identifier(None)
@@ -83,6 +83,9 @@ fn ios_physical_device_is_reachable(stdout: &str) -> bool {
     let mut in_online_devices_section = false;
     for line in observation_segments(stdout) {
         let lower = line.to_ascii_lowercase();
+        if ios_devicectl_device_is_available(&lower) {
+            return true;
+        }
         if lower == "== devices ==" {
             in_online_devices_section = true;
             continue;
@@ -99,6 +102,12 @@ fn ios_physical_device_is_reachable(stdout: &str) -> bool {
         }
     }
     false
+}
+
+fn ios_devicectl_device_is_available(lower: &str) -> bool {
+    lower.split_whitespace().any(|part| part == "available")
+        && (lower.contains("iphone") || lower.contains("ipad"))
+        && !lower.contains("simulator")
 }
 
 fn observation_segments(stdout: &str) -> impl Iterator<Item = &str> {
@@ -129,7 +138,7 @@ mod tests {
             runtime_version_class: RealDeviceVersionClass::IosSystemVersion,
             execution_surface: RealDeviceExecutionSurface::NativeSdkCommand,
             network_class: RealDeviceNetworkClass::LocalUsb,
-            platform_command: Some("xcrun xctrace list devices"),
+            platform_command: Some("xcrun devicectl list devices"),
         }
     }
 
@@ -167,7 +176,7 @@ mod tests {
                 &RealDeviceCommandOutput::success(
                     "== Devices Offline == | User iPhone (26.5)",
                     "",
-                    "xcrun xctrace list devices",
+                    "xcrun devicectl list devices",
                 ),
             ),
             Err(RealDeviceObservationError::RequiredDeviceNotObserved)
@@ -210,10 +219,22 @@ mod tests {
             &RealDeviceCommandOutput::success(
                 "== Devices == | User iPhone (26.5) | == Simulators ==",
                 "",
-                "xcrun xctrace list devices",
+                "xcrun devicectl list devices",
             ),
         )
         .is_ok());
+        assert!(parse_real_device_observation(
+            &ios_physical,
+            &RealDeviceCommandOutput::success(
+                "古川和博のiPhone   guchuanhebonoiPhone.coredevice.local   ID   available (paired)   iPhone 15 (iPhone15,4)",
+                "",
+                "xcrun devicectl list devices",
+            ),
+        )
+        .is_ok());
+        assert!(!ios_physical_device_is_reachable(
+            "古川和博のiPhone   guchuanhebonoiPhone.coredevice.local   ID   unavailable   iPhone 15"
+        ));
         assert!(ios_physical_device_is_reachable(
             "== Devices == | User iPad (26.5) | == Simulators =="
         ));
@@ -239,5 +260,16 @@ mod tests {
             ),
         )
         .is_ok());
+        let long_simulator_inventory = format!(
+            "{} | iPhone 16 Pro (ABC) (Booted)",
+            "iPad (Shutdown) | ".repeat(80)
+        );
+        let long_output = RealDeviceCommandOutput::success(
+            long_simulator_inventory,
+            "",
+            "xcrun simctl list devices",
+        );
+        assert!(long_output.stdout_summary.ends_with("..."));
+        assert!(parse_real_device_observation(&ios_simulator, &long_output).is_ok());
     }
 }

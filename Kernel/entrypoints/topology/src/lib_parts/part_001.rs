@@ -35,12 +35,12 @@ impl DeploymentTopologyClass {
         matches!(self, Self::SplitPlaneNetworked)
     }
 
-    /// production claim に ADR/evidence が必須になる experimental topology です。
-    pub const fn requires_experimental_admission_for_production_claim(self) -> bool {
+    /// explicit experimental enablement が必須になる topology です。
+    pub const fn requires_explicit_experimental_enablement(self) -> bool {
         matches!(self, Self::MultiNodeExperimental)
     }
 
-    /// driver contract と health/readiness evidence が必須になる dependency です。
+    /// driver contract と health/readiness relation が必須になる dependency です。
     pub const fn requires_external_dependency_contract(self) -> bool {
         matches!(self, Self::ExternalManagedDependency)
     }
@@ -94,9 +94,9 @@ pub struct DeploymentTopologyAdmissionGuard {
     edge_proxy_policy_declared_when_ingress_metadata_affects_path: bool,
     distributed_state_policy_declared_when_node_local_state_can_move: bool,
     external_dependency_contract_and_health_declared_when_required: bool,
-    experimental_adr_and_evidence_present_before_production_claim: bool,
+    explicit_experimental_enablement_declared: bool,
     topology_policy_input_is_typed_configuration: bool,
-    local_dev_topology_not_used_as_production_topology: bool,
+    local_dev_topology_not_enabled_for_managed_runtime: bool,
 }
 
 /// topology admission の fail-closed error です。
@@ -122,14 +122,14 @@ pub enum DeploymentTopologyAdmissionError {
     EdgeProxyPolicyMissing,
     /// node-local state 移動時の distributed state policy がありません。
     DistributedStatePolicyMissing,
-    /// external dependency の driver contract / health evidence がありません。
+    /// external dependency の driver contract / health relation がありません。
     ExternalDependencyContractHealthMissing,
-    /// multi-node experimental の production claim 前 ADR/evidence がありません。
-    ExperimentalAdmissionMissing,
+    /// multi-node experimental の explicit enablement がありません。
+    ExperimentalEnablementMissing,
     /// topology policy input が typed configuration ではありません。
     TopologyPolicyInputNotTyped,
-    /// local dev topology を production topology として扱っています。
-    LocalDevTopologyUsedAsProduction,
+    /// local dev topology が managed runtime で有効になっています。
+    LocalDevTopologyEnabledForManagedRuntime,
 }
 
 impl DeploymentTopologyAdmissionGuard {
@@ -147,9 +147,9 @@ impl DeploymentTopologyAdmissionGuard {
         edge_proxy_policy_declared_when_ingress_metadata_affects_path: bool,
         distributed_state_policy_declared_when_node_local_state_can_move: bool,
         external_dependency_contract_and_health_declared_when_required: bool,
-        experimental_adr_and_evidence_present_before_production_claim: bool,
+        explicit_experimental_enablement_declared: bool,
         topology_policy_input_is_typed_configuration: bool,
-        local_dev_topology_not_used_as_production_topology: bool,
+        local_dev_topology_not_enabled_for_managed_runtime: bool,
     ) -> Result<Self, DeploymentTopologyAdmissionError> {
         if !topology_class_declared {
             return Err(DeploymentTopologyAdmissionError::TopologyClassMissing);
@@ -192,16 +192,18 @@ impl DeploymentTopologyAdmissionGuard {
         {
             return Err(DeploymentTopologyAdmissionError::ExternalDependencyContractHealthMissing);
         }
-        if topology_class.requires_experimental_admission_for_production_claim()
-            && !experimental_adr_and_evidence_present_before_production_claim
+        if topology_class.requires_explicit_experimental_enablement()
+            && !explicit_experimental_enablement_declared
         {
-            return Err(DeploymentTopologyAdmissionError::ExperimentalAdmissionMissing);
+            return Err(DeploymentTopologyAdmissionError::ExperimentalEnablementMissing);
         }
         if !topology_policy_input_is_typed_configuration {
             return Err(DeploymentTopologyAdmissionError::TopologyPolicyInputNotTyped);
         }
-        if !local_dev_topology_not_used_as_production_topology {
-            return Err(DeploymentTopologyAdmissionError::LocalDevTopologyUsedAsProduction);
+        if !local_dev_topology_not_enabled_for_managed_runtime {
+            return Err(
+                DeploymentTopologyAdmissionError::LocalDevTopologyEnabledForManagedRuntime,
+            );
         }
 
         Ok(Self {
@@ -217,9 +219,9 @@ impl DeploymentTopologyAdmissionGuard {
             edge_proxy_policy_declared_when_ingress_metadata_affects_path,
             distributed_state_policy_declared_when_node_local_state_can_move,
             external_dependency_contract_and_health_declared_when_required,
-            experimental_adr_and_evidence_present_before_production_claim,
+            explicit_experimental_enablement_declared,
             topology_policy_input_is_typed_configuration,
-            local_dev_topology_not_used_as_production_topology,
+            local_dev_topology_not_enabled_for_managed_runtime,
         })
     }
 }
@@ -288,7 +290,6 @@ pub struct NodeAffinityPolicyGuard {
     failover_behavior_declared: bool,
     unavailable_node_reason_declared: bool,
     recovery_replay_relation_declared: bool,
-    evidence_class_declared: bool,
     wrong_node_access_fails_closed_without_distributed_state_policy: bool,
 }
 
@@ -301,7 +302,6 @@ pub struct NodeAffinityPolicyGuardInput {
     pub failover_behavior_declared: bool,
     pub unavailable_node_reason_declared: bool,
     pub recovery_replay_relation_declared: bool,
-    pub evidence_class_declared: bool,
     pub wrong_node_access_fails_closed_without_distributed_state_policy: bool,
 }
 
@@ -318,8 +318,6 @@ pub enum NodeAffinityPolicyError {
     UnavailableNodeReasonMissing,
     /// recovery/replay relation がありません。
     RecoveryReplayRelationMissing,
-    /// evidence class がありません。
-    EvidenceClassMissing,
     /// distributed policy なしの wrong-node access が fail-closed ではありません。
     WrongNodeAccessNotFailClosed,
 }
@@ -336,7 +334,6 @@ impl NodeAffinityPolicyGuard {
             failover_behavior_declared,
             unavailable_node_reason_declared,
             recovery_replay_relation_declared,
-            evidence_class_declared,
             wrong_node_access_fails_closed_without_distributed_state_policy,
         } = input;
 
@@ -355,9 +352,6 @@ impl NodeAffinityPolicyGuard {
         if !recovery_replay_relation_declared {
             return Err(NodeAffinityPolicyError::RecoveryReplayRelationMissing);
         }
-        if !evidence_class_declared {
-            return Err(NodeAffinityPolicyError::EvidenceClassMissing);
-        }
         if !wrong_node_access_fails_closed_without_distributed_state_policy {
             return Err(NodeAffinityPolicyError::WrongNodeAccessNotFailClosed);
         }
@@ -369,7 +363,6 @@ impl NodeAffinityPolicyGuard {
             failover_behavior_declared,
             unavailable_node_reason_declared,
             recovery_replay_relation_declared,
-            evidence_class_declared,
             wrong_node_access_fails_closed_without_distributed_state_policy,
         })
     }
@@ -384,7 +377,7 @@ pub struct TopologyServiceDiscoveryRelationGuard {
     endpoint_resolution_does_not_prove_other_plane_readiness: bool,
     endpoint_resolution_does_not_prove_failover_recovery: bool,
     discovery_failure_not_hidden_by_unverified_fallback: bool,
-    networked_resolved_endpoint_paired_with_trust_evidence_or_close_not_claimed: bool,
+    networked_resolved_endpoint_has_verified_trust_relation: bool,
 }
 
 /// topology/service discovery relation の fail-closed error です。
@@ -402,8 +395,8 @@ pub enum TopologyServiceDiscoveryRelationError {
     ServiceDiscoveryProvesFailoverRecovery,
     /// discovery failure が unverified fallback で隠れています。
     DiscoveryFailureHiddenByFallback,
-    /// networked endpoint evidence に trust evidence / close-not-claimed がありません。
-    NetworkedEndpointTrustEvidenceMissing,
+    /// networked endpoint に verified trust relation がありません。
+    NetworkedEndpointTrustRelationMissing,
 }
 
 impl TopologyServiceDiscoveryRelationGuard {
@@ -415,7 +408,7 @@ impl TopologyServiceDiscoveryRelationGuard {
         endpoint_resolution_does_not_prove_other_plane_readiness: bool,
         endpoint_resolution_does_not_prove_failover_recovery: bool,
         discovery_failure_not_hidden_by_unverified_fallback: bool,
-        networked_resolved_endpoint_paired_with_trust_evidence_or_close_not_claimed: bool,
+        networked_resolved_endpoint_has_verified_trust_relation: bool,
     ) -> Result<Self, TopologyServiceDiscoveryRelationError> {
         if !endpoint_resolution_does_not_own_domain_decision {
             return Err(TopologyServiceDiscoveryRelationError::ServiceDiscoveryOwnsDomainDecision);
@@ -443,9 +436,9 @@ impl TopologyServiceDiscoveryRelationGuard {
         if !discovery_failure_not_hidden_by_unverified_fallback {
             return Err(TopologyServiceDiscoveryRelationError::DiscoveryFailureHiddenByFallback);
         }
-        if !networked_resolved_endpoint_paired_with_trust_evidence_or_close_not_claimed {
+        if !networked_resolved_endpoint_has_verified_trust_relation {
             return Err(
-                TopologyServiceDiscoveryRelationError::NetworkedEndpointTrustEvidenceMissing,
+                TopologyServiceDiscoveryRelationError::NetworkedEndpointTrustRelationMissing,
             );
         }
 
@@ -456,60 +449,7 @@ impl TopologyServiceDiscoveryRelationGuard {
             endpoint_resolution_does_not_prove_other_plane_readiness,
             endpoint_resolution_does_not_prove_failover_recovery,
             discovery_failure_not_hidden_by_unverified_fallback,
-            networked_resolved_endpoint_paired_with_trust_evidence_or_close_not_claimed,
+            networked_resolved_endpoint_has_verified_trust_relation,
         })
     }
 }
-
-/// topology evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DeploymentTopologyEvidenceGuard {
-    topology_class_declared: bool,
-    audit_shape_declared: bool,
-    edge_proxy_class_declared_when_ingress_metadata_affects_path: bool,
-    process_entrypoint_set_declared: bool,
-    node_scope_declared: bool,
-    selected_service_endpoints_or_redacted_references_declared: bool,
-    node_affinity_rule_declared_when_relevant: bool,
-    discovery_failure_behavior_declared: bool,
-    discovery_source_cache_fallback_class_declared_when_resolution_affects_evidence: bool,
-    internal_service_trust_class_declared_when_network_identity_affects_evidence: bool,
-    distributed_state_class_and_failover_admission_declared_when_state_can_move: bool,
-    health_readiness_relation_declared: bool,
-    close_not_claimed_scope_declared: bool,
-    single_node_evidence_not_used_as_multi_node_proof: bool,
-}
-
-/// topology evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DeploymentTopologyEvidenceError {
-    /// topology class がありません。
-    TopologyClassMissing,
-    /// topology audit shape がありません。
-    AuditShapeMissing,
-    /// edge/proxy class がありません。
-    EdgeProxyClassMissing,
-    /// process/entrypoint set がありません。
-    ProcessEntrypointSetMissing,
-    /// node scope がありません。
-    NodeScopeMissing,
-    /// selected endpoint/reference がありません。
-    SelectedEndpointReferenceMissing,
-    /// node affinity rule がありません。
-    NodeAffinityRuleMissing,
-    /// discovery failure behavior がありません。
-    DiscoveryFailureBehaviorMissing,
-    /// discovery source/cache/fallback class がありません。
-    DiscoverySourceCacheFallbackMissing,
-    /// internal service trust class がありません。
-    InternalServiceTrustClassMissing,
-    /// distributed state/failover admission がありません。
-    DistributedStateFailoverAdmissionMissing,
-    /// health/readiness relation がありません。
-    HealthReadinessRelationMissing,
-    /// close-not-claimed scope がありません。
-    CloseNotClaimedScopeMissing,
-    /// single-node evidence を multi-node proof として扱っています。
-    SingleNodeEvidenceUsedAsMultiNodeProof,
-}
-

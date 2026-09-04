@@ -1,6 +1,6 @@
 //! Kernel-owned live public probe server entrypoint.
 //!
-//! この crate は live/operational evidence の raw material を得るための
+//! この crate は live/operational probe response を得るための
 //! process I/O surface だけを持ち、domain admission や readiness 証明は所有しません。
 
 use std::io::{Read, Write};
@@ -213,7 +213,7 @@ fn build_probe_response(route: LivePublicProbeRoute, body: &[u8]) -> LivePublicP
 }
 
 fn stable_body_digest(body: &[u8]) -> String {
-    // evidence raw material で比較しやすいよう、外部 crate に依存しない安定 digest を作ります。
+    // probe response observation を比較しやすいよう、外部 crate に依存しない安定 digest を作ります。
     let digest = body
         .iter()
         .fold(0xcbf2_9ce4_8422_2325_u64, |accumulator, byte| {

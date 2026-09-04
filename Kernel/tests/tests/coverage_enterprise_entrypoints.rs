@@ -4,12 +4,10 @@ use arcrtc_core_reason::CatalogedReasonRef;
 use arcrtc_entrypoint_admin::{
     AdminMaintenanceActionClass, AdminMaintenanceCommandError, AdminMaintenanceCommandGuard,
     AdminProbeClass, HealthAdminAuditError, HealthAdminAuditEventType, HealthAdminAuditGuard,
-    HealthAdminAuditOutcome, HealthAdminEvidenceError, HealthAdminEvidenceGuard,
-    HealthAdminFailure, HealthAdminFailureKind, HealthAdminOutcome,
+    HealthAdminAuditOutcome, HealthAdminFailure, HealthAdminFailureKind, HealthAdminOutcome,
     OperatorAdminAllowedActionClass, OperatorAdminAuthorizationAuditError,
     OperatorAdminAuthorizationAuditEventType, OperatorAdminAuthorizationAuditGuard,
-    OperatorAdminAuthorizationError, OperatorAdminAuthorizationEvidenceError,
-    OperatorAdminAuthorizationEvidenceGuard, OperatorAdminAuthorizationFailure,
+    OperatorAdminAuthorizationError, OperatorAdminAuthorizationFailure,
     OperatorAdminAuthorizationFailureKind, OperatorAdminAuthorizationGuard,
     OperatorAdminAuthorizationOutcome, OperatorAdminClass, OperatorAdminTargetScopeClass,
     OperatorCredentialContextSourceClass, ProhibitedHealthAdminBehavior,
@@ -17,21 +15,15 @@ use arcrtc_entrypoint_admin::{
     ReadinessCompositionGuard,
 };
 use arcrtc_entrypoint_configuration::{
-    CapabilityDeclarationError, CapabilityDeclarationGuard, CapabilityDeclarationGuardInput,
-    CapabilityDeclarationSurface, ConfigurationBundleFailure, ConfigurationBundleFailureKind,
-    ConfigurationBundleValidationError, ConfigurationBundleValidationGuard,
-    ConfigurationProfileClass, ConfigurationProfileEvidenceClaimClass,
-    ConfigurationProfileEvidenceError, ConfigurationProfileEvidenceGuard,
-    ExperimentalLifecycleError, ExperimentalLifecycleGuard, ExperimentalLifecycleGuardInput,
-    ExperimentalLifecycleStage, FeatureCapabilityAdmissionError, FeatureCapabilityAdmissionGuard,
-    FeatureCapabilityAuthorityOwner, FeatureCapabilityFailure, FeatureCapabilityFailureKind,
+    ConfigurationBundleFailure, ConfigurationBundleFailureKind, ConfigurationBundleValidationError,
+    ConfigurationBundleValidationGuard, ConfigurationProfileClass, FeatureCapabilityAdmissionError,
+    FeatureCapabilityAdmissionGuard, FeatureCapabilityFailure, FeatureCapabilityFailureKind,
     FeatureCapabilityUnsupportedVersionReason, FeatureFlagClass,
     ProhibitedConfigurationProfileBundleBehavior, ProhibitedFeatureCapabilityBehavior,
     ProhibitedRuntimeReconfigurationBehavior, RuntimeConfigurationGenerationState,
     RuntimeReconfigurationAdmissionError, RuntimeReconfigurationAdmissionGuard,
     RuntimeReconfigurationApplyError, RuntimeReconfigurationApplyGuard,
     RuntimeReconfigurationAuditEventType, RuntimeReconfigurationClass,
-    RuntimeReconfigurationEvidenceError, RuntimeReconfigurationEvidenceGuard,
     RuntimeReconfigurationFailure, RuntimeReconfigurationFailureKind,
     RuntimeReconfigurationRollbackError, RuntimeReconfigurationRollbackGuard,
     RuntimeReconfigurationTargetSurface,
@@ -40,29 +32,25 @@ use arcrtc_entrypoint_endpoints::{
     ConnectionLifecycleState, ConnectionLifecycleTransitionError,
     ConnectionLifecycleTransitionGuard, EdgeProxyAuditEventType, EdgeProxyClass,
     EdgeProxyHeaderSourceError, EdgeProxyHeaderSourceGuard, EdgeProxyTrustAdmissionError,
-    EdgeProxyTrustAdmissionGuard, EdgeProxyTrustEvidenceError, EdgeProxyTrustEvidenceGuard,
-    EdgeProxyTrustFailure, EdgeProxyTrustFailureKind, EdgeTlsTerminationClass,
-    EdgeTlsTerminationError, EdgeTlsTerminationGuard, EndpointExposureScope,
-    EndpointTargetContract, ProhibitedEdgeProxyTrustBehavior, ProhibitedPublicEndpointBehavior,
-    PublicEndpointAuditEventType, PublicEndpointClass, PublicEndpointDeclarationError,
-    PublicEndpointDeclarationGuard, PublicEndpointEvidenceError, PublicEndpointEvidenceGuard,
-    PublicEndpointFailure, PublicEndpointFailureKind, PublicEndpointProtocolClass,
-    PublicInternalEndpointSeparationError, PublicInternalEndpointSeparationGuard,
-    TrustedMetadataClass,
+    EdgeProxyTrustAdmissionGuard, EdgeProxyTrustFailure, EdgeProxyTrustFailureKind,
+    EdgeTlsTerminationClass, EdgeTlsTerminationError, EdgeTlsTerminationGuard,
+    EndpointExposureScope, EndpointTargetContract, ProhibitedEdgeProxyTrustBehavior,
+    ProhibitedPublicEndpointBehavior, PublicEndpointAuditEventType, PublicEndpointClass,
+    PublicEndpointDeclarationError, PublicEndpointDeclarationGuard, PublicEndpointFailure,
+    PublicEndpointFailureKind, PublicEndpointProtocolClass, PublicInternalEndpointSeparationError,
+    PublicInternalEndpointSeparationGuard, TrustedMetadataClass,
 };
 use arcrtc_entrypoint_internal_control::{
     InternalControlAuthorizationContextClass, InternalControlCommandEventType,
     InternalControlContractVersionState, InternalControlMessageClass,
     InternalControlPlaneAuditError, InternalControlPlaneAuditEventType,
     InternalControlPlaneAuditGuard, InternalControlPlaneClass, InternalControlPlaneContractError,
-    InternalControlPlaneContractGuard, InternalControlPlaneEvidenceError,
-    InternalControlPlaneEvidenceGuard, InternalControlPlaneFailure,
+    InternalControlPlaneContractGuard, InternalControlPlaneFailure,
     InternalControlPlaneFailureKind, InternalControlPlaneOutcome,
     InternalServiceAuthorizationSequenceError, InternalServiceAuthorizationSequenceGuard,
     InternalServiceIdentityMappingError, InternalServiceIdentityMappingGuard, InternalServiceRole,
     InternalServiceTrustAuditError, InternalServiceTrustAuditEventType,
     InternalServiceTrustAuditGuard, InternalServiceTrustClass, InternalServiceTrustDecisionOutcome,
-    InternalServiceTrustEvidenceError, InternalServiceTrustEvidenceGuard,
     InternalServiceTrustFailure, InternalServiceTrustFailureKind,
     ProhibitedInternalControlPlaneBehavior, ProhibitedInternalServiceTrustBehavior,
     ServiceIdentityProofReferenceClass,
@@ -70,15 +58,13 @@ use arcrtc_entrypoint_internal_control::{
 use arcrtc_entrypoint_topology::{
     DeploymentTopologyAdmissionError, DeploymentTopologyAdmissionGuard,
     DeploymentTopologyAuditError, DeploymentTopologyAuditEventType, DeploymentTopologyAuditGuard,
-    DeploymentTopologyClass, DeploymentTopologyEvidenceError, DeploymentTopologyEvidenceGuard,
-    DeploymentTopologyFailure, DeploymentTopologyFailureKind, DiscoverySourceClass,
-    EndpointFallbackPolicyError, EndpointFallbackPolicyGuard, EndpointResolutionState,
-    NodeAffinityPolicyError, NodeAffinityPolicyGuard, NodeAffinityPolicyGuardInput,
-    NodeLocalStateClass, ProhibitedDeploymentTopologyBehavior,
+    DeploymentTopologyClass, DeploymentTopologyFailure, DeploymentTopologyFailureKind,
+    DiscoverySourceClass, EndpointFallbackPolicyError, EndpointFallbackPolicyGuard,
+    EndpointResolutionState, NodeAffinityPolicyError, NodeAffinityPolicyGuard,
+    NodeAffinityPolicyGuardInput, NodeLocalStateClass, ProhibitedDeploymentTopologyBehavior,
     ProhibitedServiceDiscoveryResolutionBehavior, ResolutionTargetService, ResolvedEndpointScope,
     ServiceDiscoveryAuditError, ServiceDiscoveryAuditEventType, ServiceDiscoveryAuditGuard,
     ServiceDiscoveryResolutionAdmissionError, ServiceDiscoveryResolutionAdmissionGuard,
-    ServiceDiscoveryResolutionEvidenceError, ServiceDiscoveryResolutionEvidenceGuard,
     ServiceDiscoveryResolutionFailure, ServiceDiscoveryResolutionFailureKind,
     TopologyServiceDiscoveryRelationError, TopologyServiceDiscoveryRelationGuard,
 };
@@ -99,11 +85,11 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
     assert!(
         OperatorAdminClass::EvidenceVerificationContext.admits_action_scope(
             OperatorAdminAllowedActionClass::EvidenceVerificationAction,
-            OperatorAdminTargetScopeClass::EvidenceReportScope,
+            OperatorAdminTargetScopeClass::VerificationOutputScope,
         )
     );
 
-    let readiness_ok = [true; 19];
+    let readiness_ok = [true; 17];
     assert!(readiness_guard(readiness_ok, HealthAdminOutcome::Satisfied).is_ok());
     for (index, expected) in [
         (0, ReadinessCompositionError::StartupRunIdMissing),
@@ -113,14 +99,13 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
         (4, ReadinessCompositionError::TopologyNodeScopeMissing),
         (10, ReadinessCompositionError::ProbeClassMissing),
         (13, ReadinessCompositionError::OutcomeMissing),
-        (15, ReadinessCompositionError::EvidenceClassMissing),
         (
-            17,
+            15,
             ReadinessCompositionError::SingleUnqualifiedBooleanReadiness,
         ),
         (
-            18,
-            ReadinessCompositionError::UnevaluatedComponentClaimedSatisfied,
+            16,
+            ReadinessCompositionError::UnevaluatedComponentMarkedSatisfied,
         ),
     ] {
         let mut flags = readiness_ok;
@@ -147,7 +132,6 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
         true,
         true,
         true,
-        true,
     )
     .is_ok());
     assert_eq!(
@@ -157,7 +141,6 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
             true,
             true,
             false,
-            true,
             true,
             true,
             true,
@@ -189,53 +172,6 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
             true,
         ),
         Err(HealthAdminAuditError::OutcomeMismatch)
-    );
-
-    assert!(HealthAdminEvidenceGuard::try_new(
-        AdminProbeClass::DriverDependencyReadiness,
-        HealthAdminOutcome::NotSatisfied,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-    )
-    .is_ok());
-    assert_eq!(
-        HealthAdminEvidenceGuard::try_new(
-            AdminProbeClass::DriverDependencyReadiness,
-            HealthAdminOutcome::NotSatisfied,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-        ),
-        Err(HealthAdminEvidenceError::CatalogedReasonMissing)
     );
 
     for kind in [
@@ -298,7 +234,7 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
             true,
             false,
         ),
-        Err(OperatorAdminAuthorizationError::DeveloperLocalContextUsedAsProductionProof)
+        Err(OperatorAdminAuthorizationError::DeveloperLocalContextUsedAsOperatorAuthorization)
     );
 
     assert!(OperatorAdminAuthorizationAuditGuard::try_new(
@@ -324,49 +260,6 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
             false,
         ),
         Err(OperatorAdminAuthorizationAuditError::CatalogedReasonMissing)
-    );
-
-    assert!(OperatorAdminAuthorizationEvidenceGuard::try_new(
-        OperatorAdminClass::OperatorProbeContext,
-        OperatorAdminAuthorizationOutcome::Rejected,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-    )
-    .is_ok());
-    assert_eq!(
-        OperatorAdminAuthorizationEvidenceGuard::try_new(
-            OperatorAdminClass::DeveloperLocalContext,
-            OperatorAdminAuthorizationOutcome::Accepted,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-            true,
-        ),
-        Err(OperatorAdminAuthorizationEvidenceError::CloseNotClaimedScopeMissing)
     );
 
     for kind in [
@@ -400,27 +293,8 @@ fn coverage_entrypoints_admin_guards_are_fail_closed_and_cataloged() {
 
 #[test]
 fn coverage_entrypoints_configuration_guards_are_fail_closed_and_cataloged() {
-    assert!(ConfigurationProfileClass::ProductionCandidate
-        .adoption_rule()
-        .admits_claim(
-            ConfigurationProfileEvidenceClaimClass::ProductionEvidence,
-            true
-        )
-        .is_ok());
-    assert_eq!(
-        ConfigurationProfileClass::ProductionCandidate
-            .adoption_rule()
-            .admits_claim(
-                ConfigurationProfileEvidenceClaimClass::ProductionEvidence,
-                false
-            ),
-        Err(ConfigurationProfileEvidenceError::ExplicitEvidenceReportReferenceMissing)
-    );
-
     assert!(ConfigurationBundleValidationGuard::try_new(
         ConfigurationProfileClass::ProductionCandidate,
-        true,
-        true,
         true,
         true,
         true,
@@ -452,39 +326,8 @@ fn coverage_entrypoints_configuration_guards_are_fail_closed_and_cataloged() {
             true,
             true,
             true,
-            true,
-            true,
         ),
         Err(ConfigurationBundleValidationError::DeploymentTopologyMissing)
-    );
-
-    assert!(ConfigurationProfileEvidenceGuard::try_new(
-        ConfigurationProfileClass::TestDeterministic,
-        ConfigurationProfileEvidenceClaimClass::TestEvidence,
-        true,
-        true,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-    )
-    .is_ok());
-    assert_eq!(
-        ConfigurationProfileEvidenceGuard::try_new(
-            ConfigurationProfileClass::TestDeterministic,
-            ConfigurationProfileEvidenceClaimClass::TestEvidence,
-            true,
-            false,
-            false,
-            true,
-            true,
-            true,
-            true,
-            true,
-        ),
-        Err(ConfigurationProfileEvidenceError::RawSecretMaterialInEvidence)
     );
 
     assert!(RuntimeReconfigurationClass::SecretRotationReload.admits_runtime_apply());
@@ -511,8 +354,6 @@ fn coverage_entrypoints_configuration_guards_are_fail_closed_and_cataloged() {
         true,
         true,
         true,
-        true,
-        true,
     )
     .is_ok());
     assert_eq!(
@@ -532,12 +373,10 @@ fn coverage_entrypoints_configuration_guards_are_fail_closed_and_cataloged() {
             true,
             true,
             true,
-            true,
-            true,
             false,
             true,
         ),
-        Err(RuntimeReconfigurationAdmissionError::TestProfileSwapEvidenceNotTestOnly)
+        Err(RuntimeReconfigurationAdmissionError::TestProfileSwapUsedOutsideTestScope)
     );
 
     assert_eq!(
@@ -563,42 +402,6 @@ fn coverage_entrypoints_configuration_guards_are_fail_closed_and_cataloged() {
         Err(RuntimeReconfigurationRollbackError::RollbackGenerationStateInvalid)
     );
     assert_eq!(
-        RuntimeReconfigurationEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, true, true, false,
-        ),
-        Err(RuntimeReconfigurationEvidenceError::StartupEvidenceUsedAsRuntimeReconfigurationEvidence)
-    );
-
-    assert!(
-        CapabilityDeclarationGuard::try_new(CapabilityDeclarationGuardInput {
-            surface: CapabilityDeclarationSurface::FeatureFlagValue,
-            configuration_wiring_owner: ConfigurationOwner::Entrypoints,
-            authority_owner: FeatureCapabilityAuthorityOwner::EntrypointsConfig,
-            accepted_contract_version_declared: true,
-            optional_behavior_declared: true,
-            fallback_when_absent_declared: true,
-            required_absent_reason_declared: true,
-            sdk_parity_requirement_declared_when_client_visible: true,
-            evidence_class_required_before_adoption_declared: true,
-        })
-        .is_ok()
-    );
-    assert_eq!(
-        CapabilityDeclarationGuard::try_new(CapabilityDeclarationGuardInput {
-            surface: CapabilityDeclarationSurface::CoreProtocol,
-            configuration_wiring_owner: ConfigurationOwner::Entrypoints,
-            authority_owner: FeatureCapabilityAuthorityOwner::EntrypointsConfig,
-            accepted_contract_version_declared: true,
-            optional_behavior_declared: true,
-            fallback_when_absent_declared: true,
-            required_absent_reason_declared: true,
-            sdk_parity_requirement_declared_when_client_visible: true,
-            evidence_class_required_before_adoption_declared: true,
-        }),
-        Err(CapabilityDeclarationError::SurfaceAuthorityOwnerMismatch)
-    );
-
-    assert_eq!(
         FeatureCapabilityAdmissionGuard::try_new(
             FeatureFlagClass::TestOnlyGate,
             true,
@@ -613,20 +416,7 @@ fn coverage_entrypoints_configuration_guards_are_fail_closed_and_cataloged() {
             false,
             true,
         ),
-        Err(FeatureCapabilityAdmissionError::TestOnlyGateUsedOutsideTestEvidence)
-    );
-    assert_eq!(
-        ExperimentalLifecycleGuard::try_new(ExperimentalLifecycleGuardInput {
-            stage: ExperimentalLifecycleStage::AdoptedContract,
-            scope_and_owner_fixed: true,
-            explicit_gate_present_when_scaffold_or_later: true,
-            dependency_direction_evidence_present_when_scaffold: true,
-            unit_or_contract_evidence_present_when_implemented: true,
-            integration_report_present_when_controlled_integration: true,
-            adr_or_canonical_update_and_compatibility_rule_present_when_adopted: false,
-            compatibility_or_deprecation_lifecycle_satisfied_when_removed: true,
-        }),
-        Err(ExperimentalLifecycleError::AdoptionCanonicalOrCompatibilityRuleMissing)
+        Err(FeatureCapabilityAdmissionError::TestOnlyGateUsedOutsideTestScope)
     );
 
     for kind in [
@@ -799,12 +589,6 @@ fn coverage_entrypoints_endpoints_guards_are_fail_closed_and_cataloged() {
         Err(PublicInternalEndpointSeparationError::PrivateEndpointPublicByDefault)
     );
 
-    assert_eq!(
-        PublicEndpointEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, false,
-        ),
-        Err(PublicEndpointEvidenceError::ListenerStartupUsedAsReadinessEvidence)
-    );
     for kind in [
         PublicEndpointFailureKind::PublicEndpointNotAllowed,
         PublicEndpointFailureKind::PublicEndpointUpgradeFailed,
@@ -860,7 +644,7 @@ fn coverage_entrypoints_endpoints_guards_are_fail_closed_and_cataloged() {
             true,
             false,
         ),
-        Err(EdgeProxyTrustAdmissionError::TestEdgeUsedOutsideTestEvidence)
+        Err(EdgeProxyTrustAdmissionError::TestEdgeUsedOutsideTestScope)
     );
     assert_eq!(
         EdgeProxyHeaderSourceGuard::try_new(
@@ -885,12 +669,6 @@ fn coverage_entrypoints_endpoints_guards_are_fail_closed_and_cataloged() {
             true,
         ),
         Err(EdgeTlsTerminationError::TerminationClassNotAdmitted)
-    );
-    assert_eq!(
-        EdgeProxyTrustEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, true, true, true, false,
-        ),
-        Err(EdgeProxyTrustEvidenceError::DiagnosticSnippetUsedAsEvidence)
     );
     for kind in [
         EdgeProxyTrustFailureKind::EdgeProxyNotAdmitted,
@@ -1011,13 +789,6 @@ fn coverage_entrypoints_internal_control_guards_are_fail_closed_and_cataloged() 
         ),
         Err(InternalServiceTrustAuditError::CatalogedReasonMissing)
     );
-    assert_eq!(
-        InternalServiceTrustEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, true, true, true, true, false,
-            true, true, true,
-        ),
-        Err(InternalServiceTrustEvidenceError::ActualOutcomeMissing)
-    );
     for kind in [
         InternalServiceTrustFailureKind::InternalServiceIdentitySourceNotAdmitted,
         InternalServiceTrustFailureKind::InternalServicePeerVerificationFailed,
@@ -1089,31 +860,6 @@ fn coverage_entrypoints_internal_control_guards_are_fail_closed_and_cataloged() 
         ),
         Err(InternalControlPlaneAuditError::CatalogedReasonMissing)
     );
-    assert_eq!(
-        InternalControlPlaneEvidenceGuard::try_new(
-            InternalControlPlaneClass::NodeAffinityPlaneCall,
-            InternalControlPlaneOutcome::Success,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            true,
-            true,
-            false,
-            true,
-            true,
-            false,
-            true,
-            true,
-        ),
-        Err(InternalControlPlaneEvidenceError::DistributedStateOwnerScopeMissing)
-    );
     for kind in [
         InternalControlPlaneFailureKind::InternalControlMessageInvalid,
         InternalControlPlaneFailureKind::InternalServiceTrustFailure(
@@ -1149,8 +895,9 @@ fn coverage_entrypoints_topology_guards_are_fail_closed_and_cataloged() {
     assert!(
         DeploymentTopologyClass::SplitPlaneNetworked.requires_networked_internal_service_relation()
     );
-    assert!(DeploymentTopologyClass::MultiNodeExperimental
-        .requires_experimental_admission_for_production_claim());
+    assert!(
+        DeploymentTopologyClass::MultiNodeExperimental.requires_explicit_experimental_enablement()
+    );
     assert_eq!(
         DeploymentTopologyAuditEventType::DeploymentTopologyDecision.event_type(),
         "deployment_topology_decision"
@@ -1193,7 +940,6 @@ fn coverage_entrypoints_topology_guards_are_fail_closed_and_cataloged() {
             failover_behavior_declared: true,
             unavailable_node_reason_declared: true,
             recovery_replay_relation_declared: true,
-            evidence_class_declared: true,
             wrong_node_access_fails_closed_without_distributed_state_policy: false,
         }),
         Err(NodeAffinityPolicyError::WrongNodeAccessNotFailClosed)
@@ -1201,12 +947,6 @@ fn coverage_entrypoints_topology_guards_are_fail_closed_and_cataloged() {
     assert_eq!(
         TopologyServiceDiscoveryRelationGuard::try_new(true, true, true, true, false, true, true),
         Err(TopologyServiceDiscoveryRelationError::ServiceDiscoveryProvesFailoverRecovery)
-    );
-    assert_eq!(
-        DeploymentTopologyEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, true, true, true, true, false,
-        ),
-        Err(DeploymentTopologyEvidenceError::SingleNodeEvidenceUsedAsMultiNodeProof)
     );
     for kind in [
         DeploymentTopologyFailureKind::DeploymentTopologyUnsupported,
@@ -1258,7 +998,7 @@ fn coverage_entrypoints_topology_guards_are_fail_closed_and_cataloged() {
     );
     assert_eq!(
         EndpointFallbackPolicyGuard::try_new(true, true, true, true, true, false, true),
-        Err(EndpointFallbackPolicyError::EvidenceLimitationMissing)
+        Err(EndpointFallbackPolicyError::FallbackScopeLimitationMissing)
     );
     assert_eq!(
         ServiceDiscoveryAuditGuard::try_new(
@@ -1275,13 +1015,6 @@ fn coverage_entrypoints_topology_guards_are_fail_closed_and_cataloged() {
             false,
         ),
         Err(ServiceDiscoveryAuditError::CatalogedReasonMissing)
-    );
-    assert_eq!(
-        ServiceDiscoveryResolutionEvidenceGuard::try_new(
-            true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            false,
-        ),
-        Err(ServiceDiscoveryResolutionEvidenceError::DiagnosticOutputUsedAsEvidence)
     );
     for kind in [
         ServiceDiscoveryResolutionFailureKind::ServiceDiscoverySourceNotAdmitted,
@@ -1312,7 +1045,7 @@ fn coverage_entrypoints_topology_guards_are_fail_closed_and_cataloged() {
 }
 
 fn readiness_guard(
-    flags: [bool; 19],
+    flags: [bool; 17],
     outcome: HealthAdminOutcome,
 ) -> Result<ReadinessCompositionGuard, ReadinessCompositionError> {
     ReadinessCompositionGuard::try_new(
@@ -1335,7 +1068,5 @@ fn readiness_guard(
         flags[14],
         flags[15],
         flags[16],
-        flags[17],
-        flags[18],
     )
 }

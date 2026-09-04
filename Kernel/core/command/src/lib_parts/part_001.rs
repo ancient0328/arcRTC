@@ -221,7 +221,7 @@ pub enum DecisionReason<Reason> {
 pub enum StateTransitionSummary {
     /// state transition はありません。
     NoStateChange,
-    /// state transition があり、詳細は各 state machine Canonical 側が所有します。
+    /// state transition があり、詳細は各 state machine source が所有します。
     Changed(&'static str),
 }
 
@@ -261,15 +261,6 @@ pub enum AuditProjectionRequirement {
     NotRequired,
 }
 
-/// decision が runtime proof ではない場合の evidence class です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DecisionEvidenceClass {
-    /// source-level decision であり runtime close claim ではありません。
-    SourceDecisionOnly,
-    /// runtime proof ではないことを明示します。
-    RuntimeProofNotClaimed,
-}
-
 /// command に対する authoritative decision です。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UseCaseDecision<Reason> {
@@ -281,7 +272,6 @@ pub struct UseCaseDecision<Reason> {
     state_transition: StateTransitionSummary,
     port_intents: Vec<PortIntent>,
     audit_projection: AuditProjectionRequirement,
-    evidence_class: DecisionEvidenceClass,
 }
 
 /// use case decision 生成時の未検査入力です。
@@ -295,7 +285,6 @@ pub struct UseCaseDecisionInput<Reason> {
     pub state_transition: StateTransitionSummary,
     pub port_intents: Vec<PortIntent>,
     pub audit_projection: AuditProjectionRequirement,
-    pub evidence_class: DecisionEvidenceClass,
 }
 
 impl<Reason> UseCaseDecision<Reason> {
@@ -310,7 +299,6 @@ impl<Reason> UseCaseDecision<Reason> {
             state_transition,
             port_intents,
             audit_projection,
-            evidence_class,
         } = input;
 
         match (outcome.requires_reason(), &reason) {
@@ -332,7 +320,6 @@ impl<Reason> UseCaseDecision<Reason> {
             state_transition,
             port_intents,
             audit_projection,
-            evidence_class,
         })
     }
 
@@ -376,10 +363,6 @@ impl<Reason> UseCaseDecision<Reason> {
         self.audit_projection
     }
 
-    /// runtime proof ではない場合の evidence class です。
-    pub const fn evidence_class(&self) -> DecisionEvidenceClass {
-        self.evidence_class
-    }
 }
 
 /// decision shape rule 違反です。
@@ -515,4 +498,3 @@ impl<Reason> ExternalResponseModel<Reason> {
 pub struct CorrelationTrace {
     correlation_id: CorrelationId,
 }
-

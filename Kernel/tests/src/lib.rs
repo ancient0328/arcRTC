@@ -1,16 +1,10 @@
-//! Test Roadmap 用の共通検査ヘルパーです。
+//! Kernel test support の共通検査ヘルパーです。
 //!
-//! production code へ責務を足さず、テスト側から source shape と証跡資産を検査します。
+//! production code へ責務を足さず、source shape とruntime behaviorを検査します。
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub mod benchmark_model;
-pub mod benchmark_runner;
-pub mod evidence_model;
-pub mod evidence_validator;
-pub mod report_writer;
-pub mod semantic_obligation_manifest;
 pub mod source_graph;
 
 /// `Kernel` の実装 root です。
@@ -19,24 +13,6 @@ pub fn implementation_root() -> PathBuf {
         .parent()
         .expect("tests crate must live directly under implementation root")
         .to_path_buf()
-}
-
-/// repository (v0.2) root です。
-pub fn v02_root() -> PathBuf {
-    implementation_root()
-        .parent()
-        .expect("implementation root must live directly under v0.2")
-        .to_path_buf()
-}
-
-/// v0.2 current authority path の UTF-8 ファイルを読みます。
-pub fn read_v02(relative_path: &str) -> String {
-    read_file(&v02_path(relative_path))
-}
-
-/// v0.2 current authority path を実体 path へ解決します。
-pub fn v02_path(relative_path: &str) -> PathBuf {
-    v02_root().join(relative_path)
 }
 
 /// implementation root 相対の UTF-8 ファイルを読みます。
@@ -48,17 +24,6 @@ pub fn read_impl(relative_path: &str) -> String {
 pub fn read_file(path: &Path) -> String {
     fs::read_to_string(path)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()))
-}
-
-/// v0.2 current authority path のファイルが存在し、必要 marker を含むことを検査します。
-pub fn assert_v02_file_contains(relative_path: &str, markers: &[&str]) {
-    let content = read_v02(relative_path);
-    for marker in markers {
-        assert!(
-            content.contains(marker),
-            "{relative_path} must contain marker `{marker}`"
-        );
-    }
 }
 
 /// implementation root 相対のファイルが存在し、必要 marker を含むことを検査します。
@@ -176,11 +141,3 @@ pub fn assert_not_contains(label: &str, content: &str, forbidden: &[&str]) {
         );
     }
 }
-
-/// Roadmap の task surface をファイル化した asset の最小必須 marker です。
-pub const ASSET_BASE_MARKERS: &[&str] = &[
-    "Correlation field",
-    "Evidence class",
-    "Close-not-claimed",
-    "Rerun condition",
-];

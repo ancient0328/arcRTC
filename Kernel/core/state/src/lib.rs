@@ -15,7 +15,7 @@ pub enum StateClass {
     EphemeralCoreState,
     /// restart/recovery のため保存可能な core-owned snapshot intent.
     CheckpointEligibleState,
-    /// decision/evidence として audit/hash-chain に残す state.
+    /// decision result として audit/hash-chain に残す state.
     AuditOnlyState,
     /// socket, buffer, retry queue, external client/session detail.
     DriverLocalState,
@@ -86,7 +86,7 @@ pub enum StateFamily {
     AuditEvent,
     /// Audit hash-chain record.
     AuditHashChainRecord,
-    /// Atomicity/compensation evidence.
+    /// Atomicity/compensation state record.
     AtomicityCompensationEvidence,
     /// Resource bound counters.
     ResourceBoundCounters,
@@ -239,8 +239,8 @@ impl StatePersistenceFailureKind {
 pub enum ProhibitedStatePersistenceBehavior {
     /// driver persistence schema becomes domain source-of-truth.
     DriverSchemaAsDomainSourceOfTruth,
-    /// checkpoint restore creates domain state without restore Canonical.
-    CheckpointRestoreWithoutRestoreCanonical,
+    /// checkpoint restore creates domain state without restore policy.
+    CheckpointRestoreWithoutRestorePolicy,
     /// SFU route state is durable by default.
     SfuRouteDurableByDefault,
     /// TURN allocation is silently restored from driver storage.

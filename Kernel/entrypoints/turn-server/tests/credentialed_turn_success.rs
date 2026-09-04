@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use std::io::BufRead;
 use std::net::UdpSocket;
 use std::process::{Child, Command, Stdio};
@@ -14,8 +12,6 @@ const COOKIE: [u8; 4] = [0x21, 0x12, 0xA4, 0x42];
 const TX: [u8; 12] = [
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
 ];
-
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
 
 struct ServerProc {
     child: Child,
@@ -88,22 +84,22 @@ fn exchange(client: &UdpSocket, addr: &str, input: &[u8]) -> Vec<u8> {
 }
 
 #[test]
-fn t_turn_01_credentialed_success_path() {
+fn credentialed_turn_success_path() {
     let (mut server, addr) = ServerProc::spawn();
     let client = UdpSocket::bind("127.0.0.1:0").expect("client socket must bind");
     client
         .set_read_timeout(Some(Duration::from_secs(10)))
         .expect("read timeout must be set");
 
-    assert_t_turn_01__allocate(&client, &addr);
-    assert_t_turn_01__refresh(&client, &addr);
-    assert_t_turn_01__create_permission(&client, &addr);
-    assert_t_turn_01__channel_bind(&client, &addr);
-    assert_t_turn_01__relay_data(&client, &addr);
+    assert_allocate(&client, &addr);
+    assert_refresh(&client, &addr);
+    assert_create_permission(&client, &addr);
+    assert_channel_bind(&client, &addr);
+    assert_relay_data(&client, &addr);
     server.kill_and_wait();
 }
 
-fn assert_t_turn_01__allocate(client: &UdpSocket, addr: &str) {
+fn assert_allocate(client: &UdpSocket, addr: &str) {
     let response = exchange(
         client,
         addr,
@@ -112,7 +108,7 @@ fn assert_t_turn_01__allocate(client: &UdpSocket, addr: &str) {
     assert_eq!(response, vec![ALLOCATION_SUCCESS]);
 }
 
-fn assert_t_turn_01__refresh(client: &UdpSocket, addr: &str) {
+fn assert_refresh(client: &UdpSocket, addr: &str) {
     let response = exchange(
         client,
         addr,
@@ -121,7 +117,7 @@ fn assert_t_turn_01__refresh(client: &UdpSocket, addr: &str) {
     assert_eq!(response, vec![REFRESH_SUCCESS]);
 }
 
-fn assert_t_turn_01__create_permission(client: &UdpSocket, addr: &str) {
+fn assert_create_permission(client: &UdpSocket, addr: &str) {
     let response = exchange(
         client,
         addr,
@@ -130,7 +126,7 @@ fn assert_t_turn_01__create_permission(client: &UdpSocket, addr: &str) {
     assert_eq!(response, vec![PERMISSION_SUCCESS]);
 }
 
-fn assert_t_turn_01__channel_bind(client: &UdpSocket, addr: &str) {
+fn assert_channel_bind(client: &UdpSocket, addr: &str) {
     let response = exchange(
         client,
         addr,
@@ -142,7 +138,7 @@ fn assert_t_turn_01__channel_bind(client: &UdpSocket, addr: &str) {
     assert_eq!(response, vec![CHANNEL_BIND_SUCCESS]);
 }
 
-fn assert_t_turn_01__relay_data(client: &UdpSocket, addr: &str) {
+fn assert_relay_data(client: &UdpSocket, addr: &str) {
     let response = exchange(
         client,
         addr,

@@ -34,13 +34,9 @@ impl RealDeviceCommandExitStatus {
     pub const fn distro_reason(self) -> DistroEvidenceReason {
         match self {
             Self::Success => DistroEvidenceReason::DistroOk,
-            Self::RequiredDeviceNotObserved => {
-                DistroEvidenceReason::RealDeviceScopeMismatch
-            }
+            Self::RequiredDeviceNotObserved => DistroEvidenceReason::RealDeviceScopeMismatch,
             Self::PlatformCommandUnavailable => DistroEvidenceReason::RuntimeExecutorError,
-            Self::EvidenceFieldsIncomplete => {
-                DistroEvidenceReason::EvidenceFieldsIncomplete
-            }
+            Self::EvidenceFieldsIncomplete => DistroEvidenceReason::EvidenceFieldsIncomplete,
             Self::CommandScopeMismatch => DistroEvidenceReason::CommandScopeMismatch,
         }
     }
@@ -73,6 +69,10 @@ pub struct RealDeviceCommandOutput {
     pub exit_status: RealDeviceCommandExitStatus,
     /// platform command の raw exit status です。
     pub raw_exit_status: Option<i32>,
+    /// 観測判定に使う platform command stdout です。
+    ///
+    /// evidence には summary を出し、device inventory の判定には切り詰め前の stdout を使います。
+    pub stdout_observation: String,
     /// stdout summary です。
     pub stdout_summary: String,
     /// stderr summary です。
@@ -90,10 +90,12 @@ impl RealDeviceCommandOutput {
         stderr: impl Into<String>,
         runtime: impl Into<String>,
     ) -> Self {
+        let stdout = stdout.into();
         Self {
             exit_status: RealDeviceCommandExitStatus::Success,
             raw_exit_status: Some(0),
-            stdout_summary: normalize_summary(stdout.into()),
+            stdout_observation: stdout.clone(),
+            stdout_summary: normalize_summary(stdout),
             stderr_summary: normalize_summary(stderr.into()),
             toolchain_runtime_version: normalize_summary(runtime.into()),
             unavailable: None,
@@ -114,10 +116,12 @@ impl RealDeviceCommandOutput {
         raw_exit_status: Option<i32>,
         runtime: impl Into<String>,
     ) -> Self {
+        let stdout = stdout.into();
         Self {
             exit_status: RealDeviceCommandExitStatus::PlatformCommandUnavailable,
             raw_exit_status,
-            stdout_summary: normalize_summary(stdout.into()),
+            stdout_observation: stdout.clone(),
+            stdout_summary: normalize_summary(stdout),
             stderr_summary: normalize_summary(stderr.into()),
             toolchain_runtime_version: normalize_summary(runtime.into()),
             unavailable: Some(reason),
@@ -129,6 +133,7 @@ impl RealDeviceCommandOutput {
         Self {
             exit_status: RealDeviceCommandExitStatus::EvidenceFieldsIncomplete,
             raw_exit_status: None,
+            stdout_observation: String::new(),
             stdout_summary: String::new(),
             stderr_summary: String::new(),
             toolchain_runtime_version: normalize_summary(runtime.into()),
@@ -166,6 +171,7 @@ mod tests {
 
         assert!(output.stdout_summary.ends_with("..."));
         assert_eq!(output.stdout_summary.chars().count(), 515);
+        assert_eq!(output.stdout_observation.chars().count(), 513);
         assert_eq!(
             output.stderr_summary,
             "first stderr line | second stderr line"

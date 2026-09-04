@@ -86,16 +86,14 @@ pub struct ReadinessCompositionGuard {
     distributed_state_failover_declared_when_affects_readiness: bool,
     runtime_task_supervision_declared_when_affects_readiness: bool,
     internal_service_trust_declared_when_affects_readiness: bool,
-    public_endpoint_lifecycle_declared_when_endpoint_behavior_target_claim: bool,
+    public_endpoint_lifecycle_declared_when_endpoint_behavior_is_required: bool,
     probe_class_declared: bool,
     included_dependency_checks_declared: bool,
     excluded_checks_declared: bool,
     outcome_declared: bool,
     cataloged_reason_declared_for_non_success: bool,
-    evidence_class_declared: bool,
-    close_not_claimed_scope_declared: bool,
     readiness_response_not_single_unqualified_boolean: bool,
-    unevaluated_required_component_prevents_satisfied_claim: bool,
+    unevaluated_required_component_prevents_satisfied_outcome: bool,
 }
 
 /// readiness composition の fail-closed error です。
@@ -131,18 +129,14 @@ pub enum ReadinessCompositionError {
     OutcomeMissing,
     /// non-success の cataloged reason がありません。
     CatalogedReasonMissing,
-    /// evidence class がありません。
-    EvidenceClassMissing,
-    /// close-not-claimed scope がありません。
-    CloseNotClaimedScopeMissing,
     /// readiness が単一 boolean になっています。
     SingleUnqualifiedBooleanReadiness,
-    /// 未評価 component を含む claim を satisfied としています。
-    UnevaluatedComponentClaimedSatisfied,
+    /// 未評価 component を含む outcome を satisfied としています。
+    UnevaluatedComponentMarkedSatisfied,
 }
 
 impl ReadinessCompositionGuard {
-    /// readiness response が claims に採用可能な shape かを検査します。
+    /// readiness response が operational response に必要な shape かを検査します。
     pub const fn try_new(
         probe_class: AdminProbeClass,
         outcome: HealthAdminOutcome,
@@ -155,16 +149,14 @@ impl ReadinessCompositionGuard {
         distributed_state_failover_declared_when_affects_readiness: bool,
         runtime_task_supervision_declared_when_affects_readiness: bool,
         internal_service_trust_declared_when_affects_readiness: bool,
-        public_endpoint_lifecycle_declared_when_endpoint_behavior_target_claim: bool,
+        public_endpoint_lifecycle_declared_when_endpoint_behavior_is_required: bool,
         probe_class_declared: bool,
         included_dependency_checks_declared: bool,
         excluded_checks_declared: bool,
         outcome_declared: bool,
         cataloged_reason_declared_for_non_success: bool,
-        evidence_class_declared: bool,
-        close_not_claimed_scope_declared: bool,
         readiness_response_not_single_unqualified_boolean: bool,
-        unevaluated_required_component_prevents_satisfied_claim: bool,
+        unevaluated_required_component_prevents_satisfied_outcome: bool,
     ) -> Result<Self, ReadinessCompositionError> {
         if !startup_run_id_declared {
             return Err(ReadinessCompositionError::StartupRunIdMissing);
@@ -193,7 +185,7 @@ impl ReadinessCompositionGuard {
         if !internal_service_trust_declared_when_affects_readiness {
             return Err(ReadinessCompositionError::InternalServiceTrustMissing);
         }
-        if !public_endpoint_lifecycle_declared_when_endpoint_behavior_target_claim {
+        if !public_endpoint_lifecycle_declared_when_endpoint_behavior_is_required {
             return Err(ReadinessCompositionError::PublicEndpointLifecycleMissing);
         }
         if !probe_class_declared {
@@ -211,17 +203,11 @@ impl ReadinessCompositionGuard {
         if outcome.requires_reason() && !cataloged_reason_declared_for_non_success {
             return Err(ReadinessCompositionError::CatalogedReasonMissing);
         }
-        if !evidence_class_declared {
-            return Err(ReadinessCompositionError::EvidenceClassMissing);
-        }
-        if !close_not_claimed_scope_declared {
-            return Err(ReadinessCompositionError::CloseNotClaimedScopeMissing);
-        }
         if !readiness_response_not_single_unqualified_boolean {
             return Err(ReadinessCompositionError::SingleUnqualifiedBooleanReadiness);
         }
-        if !unevaluated_required_component_prevents_satisfied_claim {
-            return Err(ReadinessCompositionError::UnevaluatedComponentClaimedSatisfied);
+        if !unevaluated_required_component_prevents_satisfied_outcome {
+            return Err(ReadinessCompositionError::UnevaluatedComponentMarkedSatisfied);
         }
 
         Ok(Self {
@@ -236,16 +222,14 @@ impl ReadinessCompositionGuard {
             distributed_state_failover_declared_when_affects_readiness,
             runtime_task_supervision_declared_when_affects_readiness,
             internal_service_trust_declared_when_affects_readiness,
-            public_endpoint_lifecycle_declared_when_endpoint_behavior_target_claim,
+            public_endpoint_lifecycle_declared_when_endpoint_behavior_is_required,
             probe_class_declared,
             included_dependency_checks_declared,
             excluded_checks_declared,
             outcome_declared,
             cataloged_reason_declared_for_non_success,
-            evidence_class_declared,
-            close_not_claimed_scope_declared,
             readiness_response_not_single_unqualified_boolean,
-            unevaluated_required_component_prevents_satisfied_claim,
+            unevaluated_required_component_prevents_satisfied_outcome,
         })
     }
 }
@@ -261,7 +245,6 @@ pub struct AdminMaintenanceCommandGuard {
     raw_secret_token_packet_regulated_payload_not_exposed: bool,
     state_mutation_only_through_core_use_case: bool,
     probe_success_not_used_as_domain_acceptance: bool,
-    closeout_completion_requires_evidence_report: bool,
     maintenance_status_not_driver_local_flag_only: bool,
 }
 
@@ -282,8 +265,6 @@ pub enum AdminMaintenanceCommandError {
     StateMutationBypassesCoreUseCase,
     /// probe success を domain acceptance として扱っています。
     ProbeSuccessUsedAsDomainAcceptance,
-    /// evidence report なしに closeout complete を扱っています。
-    CloseoutWithoutEvidenceReport,
     /// maintenance status が driver-local flag だけで表現されています。
     MaintenanceStatusDriverLocalOnly,
 }
@@ -299,7 +280,6 @@ impl AdminMaintenanceCommandGuard {
         raw_secret_token_packet_regulated_payload_not_exposed: bool,
         state_mutation_only_through_core_use_case: bool,
         probe_success_not_used_as_domain_acceptance: bool,
-        closeout_completion_requires_evidence_report: bool,
         maintenance_status_not_driver_local_flag_only: bool,
     ) -> Result<Self, AdminMaintenanceCommandError> {
         if !action_class_declared {
@@ -323,9 +303,6 @@ impl AdminMaintenanceCommandGuard {
         if !probe_success_not_used_as_domain_acceptance {
             return Err(AdminMaintenanceCommandError::ProbeSuccessUsedAsDomainAcceptance);
         }
-        if !closeout_completion_requires_evidence_report {
-            return Err(AdminMaintenanceCommandError::CloseoutWithoutEvidenceReport);
-        }
         if !maintenance_status_not_driver_local_flag_only {
             return Err(AdminMaintenanceCommandError::MaintenanceStatusDriverLocalOnly);
         }
@@ -339,7 +316,6 @@ impl AdminMaintenanceCommandGuard {
             raw_secret_token_packet_regulated_payload_not_exposed,
             state_mutation_only_through_core_use_case,
             probe_success_not_used_as_domain_acceptance,
-            closeout_completion_requires_evidence_report,
             maintenance_status_not_driver_local_flag_only,
         })
     }
@@ -488,28 +464,3 @@ impl HealthAdminAuditGuard {
         })
     }
 }
-
-/// health/readiness/liveness evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct HealthAdminEvidenceGuard {
-    probe_class: AdminProbeClass,
-    outcome: HealthAdminOutcome,
-    command_or_probe_endpoint_declared: bool,
-    working_directory_or_target_entrypoint_declared: bool,
-    startup_run_id_declared: bool,
-    correlation_id_declared_when_command_scoped: bool,
-    probe_class_declared: bool,
-    included_excluded_checks_declared: bool,
-    topology_node_scope_declared_when_relevant: bool,
-    service_discovery_resolution_declared_when_affects_probe: bool,
-    distributed_state_failover_declared_when_affects_probe: bool,
-    runtime_task_supervision_declared_when_affects_probe: bool,
-    internal_service_trust_declared_when_affects_probe: bool,
-    expected_outcome_declared: bool,
-    actual_outcome_declared: bool,
-    cataloged_reason_declared_for_non_success: bool,
-    close_not_claimed_scope_declared: bool,
-    probe_output_without_required_fields_not_adopted_as_evidence: bool,
-    probe_success_not_used_as_build_test_runtime_or_production_proof: bool,
-}
-

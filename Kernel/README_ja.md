@@ -100,7 +100,6 @@ Drivers <- Entrypoints
 - native application readiness、
 - 完成済みの SFU、TURN、Signaling product-distro build、
 - benchmark acceptance threshold satisfaction、
-- v0.1 behavior の自動継承。
 
 benchmark scenario は measurement と reportability の surface です。別途 threshold rule が明示されていない限り、benchmark output は scoped measurement として扱います。
 

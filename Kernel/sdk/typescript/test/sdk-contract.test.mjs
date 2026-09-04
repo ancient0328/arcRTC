@@ -197,9 +197,9 @@ test("SDK reconnect and generated-artifact rules remain fail-closed", () => {
 
   assert.match(source, /generatedArtifactIsSemanticAuthority:\s*false/);
   assert.doesNotMatch(source, /generatedArtifactIsSemanticAuthority:\s*true/);
-  assert.equal((source.match(/sourceContract:\s*"SIGNALING_CONTRACT_CANONICAL"/g) ?? []).length, 2);
+  assert.equal((source.match(/sourceProtocol:\s*"SIGNALING_PROTOCOL"/g) ?? []).length, 2);
   assert.equal(sdk.arcrtcTypeScriptSdkProjection.generatedArtifactIsSemanticAuthority, false);
-  assert.equal(sdk.arcrtcTypeScriptSdkProjection.sourceContract, "SIGNALING_CONTRACT_CANONICAL");
+  assert.equal(sdk.arcrtcTypeScriptSdkProjection.sourceProtocol, "SIGNALING_PROTOCOL");
 });
 
 test("SDK out-of-scope catalog excludes media auth issuance and regulated workflow", () => {

@@ -9,9 +9,9 @@ impl FeatureCapabilityAdmissionGuard {
         capability_not_used_to_change_required_state_transition: bool,
         absent_capability_fails_closed: bool,
         experimental_surface_has_explicit_gate_when_used: bool,
-        out_of_scope_feature_has_admission_canonical_when_used: bool,
+        out_of_scope_feature_has_admission_decision_when_used: bool,
         sdk_capability_matches_server_contract_when_visible: bool,
-        test_only_gate_evidence_is_test_only: bool,
+        test_only_gate_is_test_only: bool,
         runtime_flag_change_uses_reconfiguration_generation_and_apply_scope: bool,
     ) -> Result<Self, FeatureCapabilityAdmissionError> {
         if !flag_class_declared {
@@ -38,14 +38,14 @@ impl FeatureCapabilityAdmissionGuard {
         if !experimental_surface_has_explicit_gate_when_used {
             return Err(FeatureCapabilityAdmissionError::ExperimentalSurfaceGateMissing);
         }
-        if !out_of_scope_feature_has_admission_canonical_when_used {
-            return Err(FeatureCapabilityAdmissionError::OutOfScopeAdmissionCanonicalMissing);
+        if !out_of_scope_feature_has_admission_decision_when_used {
+            return Err(FeatureCapabilityAdmissionError::OutOfScopeAdmissionDecisionMissing);
         }
         if !sdk_capability_matches_server_contract_when_visible {
             return Err(FeatureCapabilityAdmissionError::SdkCapabilityServerContractMismatch);
         }
-        if flag_class.is_test_only() && !test_only_gate_evidence_is_test_only {
-            return Err(FeatureCapabilityAdmissionError::TestOnlyGateUsedOutsideTestEvidence);
+        if flag_class.is_test_only() && !test_only_gate_is_test_only {
+            return Err(FeatureCapabilityAdmissionError::TestOnlyGateUsedOutsideTestScope);
         }
         if !runtime_flag_change_uses_reconfiguration_generation_and_apply_scope {
             return Err(
@@ -62,123 +62,10 @@ impl FeatureCapabilityAdmissionGuard {
             capability_not_used_to_change_required_state_transition,
             absent_capability_fails_closed,
             experimental_surface_has_explicit_gate_when_used,
-            out_of_scope_feature_has_admission_canonical_when_used,
+            out_of_scope_feature_has_admission_decision_when_used,
             sdk_capability_matches_server_contract_when_visible,
-            test_only_gate_evidence_is_test_only,
+            test_only_gate_is_test_only,
             runtime_flag_change_uses_reconfiguration_generation_and_apply_scope,
-        })
-    }
-}
-
-/// experimental lifecycle stage guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ExperimentalLifecycleGuard {
-    stage: ExperimentalLifecycleStage,
-    scope_and_owner_fixed: bool,
-    explicit_gate_present_when_scaffold_or_later: bool,
-    dependency_direction_evidence_present_when_scaffold: bool,
-    unit_or_contract_evidence_present_when_implemented: bool,
-    integration_report_present_when_controlled_integration: bool,
-    adr_or_canonical_update_and_compatibility_rule_present_when_adopted: bool,
-    compatibility_or_deprecation_lifecycle_satisfied_when_removed: bool,
-}
-
-/// experimental lifecycle guard 生成時の未検査入力です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ExperimentalLifecycleGuardInput {
-    pub stage: ExperimentalLifecycleStage,
-    pub scope_and_owner_fixed: bool,
-    pub explicit_gate_present_when_scaffold_or_later: bool,
-    pub dependency_direction_evidence_present_when_scaffold: bool,
-    pub unit_or_contract_evidence_present_when_implemented: bool,
-    pub integration_report_present_when_controlled_integration: bool,
-    pub adr_or_canonical_update_and_compatibility_rule_present_when_adopted: bool,
-    pub compatibility_or_deprecation_lifecycle_satisfied_when_removed: bool,
-}
-
-/// experimental lifecycle の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ExperimentalLifecycleError {
-    /// scope と owner が固定されていません。
-    ScopeOrOwnerMissing,
-    /// gated stage に explicit gate がありません。
-    ExplicitGateMissing,
-    /// gated scaffold に dependency direction evidence がありません。
-    DependencyDirectionEvidenceMissing,
-    /// gated implementation に unit/contract evidence がありません。
-    UnitOrContractEvidenceMissing,
-    /// controlled integration に integration report がありません。
-    IntegrationReportMissing,
-    /// adopted contract に ADR/Canonical update と compatibility rule がありません。
-    AdoptionCanonicalOrCompatibilityRuleMissing,
-    /// removal に compatibility/deprecation lifecycle がありません。
-    RemovalCompatibilityLifecycleMissing,
-}
-
-impl ExperimentalLifecycleGuard {
-    /// experimental lifecycle stage の promotion condition を検査します。
-    pub const fn try_new(
-        input: ExperimentalLifecycleGuardInput,
-    ) -> Result<Self, ExperimentalLifecycleError> {
-        let ExperimentalLifecycleGuardInput {
-            stage,
-            scope_and_owner_fixed,
-            explicit_gate_present_when_scaffold_or_later,
-            dependency_direction_evidence_present_when_scaffold,
-            unit_or_contract_evidence_present_when_implemented,
-            integration_report_present_when_controlled_integration,
-            adr_or_canonical_update_and_compatibility_rule_present_when_adopted,
-            compatibility_or_deprecation_lifecycle_satisfied_when_removed,
-        } = input;
-
-        if !scope_and_owner_fixed {
-            return Err(ExperimentalLifecycleError::ScopeOrOwnerMissing);
-        }
-        if matches!(
-            stage,
-            ExperimentalLifecycleStage::GatedScaffold
-                | ExperimentalLifecycleStage::GatedImplemented
-                | ExperimentalLifecycleStage::ControlledIntegration
-                | ExperimentalLifecycleStage::AdoptedContract
-        ) && !explicit_gate_present_when_scaffold_or_later
-        {
-            return Err(ExperimentalLifecycleError::ExplicitGateMissing);
-        }
-        if matches!(stage, ExperimentalLifecycleStage::GatedScaffold)
-            && !dependency_direction_evidence_present_when_scaffold
-        {
-            return Err(ExperimentalLifecycleError::DependencyDirectionEvidenceMissing);
-        }
-        if matches!(stage, ExperimentalLifecycleStage::GatedImplemented)
-            && !unit_or_contract_evidence_present_when_implemented
-        {
-            return Err(ExperimentalLifecycleError::UnitOrContractEvidenceMissing);
-        }
-        if matches!(stage, ExperimentalLifecycleStage::ControlledIntegration)
-            && !integration_report_present_when_controlled_integration
-        {
-            return Err(ExperimentalLifecycleError::IntegrationReportMissing);
-        }
-        if matches!(stage, ExperimentalLifecycleStage::AdoptedContract)
-            && !adr_or_canonical_update_and_compatibility_rule_present_when_adopted
-        {
-            return Err(ExperimentalLifecycleError::AdoptionCanonicalOrCompatibilityRuleMissing);
-        }
-        if matches!(stage, ExperimentalLifecycleStage::Removed)
-            && !compatibility_or_deprecation_lifecycle_satisfied_when_removed
-        {
-            return Err(ExperimentalLifecycleError::RemovalCompatibilityLifecycleMissing);
-        }
-
-        Ok(Self {
-            stage,
-            scope_and_owner_fixed,
-            explicit_gate_present_when_scaffold_or_later,
-            dependency_direction_evidence_present_when_scaffold,
-            unit_or_contract_evidence_present_when_implemented,
-            integration_report_present_when_controlled_integration,
-            adr_or_canonical_update_and_compatibility_rule_present_when_adopted,
-            compatibility_or_deprecation_lifecycle_satisfied_when_removed,
         })
     }
 }
@@ -272,18 +159,18 @@ impl FeatureCapabilityFailure {
 /// feature flag / capability lifecycle 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedFeatureCapabilityBehavior {
-    /// feature flag changes core state machine without ADR/Canonical.
-    FeatureFlagChangesCoreStateMachineWithoutCanonical,
+    /// feature flag changes core state machine without source policy.
+    FeatureFlagChangesCoreStateMachineWithoutSourcePolicy,
     /// capability alters required behavior inside accepted version.
     CapabilityAltersRequiredBehaviorInsideAcceptedVersion,
     /// experimental surface is enabled by default.
     ExperimentalSurfaceEnabledByDefault,
-    /// out-of-scope feature is enabled by flag without ADR/Canonical admission.
+    /// out-of-scope feature is enabled by flag without an admission decision.
     OutOfScopeFeatureEnabledByFlagWithoutAdmission,
     /// SDK exposes capability that server contract does not define.
     SdkExposesUndefinedServerCapability,
-    /// test-only gate is used as runtime/prod evidence.
-    TestOnlyGateUsedAsRuntimeOrProductionEvidence,
+    /// test-only gate is used outside test scope.
+    TestOnlyGateUsedOutsideTestScope,
     /// removal bypasses compatibility/deprecation lifecycle.
     RemovalBypassesCompatibilityDeprecationLifecycle,
     /// runtime flag change is treated as startup profile validation.

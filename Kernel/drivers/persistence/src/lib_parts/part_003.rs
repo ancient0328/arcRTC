@@ -51,12 +51,12 @@ pub enum ProhibitedExportBackupArtifactBehavior {
     BackupExistenceAsRestoreSuccess,
     /// storage checksum is treated as audit hash-chain proof.
     StorageChecksumAsAuditHashChainProof,
-    /// raw sensitive material is exported into general evidence.
-    RawSensitiveMaterialInGeneralEvidence,
+    /// raw sensitive material is exported through a general artifact path.
+    RawSensitiveMaterialInGeneralExport,
     /// artifact path or bucket key becomes core domain identity.
     ArtifactPathAsCoreDomainIdentity,
-    /// export format is treated as canonical serialization without explicit Canonical.
+    /// export format is treated as canonical serialization without an explicit source rule.
     ExportFormatAsCanonicalSerialization,
-    /// release/distribution evidence is hidden under backup evidence.
-    ReleaseDistributionEvidenceHiddenAsBackup,
+    /// release/distribution artifact is hidden under backup classification.
+    ReleaseDistributionArtifactHiddenAsBackup,
 }

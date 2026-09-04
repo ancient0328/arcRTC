@@ -1,9 +1,9 @@
 /// prior drain status です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PriorDrainStatus {
-    /// graceful drain evidence recorded.
-    GracefulDrainEvidenceRecorded,
-    /// drain did not complete or evidence is absent.
+    /// graceful drain was observed.
+    GracefulDrainObserved,
+    /// drain did not complete or observation is absent.
     DrainIncompleteOrAbsent,
 }
 
@@ -16,15 +16,15 @@ pub enum AuditPersistenceStatus {
     AuditPersistenceIncompleteOrAbsent,
 }
 
-/// restart 後 readiness の evidence class です。
+/// restart 後 readiness の observation class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RestartReadinessClass {
     /// readiness not claimed.
     NotClaimed,
     /// process uptime/readiness observation only.
     ProcessReadinessObservationOnly,
-    /// readiness is separately evidenced and not used as restore proof.
-    SeparateReadinessEvidence,
+    /// readiness is observed separately and not used as restore proof.
+    ReadinessObservedSeparately,
 }
 
 /// restore/replay policy application status です。
@@ -38,15 +38,6 @@ pub enum RestoreReplayPolicyApplication {
     ReplayVerificationOnly,
 }
 
-/// close-not-claimed scope です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CloseNotClaimedScope {
-    /// no closeout claim is made for affected domain state.
-    AffectedDomainState,
-    /// only process lifecycle observation is claimed.
-    ProcessLifecycleOnly,
-}
-
 /// process lifecycle observation の分類結果です。
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProcessFailureClassification {
@@ -58,7 +49,6 @@ pub struct ProcessFailureClassification {
     audit_persistence_status: AuditPersistenceStatus,
     restore_replay_policy_application: RestoreReplayPolicyApplication,
     readiness_class_after_restart: RestartReadinessClass,
-    close_not_claimed_scope: CloseNotClaimedScope,
 }
 
 /// process failure classification の fail-closed error です。
@@ -83,7 +73,6 @@ impl ProcessFailureClassification {
         audit_persistence_status: Option<AuditPersistenceStatus>,
         restore_replay_policy_application: RestoreReplayPolicyApplication,
         readiness_class_after_restart: RestartReadinessClass,
-        close_not_claimed_scope: CloseNotClaimedScope,
     ) -> Result<Self, ProcessFailureClassificationError> {
         let process_identity =
             process_identity.ok_or(ProcessFailureClassificationError::ProcessIdentityMissing)?;
@@ -101,12 +90,11 @@ impl ProcessFailureClassification {
             audit_persistence_status,
             restore_replay_policy_application,
             readiness_class_after_restart,
-            close_not_claimed_scope,
         })
     }
 
-    /// closeout claim 上は unclean と扱うべき classification かどうかです。
-    pub const fn treated_as_unclean_for_closeout(&self) -> bool {
+    /// unclean shutdown として扱うべき classification かどうかです。
+    pub const fn is_unclean_shutdown(&self) -> bool {
         matches!(
             self.prior_drain_status,
             PriorDrainStatus::DrainIncompleteOrAbsent
@@ -129,7 +117,7 @@ impl ProcessFailureClassification {
 pub struct RestartDomainStateClaim {
     classification: ProcessFailureClassification,
     restore_eligibility: RestoreEligibility,
-    crash_restart_evidence: CrashRestartEvidenceShape,
+    crash_restart_verification: CrashRestartVerification,
 }
 
 /// restart domain state claim の fail-closed error です。
@@ -137,8 +125,8 @@ pub struct RestartDomainStateClaim {
 pub enum RestartDomainStateClaimError {
     /// restart/failure observation alone cannot prove domain recovery.
     RestoreEligibilityRequired,
-    /// crash/restart evidence shape がありません。
-    CrashRestartEvidenceRequired,
+    /// crash/restart verification がありません。
+    CrashRestartVerificationRequired,
 }
 
 impl RestartDomainStateClaim {
@@ -146,10 +134,10 @@ impl RestartDomainStateClaim {
     pub fn try_new(
         classification: ProcessFailureClassification,
         restore_eligibility: Option<RestoreEligibility>,
-        crash_restart_evidence: Option<CrashRestartEvidenceShape>,
+        crash_restart_verification: Option<CrashRestartVerification>,
     ) -> Result<Self, RestartDomainStateClaimError> {
-        let crash_restart_evidence = crash_restart_evidence
-            .ok_or(RestartDomainStateClaimError::CrashRestartEvidenceRequired)?;
+        let crash_restart_verification = crash_restart_verification
+            .ok_or(RestartDomainStateClaimError::CrashRestartVerificationRequired)?;
         if classification
             .failure_class
             .requires_restore_policy_before_state_claim()
@@ -159,7 +147,7 @@ impl RestartDomainStateClaim {
             return Ok(Self {
                 classification,
                 restore_eligibility,
-                crash_restart_evidence,
+                crash_restart_verification,
             });
         }
 
@@ -168,31 +156,28 @@ impl RestartDomainStateClaim {
         Ok(Self {
             classification,
             restore_eligibility,
-            crash_restart_evidence,
+            crash_restart_verification,
         })
     }
 }
 
-/// crash/restart evidence に必要な field shape です。
+/// crash/restart runtime verification です。
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CrashRestartEvidenceShape {
-    exact_command_or_procedure: &'static str,
+pub struct CrashRestartVerification {
     supervisor_or_process_runner: &'static str,
     expected_failure_class: ProcessFailureClass,
     observed_failure_class: ProcessFailureClass,
     startup_run_before_restart: StartupRunId,
     startup_run_after_restart: StartupRunId,
     logs_are_diagnostic_support_only: bool,
-    audit_status_is_separate_evidence_class: bool,
-    restore_status_is_separate_evidence_class: bool,
-    readiness_status_is_separate_evidence_class: bool,
+    audit_status_is_distinct: bool,
+    restore_status_is_distinct: bool,
+    readiness_status_is_distinct: bool,
 }
 
-/// crash/restart evidence shape の fail-closed error です。
+/// crash/restart verification の fail-closed error です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CrashRestartEvidenceShapeError {
-    /// exact command/procedure がありません。
-    CommandOrProcedureMissing,
+pub enum CrashRestartVerificationError {
     /// supervisor or process runner がありません。
     SupervisorOrRunnerMissing,
     /// startup run ID before restart がありません。
@@ -201,62 +186,57 @@ pub enum CrashRestartEvidenceShapeError {
     StartupRunAfterMissing,
     /// log text が authoritative reason として扱われています。
     LogsUsedAsAuthoritativeReason,
-    /// audit status が separate evidence class になっていません。
-    AuditStatusNotSeparated,
-    /// restore status が separate evidence class になっていません。
-    RestoreStatusNotSeparated,
-    /// readiness status が separate evidence class になっていません。
-    ReadinessStatusNotSeparated,
+    /// audit status が distinct になっていません。
+    AuditStatusNotDistinct,
+    /// restore status が distinct になっていません。
+    RestoreStatusNotDistinct,
+    /// readiness status が distinct になっていません。
+    ReadinessStatusNotDistinct,
 }
 
-impl CrashRestartEvidenceShape {
-    /// crash/restart evidence に必要な field を検査して作ります。
+impl CrashRestartVerification {
+    /// crash/restart の runtime invariants を検査して作ります。
     pub fn try_new(
-        exact_command_or_procedure: &'static str,
         supervisor_or_process_runner: &'static str,
         expected_failure_class: ProcessFailureClass,
         observed_failure_class: ProcessFailureClass,
         startup_run_before_restart: Option<StartupRunId>,
         startup_run_after_restart: Option<StartupRunId>,
         logs_are_diagnostic_support_only: bool,
-        audit_status_is_separate_evidence_class: bool,
-        restore_status_is_separate_evidence_class: bool,
-        readiness_status_is_separate_evidence_class: bool,
-    ) -> Result<Self, CrashRestartEvidenceShapeError> {
-        if exact_command_or_procedure.is_empty() {
-            return Err(CrashRestartEvidenceShapeError::CommandOrProcedureMissing);
-        }
+        audit_status_is_distinct: bool,
+        restore_status_is_distinct: bool,
+        readiness_status_is_distinct: bool,
+    ) -> Result<Self, CrashRestartVerificationError> {
         if supervisor_or_process_runner.is_empty() {
-            return Err(CrashRestartEvidenceShapeError::SupervisorOrRunnerMissing);
+            return Err(CrashRestartVerificationError::SupervisorOrRunnerMissing);
         }
         let startup_run_before_restart = startup_run_before_restart
-            .ok_or(CrashRestartEvidenceShapeError::StartupRunBeforeMissing)?;
+            .ok_or(CrashRestartVerificationError::StartupRunBeforeMissing)?;
         let startup_run_after_restart = startup_run_after_restart
-            .ok_or(CrashRestartEvidenceShapeError::StartupRunAfterMissing)?;
+            .ok_or(CrashRestartVerificationError::StartupRunAfterMissing)?;
         if !logs_are_diagnostic_support_only {
-            return Err(CrashRestartEvidenceShapeError::LogsUsedAsAuthoritativeReason);
+            return Err(CrashRestartVerificationError::LogsUsedAsAuthoritativeReason);
         }
-        if !audit_status_is_separate_evidence_class {
-            return Err(CrashRestartEvidenceShapeError::AuditStatusNotSeparated);
+        if !audit_status_is_distinct {
+            return Err(CrashRestartVerificationError::AuditStatusNotDistinct);
         }
-        if !restore_status_is_separate_evidence_class {
-            return Err(CrashRestartEvidenceShapeError::RestoreStatusNotSeparated);
+        if !restore_status_is_distinct {
+            return Err(CrashRestartVerificationError::RestoreStatusNotDistinct);
         }
-        if !readiness_status_is_separate_evidence_class {
-            return Err(CrashRestartEvidenceShapeError::ReadinessStatusNotSeparated);
+        if !readiness_status_is_distinct {
+            return Err(CrashRestartVerificationError::ReadinessStatusNotDistinct);
         }
 
         Ok(Self {
-            exact_command_or_procedure,
             supervisor_or_process_runner,
             expected_failure_class,
             observed_failure_class,
             startup_run_before_restart,
             startup_run_after_restart,
             logs_are_diagnostic_support_only,
-            audit_status_is_separate_evidence_class,
-            restore_status_is_separate_evidence_class,
-            readiness_status_is_separate_evidence_class,
+            audit_status_is_distinct,
+            restore_status_is_distinct,
+            readiness_status_is_distinct,
         })
     }
 }
@@ -299,14 +279,14 @@ pub enum ProhibitedProcessFailureBehavior {
     UncleanCrashAsGracefulShutdown,
     /// supervisor restart is reported as readiness.
     SupervisorRestartAsReadiness,
-    /// crash recovery success is inferred without restore/replay evidence.
-    CrashRecoveryInferredWithoutRestoreEvidence,
+    /// crash recovery success is inferred without restore/replay verification.
+    CrashRecoveryInferredWithoutRestoreVerification,
     /// panic log text becomes authoritative reason.
     PanicLogTextAsAuthoritativeReason,
     /// restarted process reuses previous domain state without restore policy.
     RestartReusesDomainStateWithoutRestorePolicy,
-    /// crash evidence omits prior audit/drain status.
-    CrashEvidenceOmitsAuditOrDrainStatus,
+    /// crash verification omits prior audit/drain status.
+    CrashVerificationOmitsAuditOrDrainStatus,
     /// task panic is reported only as process readiness or generic driver failure.
     TaskPanicCollapsedIntoReadinessOrDriverFailure,
 }

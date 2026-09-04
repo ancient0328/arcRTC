@@ -69,13 +69,3 @@ fn release_artifact_manifest_schema_requires_digest_signature_and_provenance() {
         "sha256"
     );
 }
-
-#[test]
-fn release_policy_is_not_adopted_as_release_evidence() {
-    // release policy は command/source contract であり、artifact 生成や署名検証の evidence ではありません。
-    let non_adoption_count = POLICY.matches("non_adoption =").count();
-    assert_eq!(non_adoption_count, 7);
-    assert!(POLICY.contains("sbom policy is not generated sbom evidence"));
-    assert!(POLICY.contains("signature policy is not signature verification evidence"));
-    assert!(POLICY.contains("provenance policy is not release provenance evidence"));
-}

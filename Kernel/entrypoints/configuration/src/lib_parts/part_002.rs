@@ -1,78 +1,3 @@
-/// profile evidence guard の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ConfigurationProfileEvidenceError {
-    /// profile class がありません。
-    ProfileClassMissing,
-    /// bundle sources に raw secret material が含まれています。
-    RawSecretMaterialInEvidence,
-    /// profile class と evidence/claim class の対応が許可されていません。
-    ProfileClaimClassNotAdmitted,
-    /// production_candidate runtime/prod claim に explicit evidence report 参照がありません。
-    ExplicitEvidenceReportReferenceMissing,
-    /// evidence class を新規 report なしに昇格しています。
-    EvidencePromotedWithoutNewReport,
-    /// build claim に supply-chain identity がありません。
-    SupplyChainIdentityMissing,
-    /// runtime change evidence に reconfiguration class/generation がありません。
-    RuntimeChangeEvidenceMissing,
-}
-
-impl ConfigurationProfileEvidenceGuard {
-    /// profile evidence が profile class と bundle source を明示しているか検査します。
-    pub const fn try_new(
-        profile_class: ConfigurationProfileClass,
-        claim_class: ConfigurationProfileEvidenceClaimClass,
-        profile_class_declared: bool,
-        bundle_sources_declared_without_raw_secret_material: bool,
-        explicit_evidence_report_reference_present: bool,
-        evidence_not_promoted_to_another_profile_without_new_report: bool,
-        build_or_release_claim_depends_on_artifact: bool,
-        supply_chain_identity_declared_when_build_claim_depends_on_artifact: bool,
-        runtime_profile_change_claimed: bool,
-        runtime_change_includes_reconfiguration_class_and_generation: bool,
-    ) -> Result<Self, ConfigurationProfileEvidenceError> {
-        if !profile_class_declared {
-            return Err(ConfigurationProfileEvidenceError::ProfileClassMissing);
-        }
-        if !bundle_sources_declared_without_raw_secret_material {
-            return Err(ConfigurationProfileEvidenceError::RawSecretMaterialInEvidence);
-        }
-        match profile_class
-            .adoption_rule()
-            .admits_claim(claim_class, explicit_evidence_report_reference_present)
-        {
-            Ok(()) => {}
-            Err(error) => return Err(error),
-        }
-        if !evidence_not_promoted_to_another_profile_without_new_report {
-            return Err(ConfigurationProfileEvidenceError::EvidencePromotedWithoutNewReport);
-        }
-        if build_or_release_claim_depends_on_artifact
-            && !supply_chain_identity_declared_when_build_claim_depends_on_artifact
-        {
-            return Err(ConfigurationProfileEvidenceError::SupplyChainIdentityMissing);
-        }
-        if runtime_profile_change_claimed
-            && !runtime_change_includes_reconfiguration_class_and_generation
-        {
-            return Err(ConfigurationProfileEvidenceError::RuntimeChangeEvidenceMissing);
-        }
-
-        Ok(Self {
-            profile_class,
-            claim_class,
-            profile_class_declared,
-            bundle_sources_declared_without_raw_secret_material,
-            explicit_evidence_report_reference_present,
-            evidence_not_promoted_to_another_profile_without_new_report,
-            build_or_release_claim_depends_on_artifact,
-            supply_chain_identity_declared_when_build_claim_depends_on_artifact,
-            runtime_profile_change_claimed,
-            runtime_change_includes_reconfiguration_class_and_generation,
-        })
-    }
-}
-
 /// configuration profile / policy bundle 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedConfigurationProfileBundleBehavior {
@@ -86,16 +11,16 @@ pub enum ProhibitedConfigurationProfileBundleBehavior {
     TestProfileBecomesProductionProfile,
     /// feature flag enables experimental surface without lifecycle rule.
     FeatureFlagEnablesExperimentalSurfaceWithoutLifecycle,
-    /// profile evidence omits profile class.
-    ProfileEvidenceOmitsProfileClass,
+    /// profile selection omits profile class.
+    ProfileSelectionOmitsProfileClass,
     /// topology/secret/supply-chain bundle is implicit default.
     ImplicitTopologySecretOrSupplyChainBundle,
     /// service discovery / distributed state bundle is implicit default.
     ImplicitDiscoveryOrDistributedStateBundle,
     /// internal service trust / runtime task bundle is implicit default.
     ImplicitInternalTrustOrRuntimeTaskBundle,
-    /// build/release claim lacks supply-chain bundle evidence.
-    BuildReleaseClaimWithoutSupplyChainEvidence,
+    /// build/release selection omits supply-chain identity.
+    BuildReleaseSelectionOmitsSupplyChainIdentity,
     /// startup validation is treated as runtime hot-swap permission.
     StartupValidationAsRuntimeHotSwapPermission,
 }
@@ -105,7 +30,7 @@ pub enum ProhibitedConfigurationProfileBundleBehavior {
 pub enum RuntimeReconfigurationClass {
     /// restart と startup validation が必要な既定 class です。
     StartupOnly,
-    /// secret rotation Canonical 配下の key/secret reload です。
+    /// secret rotation policy 配下の key/secret reload です。
     SecretRotationReload,
     /// observability taxonomy bounds 内の exporter reload です。
     ObservabilityExportReload,
@@ -129,8 +54,8 @@ impl RuntimeReconfigurationClass {
         )
     }
 
-    /// test evidence だけに閉じる class かを返します。
-    pub const fn is_test_evidence_only(self) -> bool {
+    /// test scope だけに閉じる class かを返します。
+    pub const fn is_test_only(self) -> bool {
         matches!(self, Self::TestProfileSwap)
     }
 }
@@ -254,13 +179,11 @@ pub struct RuntimeReconfigurationAdmissionGuard {
     drain_or_restart_requirement_declared: bool,
     rollback_behavior_declared: bool,
     audit_event_type: RuntimeReconfigurationAuditEventType,
-    evidence_class_declared: bool,
-    close_not_claimed_scope_declared: bool,
     runtime_apply_requested: bool,
-    target_canonical_admits_class: bool,
+    target_policy_admits_class: bool,
     class_specific_rule_satisfied: bool,
-    test_profile_swap_evidence_is_test_only: bool,
-    raw_config_or_secret_payload_absent_from_generation_evidence: bool,
+    test_profile_swap_is_test_only: bool,
+    raw_config_or_secret_payload_absent_from_generation_state: bool,
 }
 
 /// runtime reconfiguration admission の fail-closed error です。
@@ -284,20 +207,16 @@ pub enum RuntimeReconfigurationAdmissionError {
     DrainOrRestartRequirementMissing,
     /// rollback behavior が記録されていません。
     RollbackBehaviorMissing,
-    /// evidence class がありません。
-    EvidenceClassMissing,
-    /// close-not-claimed scope がありません。
-    CloseNotClaimedScopeMissing,
     /// class が runtime apply を許可しません。
     ReconfigurationClassNotAdmitted,
-    /// target Canonical が class を許可していません。
-    TargetCanonicalDoesNotAdmitClass,
-    /// class 固有の Canonical 条件を満たしていません。
+    /// target policy が class を許可していません。
+    TargetPolicyDoesNotAdmitClass,
+    /// class 固有の source policy 条件を満たしていません。
     ClassSpecificRuleMissing,
-    /// test profile swap が test evidence only に閉じていません。
-    TestProfileSwapEvidenceNotTestOnly,
-    /// generation evidence に raw config/secret payload が混入しています。
-    RawPayloadInGenerationEvidence,
+    /// test profile swap が test scope に閉じていません。
+    TestProfileSwapUsedOutsideTestScope,
+    /// generation state に raw config/secret payload が混入しています。
+    RawPayloadInGenerationState,
 }
 
 impl RuntimeReconfigurationAdmissionGuard {
@@ -315,13 +234,11 @@ impl RuntimeReconfigurationAdmissionGuard {
         drain_or_restart_requirement_declared: bool,
         rollback_behavior_declared: bool,
         audit_event_type: RuntimeReconfigurationAuditEventType,
-        evidence_class_declared: bool,
-        close_not_claimed_scope_declared: bool,
         runtime_apply_requested: bool,
-        target_canonical_admits_class: bool,
+        target_policy_admits_class: bool,
         class_specific_rule_satisfied: bool,
-        test_profile_swap_evidence_is_test_only: bool,
-        raw_config_or_secret_payload_absent_from_generation_evidence: bool,
+        test_profile_swap_is_test_only: bool,
+        raw_config_or_secret_payload_absent_from_generation_state: bool,
     ) -> Result<Self, RuntimeReconfigurationAdmissionError> {
         if !target_surface.owner_matches(target_owner) {
             return Err(RuntimeReconfigurationAdmissionError::TargetOwnerMismatch);
@@ -350,27 +267,20 @@ impl RuntimeReconfigurationAdmissionGuard {
         if !rollback_behavior_declared {
             return Err(RuntimeReconfigurationAdmissionError::RollbackBehaviorMissing);
         }
-        if !evidence_class_declared {
-            return Err(RuntimeReconfigurationAdmissionError::EvidenceClassMissing);
-        }
-        if !close_not_claimed_scope_declared {
-            return Err(RuntimeReconfigurationAdmissionError::CloseNotClaimedScopeMissing);
-        }
         if runtime_apply_requested && !reconfiguration_class.admits_runtime_apply() {
             return Err(RuntimeReconfigurationAdmissionError::ReconfigurationClassNotAdmitted);
         }
-        if runtime_apply_requested && !target_canonical_admits_class {
-            return Err(RuntimeReconfigurationAdmissionError::TargetCanonicalDoesNotAdmitClass);
+        if runtime_apply_requested && !target_policy_admits_class {
+            return Err(RuntimeReconfigurationAdmissionError::TargetPolicyDoesNotAdmitClass);
         }
         if runtime_apply_requested && !class_specific_rule_satisfied {
             return Err(RuntimeReconfigurationAdmissionError::ClassSpecificRuleMissing);
         }
-        if reconfiguration_class.is_test_evidence_only() && !test_profile_swap_evidence_is_test_only
-        {
-            return Err(RuntimeReconfigurationAdmissionError::TestProfileSwapEvidenceNotTestOnly);
+        if reconfiguration_class.is_test_only() && !test_profile_swap_is_test_only {
+            return Err(RuntimeReconfigurationAdmissionError::TestProfileSwapUsedOutsideTestScope);
         }
-        if !raw_config_or_secret_payload_absent_from_generation_evidence {
-            return Err(RuntimeReconfigurationAdmissionError::RawPayloadInGenerationEvidence);
+        if !raw_config_or_secret_payload_absent_from_generation_state {
+            return Err(RuntimeReconfigurationAdmissionError::RawPayloadInGenerationState);
         }
 
         Ok(Self {
@@ -386,13 +296,11 @@ impl RuntimeReconfigurationAdmissionGuard {
             drain_or_restart_requirement_declared,
             rollback_behavior_declared,
             audit_event_type,
-            evidence_class_declared,
-            close_not_claimed_scope_declared,
             runtime_apply_requested,
-            target_canonical_admits_class,
+            target_policy_admits_class,
             class_specific_rule_satisfied,
-            test_profile_swap_evidence_is_test_only,
-            raw_config_or_secret_payload_absent_from_generation_evidence,
+            test_profile_swap_is_test_only,
+            raw_config_or_secret_payload_absent_from_generation_state,
         })
     }
 }
@@ -402,7 +310,7 @@ impl RuntimeReconfigurationAdmissionGuard {
 pub struct RuntimeReconfigurationApplyGuard {
     target_surface: RuntimeReconfigurationTargetSurface,
     accepted_domain_decisions_keep_original_generation: bool,
-    target_canonical_defines_migration_or_reevaluation_for_active_scope: bool,
+    target_policy_defines_migration_or_reevaluation_for_active_scope: bool,
     drain_or_restart_rule_present_for_sensitive_surface: bool,
     audit_hash_chain_scope_not_rewritten: bool,
 }
@@ -425,14 +333,14 @@ impl RuntimeReconfigurationApplyGuard {
     pub const fn try_new(
         target_surface: RuntimeReconfigurationTargetSurface,
         accepted_domain_decisions_keep_original_generation: bool,
-        target_canonical_defines_migration_or_reevaluation_for_active_scope: bool,
+        target_policy_defines_migration_or_reevaluation_for_active_scope: bool,
         drain_or_restart_rule_present_for_sensitive_surface: bool,
         audit_hash_chain_scope_not_rewritten: bool,
     ) -> Result<Self, RuntimeReconfigurationApplyError> {
         if !accepted_domain_decisions_keep_original_generation {
             return Err(RuntimeReconfigurationApplyError::AcceptedDecisionGenerationRewritten);
         }
-        if !target_canonical_defines_migration_or_reevaluation_for_active_scope {
+        if !target_policy_defines_migration_or_reevaluation_for_active_scope {
             return Err(RuntimeReconfigurationApplyError::ActiveScopeMigrationRuleMissing);
         }
         if target_surface.requires_drain_or_restart_when_runtime_changed()
@@ -447,7 +355,7 @@ impl RuntimeReconfigurationApplyGuard {
         Ok(Self {
             target_surface,
             accepted_domain_decisions_keep_original_generation,
-            target_canonical_defines_migration_or_reevaluation_for_active_scope,
+            target_policy_defines_migration_or_reevaluation_for_active_scope,
             drain_or_restart_rule_present_for_sensitive_surface,
             audit_hash_chain_scope_not_rewritten,
         })
@@ -461,7 +369,7 @@ pub struct RuntimeReconfigurationRollbackGuard {
     rollback_generation_reference_present: bool,
     rollback_trigger_declared: bool,
     rollback_apply_scope_declared: bool,
-    rollback_evidence_declared: bool,
+    rollback_outcome_observed: bool,
     in_flight_operation_handling_declared: bool,
     rollback_failure_reason_declared_when_failed: bool,
 }
@@ -477,11 +385,10 @@ pub enum RuntimeReconfigurationRollbackError {
     RollbackTriggerMissing,
     /// rollback apply scope がありません。
     RollbackApplyScopeMissing,
-    /// rollback evidence がありません。
-    RollbackEvidenceMissing,
+    /// rollback outcome が観測されていません。
+    RollbackOutcomeMissing,
     /// in-flight operation handling がありません。
     InFlightOperationHandlingMissing,
     /// rollback failure reason がありません。
     RollbackFailureReasonMissing,
 }
-

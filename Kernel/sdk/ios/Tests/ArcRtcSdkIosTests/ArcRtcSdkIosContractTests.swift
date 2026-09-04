@@ -17,8 +17,8 @@ final class ArcRtcSdkIosContractTests: XCTestCase {
 
         XCTAssertTrue(ArcRtcIosSdkSurface.assertSignalingOnlyProjection(projection))
         XCTAssertEqual(projection.platform, .ios)
-        XCTAssertEqual(projection.sourceContractVersion, .v0_2)
-        XCTAssertEqual(projection.sourceContract, .signalingContractCanonical)
+        XCTAssertEqual(projection.sourceProtocolVersion, .v0_2)
+        XCTAssertEqual(projection.sourceProtocol, .signalingProtocol)
         XCTAssertEqual(projection.projectionClass, .platformApiProjection)
         XCTAssertFalse(projection.generatedArtifactIsSemanticAuthority)
         XCTAssertEqual(projection.entries.count, SignalingCommandKind.allCases.count + SignalingEventKind.allCases.count)

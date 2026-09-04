@@ -1,6 +1,6 @@
 use arcrtc_core_command::{
-    AuditProjectionRequirement, CommandType, DecisionEvidenceClass, DecisionReason,
-    StateTransitionSummary, TargetSurface, UseCaseDecision, UseCaseDecisionInput, UseCaseOutcome,
+    AuditProjectionRequirement, CommandType, DecisionReason, StateTransitionSummary, TargetSurface,
+    UseCaseDecision, UseCaseDecisionInput, UseCaseOutcome,
 };
 use arcrtc_core_identity::{
     AllocationId, ChannelBindId, ConfigurationScopeRef, CorrelationId, CredentialRef, EndpointId,
@@ -40,30 +40,29 @@ fn full_restore_preconditions() -> recovery::RestorePreconditionSet {
 }
 
 fn full_replay_policy() -> recovery::ReplayPolicyCoverage {
-    recovery::ReplayPolicyCoverage::try_new(true, true, true, true, true, true, true, true)
+    recovery::ReplayPolicyCoverage::try_new(true, true, true, true, true, true, true)
         .expect("all replay policy coverage fields are present")
 }
 
 fn failover_input(
     replacement_owner: Option<OpaqueReference>,
-) -> recovery::FailoverEvidenceShapeInput {
-    recovery::FailoverEvidenceShapeInput {
+) -> recovery::FailoverVerificationStateInput {
+    recovery::FailoverVerificationStateInput {
         failed_owner_observed: true,
         replacement_owner,
         affected_state_family: StateFamily::SfuForwardingState,
         affinity_sticky_routing_updated: true,
-        restore_replay_relation: recovery::RecoveryRestoreRelation::ExplicitRestoreEvidenceRequired,
+        restore_replay_relation:
+            recovery::RecoveryRestoreRelation::ExplicitRestoreVerificationRequired,
         conflict_and_duplicate_handling_defined: true,
         resource_lifetime_revalidated: true,
-        audit_continuity_or_close_not_claimed_scope_recorded: true,
+        audit_continuity_recorded: true,
     }
 }
 
-fn crash_evidence(
-    label: &'static str,
-) -> Result<recovery::CrashRestartEvidenceShape, recovery::CrashRestartEvidenceShapeError> {
-    recovery::CrashRestartEvidenceShape::try_new(
-        label,
+fn crash_verification(
+) -> Result<recovery::CrashRestartVerification, recovery::CrashRestartVerificationError> {
+    recovery::CrashRestartVerification::try_new(
         "supervisor",
         recovery::ProcessFailureClass::ProcessCrashObserved,
         recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -91,7 +90,6 @@ fn decision(
         state_transition: StateTransitionSummary::Changed("coverage-enterprise-core-media"),
         port_intents: Vec::new(),
         audit_projection: AuditProjectionRequirement::Required,
-        evidence_class: DecisionEvidenceClass::SourceDecisionOnly,
     })
     .expect("decision shape is valid")
 }
@@ -148,7 +146,7 @@ fn recovery_restore_replay_reason_and_prohibited_surface_are_asserted() {
         StateFamily::SdkConnectionState,
     ];
     for family in default_families {
-        let policy = recovery::StateFamilyRecoveryPolicy::canonical_default(family);
+        let policy = recovery::StateFamilyRecoveryPolicy::default_for(family);
         assert!(!policy.permits_core_restore_candidate());
     }
 
@@ -158,9 +156,7 @@ fn recovery_restore_replay_reason_and_prohibited_surface_are_asserted() {
 
     assert_eq!(
         recovery::RestoreEligibility::try_new(
-            recovery::StateFamilyRecoveryPolicy::canonical_default(
-                StateFamily::SignalingIdempotency
-            ),
+            recovery::StateFamilyRecoveryPolicy::default_for(StateFamily::SignalingIdempotency),
             StateClass::CheckpointEligibleState,
             full_restore_preconditions(),
         ),
@@ -184,46 +180,28 @@ fn recovery_restore_replay_reason_and_prohibited_surface_are_asserted() {
 
     for (coverage, expected) in [
         (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, false, true, true, true, true, true, true,
-            ),
+            recovery::ReplayPolicyCoverage::try_new(true, false, true, true, true, true, true),
             recovery::ReplayPolicyCoverageError::OrderingMissing,
         ),
         (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, true, false, true, true, true, true, true,
-            ),
+            recovery::ReplayPolicyCoverage::try_new(true, true, false, true, true, true, true),
             recovery::ReplayPolicyCoverageError::GapHandlingMissing,
         ),
         (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, true, true, false, true, true, true, true,
-            ),
+            recovery::ReplayPolicyCoverage::try_new(true, true, true, false, true, true, true),
             recovery::ReplayPolicyCoverageError::DuplicateHandlingMissing,
         ),
         (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, true, true, true, false, true, true, true,
-            ),
+            recovery::ReplayPolicyCoverage::try_new(true, true, true, true, false, true, true),
             recovery::ReplayPolicyCoverageError::ConflictResolutionMissing,
         ),
         (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, true, true, true, true, false, true, true,
-            ),
+            recovery::ReplayPolicyCoverage::try_new(true, true, true, true, true, false, true),
             recovery::ReplayPolicyCoverageError::BoundRevalidationMissing,
         ),
         (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, true, true, true, true, true, false, true,
-            ),
+            recovery::ReplayPolicyCoverage::try_new(true, true, true, true, true, true, false),
             recovery::ReplayPolicyCoverageError::FailureReasonMappingMissing,
-        ),
-        (
-            recovery::ReplayPolicyCoverage::try_new(
-                true, true, true, true, true, true, true, false,
-            ),
-            recovery::ReplayPolicyCoverageError::EvidenceAdoptionConditionMissing,
         ),
     ] {
         assert_eq!(coverage, Err(expected));
@@ -231,9 +209,7 @@ fn recovery_restore_replay_reason_and_prohibited_surface_are_asserted() {
 
     assert_eq!(
         recovery::ReplayEligibility::domain_mutation_candidate(
-            recovery::StateFamilyRecoveryPolicy::canonical_default(
-                StateFamily::SignalingIdempotency
-            ),
+            recovery::StateFamilyRecoveryPolicy::default_for(StateFamily::SignalingIdempotency),
             Some(full_replay_policy()),
         ),
         Err(recovery::ReplayEligibilityError::RecoveryClassDoesNotPermitDomainMutationReplay)
@@ -274,7 +250,7 @@ fn recovery_restore_replay_reason_and_prohibited_surface_are_asserted() {
         recovery::ProhibitedRecoveryBehavior::TurnRelayStateSilentlyRestored,
         recovery::ProhibitedRecoveryBehavior::SdkReconnectStateAsServerParticipantState,
         recovery::ProhibitedRecoveryBehavior::DriverLocalConflictResolution,
-        recovery::ProhibitedRecoveryBehavior::RestoreSuccessClaimWithoutEvidence,
+        recovery::ProhibitedRecoveryBehavior::RestoreSuccessWithoutVerification,
         recovery::ProhibitedRecoveryBehavior::CrashObservationAsRestoreSuccess,
         recovery::ProhibitedRecoveryBehavior::ReplacementProcessAsFailoverSuccess,
         recovery::ProhibitedRecoveryBehavior::ReplicationInferredFromRestore,
@@ -284,7 +260,7 @@ fn recovery_restore_replay_reason_and_prohibited_surface_are_asserted() {
 }
 
 #[test]
-fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
+fn recovery_distributed_failover_and_process_verification_paths_are_asserted() {
     let owner = reference("owner-node");
     assert_eq!(
         recovery::DistributedStatePolicy::try_new(
@@ -353,17 +329,17 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
         );
     }
 
-    let failover_shape = recovery::FailoverEvidenceShape::try_new(failover_input(Some(reference(
-        "replacement-node",
-    ))))
-    .expect("failover evidence is valid");
+    let failover_state = recovery::FailoverVerificationState::try_new(failover_input(Some(
+        reference("replacement-node"),
+    )))
+    .expect("failover verification state is valid");
     for (input, expected) in [
         {
             let mut input = failover_input(Some(reference("replacement-a")));
             input.failed_owner_observed = false;
             (
                 input,
-                recovery::FailoverEvidenceShapeError::FailedOwnerObservationMissing,
+                recovery::FailoverVerificationStateError::FailedOwnerObservationMissing,
             )
         },
         {
@@ -371,7 +347,7 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
             input.affinity_sticky_routing_updated = false;
             (
                 input,
-                recovery::FailoverEvidenceShapeError::AffinityRoutingUpdateMissing,
+                recovery::FailoverVerificationStateError::AffinityRoutingUpdateMissing,
             )
         },
         {
@@ -379,7 +355,7 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
             input.conflict_and_duplicate_handling_defined = false;
             (
                 input,
-                recovery::FailoverEvidenceShapeError::ConflictDuplicateHandlingMissing,
+                recovery::FailoverVerificationStateError::ConflictDuplicateHandlingMissing,
             )
         },
         {
@@ -387,34 +363,34 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
             input.resource_lifetime_revalidated = false;
             (
                 input,
-                recovery::FailoverEvidenceShapeError::ResourceLifetimeRevalidationMissing,
+                recovery::FailoverVerificationStateError::ResourceLifetimeRevalidationMissing,
             )
         },
         {
             let mut input = failover_input(Some(reference("replacement-e")));
-            input.audit_continuity_or_close_not_claimed_scope_recorded = false;
+            input.audit_continuity_recorded = false;
             (
                 input,
-                recovery::FailoverEvidenceShapeError::AuditContinuityOrCloseNotClaimedScopeMissing,
+                recovery::FailoverVerificationStateError::AuditContinuityMissing,
             )
         },
     ] {
         assert_eq!(
-            recovery::FailoverEvidenceShape::try_new(input),
+            recovery::FailoverVerificationState::try_new(input),
             Err(expected)
         );
     }
     assert_eq!(
         recovery::FailoverAdmission::admit(
             recovery::FailoverClaimClass::ServiceDiscoveryFallback,
-            failover_shape.clone(),
+            failover_state.clone(),
         ),
         Err(recovery::FailoverAdmissionError::ServiceDiscoveryFallbackIsNotFailoverSuccess)
     );
     assert_eq!(
         recovery::FailoverAdmission::admit(
             recovery::FailoverClaimClass::HealthProbeSuccess,
-            failover_shape.clone(),
+            failover_state.clone(),
         ),
         Err(recovery::FailoverAdmissionError::HealthProbeIsNotFailoverSuccess)
     );
@@ -427,7 +403,7 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
         recovery::OwnerNodeScope::ServiceInstance,
         owner.clone(),
         Some(reference("affinity-key")),
-        recovery::FailoverClaimClass::EvidenceBackedFailoverCandidate,
+        recovery::FailoverClaimClass::VerifiedFailoverCandidate,
         Some(reference("replacement-audit")),
         "failover_not_proven",
     );
@@ -457,7 +433,6 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
         Some(recovery::AuditPersistenceStatus::AuditPersistenceCompleted),
         recovery::RestoreReplayPolicyApplication::NotApplied,
         recovery::RestartReadinessClass::NotClaimed,
-        recovery::CloseNotClaimedScope::ProcessLifecycleOnly,
     );
     assert_eq!(
         missing_prior,
@@ -468,11 +443,10 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
         None,
         Some(reference("process-missing-audit")),
         recovery::ProcessFailureClass::PanicObserved,
-        Some(recovery::PriorDrainStatus::GracefulDrainEvidenceRecorded),
+        Some(recovery::PriorDrainStatus::GracefulDrainObserved),
         None,
         recovery::RestoreReplayPolicyApplication::NotApplied,
         recovery::RestartReadinessClass::NotClaimed,
-        recovery::CloseNotClaimedScope::ProcessLifecycleOnly,
     );
     assert_eq!(
         missing_audit,
@@ -484,28 +458,26 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
         None,
         Some(reference("process-audit-unclean")),
         recovery::ProcessFailureClass::TaskPanicObserved,
-        Some(recovery::PriorDrainStatus::GracefulDrainEvidenceRecorded),
+        Some(recovery::PriorDrainStatus::GracefulDrainObserved),
         Some(recovery::AuditPersistenceStatus::AuditPersistenceIncompleteOrAbsent),
         recovery::RestoreReplayPolicyApplication::ReplayVerificationOnly,
         recovery::RestartReadinessClass::ProcessReadinessObservationOnly,
-        recovery::CloseNotClaimedScope::ProcessLifecycleOnly,
     )
     .expect("classification is valid");
-    assert!(audit_unclean.treated_as_unclean_for_closeout());
+    assert!(audit_unclean.is_unclean_shutdown());
 
     let clean_task_panic = recovery::ProcessFailureClassification::try_new(
         Some(startup("task-before")),
         Some(startup("task-after")),
         Some(reference("process-task-panic")),
         recovery::ProcessFailureClass::TaskPanicObserved,
-        Some(recovery::PriorDrainStatus::GracefulDrainEvidenceRecorded),
+        Some(recovery::PriorDrainStatus::GracefulDrainObserved),
         Some(recovery::AuditPersistenceStatus::AuditPersistenceCompleted),
         recovery::RestoreReplayPolicyApplication::RestoreEligibilityApplied,
-        recovery::RestartReadinessClass::SeparateReadinessEvidence,
-        recovery::CloseNotClaimedScope::AffectedDomainState,
+        recovery::RestartReadinessClass::ReadinessObservedSeparately,
     )
     .expect("task panic classification is valid");
-    assert!(!clean_task_panic.treated_as_unclean_for_closeout());
+    assert!(!clean_task_panic.is_unclean_shutdown());
 
     let restore_eligibility = recovery::RestoreEligibility::try_new(
         recovery::StateFamilyRecoveryPolicy::signaling_idempotency_checkpoint_restore_configured(),
@@ -519,28 +491,27 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
             Some(restore_eligibility),
             None
         ),
-        Err(recovery::RestartDomainStateClaimError::CrashRestartEvidenceRequired)
+        Err(recovery::RestartDomainStateClaimError::CrashRestartVerificationRequired)
     );
     assert!(recovery::RestartDomainStateClaim::try_new(
         clean_task_panic,
         Some(restore_eligibility),
-        Some(crash_evidence("task-panic-claim").expect("crash evidence is valid")),
+        Some(crash_verification().expect("crash verification is valid")),
     )
     .is_ok());
 
     for expected in [
-        recovery::CrashRestartEvidenceShapeError::SupervisorOrRunnerMissing,
-        recovery::CrashRestartEvidenceShapeError::StartupRunBeforeMissing,
-        recovery::CrashRestartEvidenceShapeError::StartupRunAfterMissing,
-        recovery::CrashRestartEvidenceShapeError::LogsUsedAsAuthoritativeReason,
-        recovery::CrashRestartEvidenceShapeError::AuditStatusNotSeparated,
-        recovery::CrashRestartEvidenceShapeError::RestoreStatusNotSeparated,
-        recovery::CrashRestartEvidenceShapeError::ReadinessStatusNotSeparated,
+        recovery::CrashRestartVerificationError::SupervisorOrRunnerMissing,
+        recovery::CrashRestartVerificationError::StartupRunBeforeMissing,
+        recovery::CrashRestartVerificationError::StartupRunAfterMissing,
+        recovery::CrashRestartVerificationError::LogsUsedAsAuthoritativeReason,
+        recovery::CrashRestartVerificationError::AuditStatusNotDistinct,
+        recovery::CrashRestartVerificationError::RestoreStatusNotDistinct,
+        recovery::CrashRestartVerificationError::ReadinessStatusNotDistinct,
     ] {
         let result = match expected {
-            recovery::CrashRestartEvidenceShapeError::SupervisorOrRunnerMissing => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::SupervisorOrRunnerMissing => {
+                recovery::CrashRestartVerification::try_new(
                     "",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -552,9 +523,8 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
                     true,
                 )
             }
-            recovery::CrashRestartEvidenceShapeError::StartupRunBeforeMissing => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::StartupRunBeforeMissing => {
+                recovery::CrashRestartVerification::try_new(
                     "supervisor",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -566,9 +536,8 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
                     true,
                 )
             }
-            recovery::CrashRestartEvidenceShapeError::StartupRunAfterMissing => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::StartupRunAfterMissing => {
+                recovery::CrashRestartVerification::try_new(
                     "supervisor",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -580,9 +549,8 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
                     true,
                 )
             }
-            recovery::CrashRestartEvidenceShapeError::LogsUsedAsAuthoritativeReason => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::LogsUsedAsAuthoritativeReason => {
+                recovery::CrashRestartVerification::try_new(
                     "supervisor",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -594,9 +562,8 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
                     true,
                 )
             }
-            recovery::CrashRestartEvidenceShapeError::AuditStatusNotSeparated => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::AuditStatusNotDistinct => {
+                recovery::CrashRestartVerification::try_new(
                     "supervisor",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -608,9 +575,8 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
                     true,
                 )
             }
-            recovery::CrashRestartEvidenceShapeError::RestoreStatusNotSeparated => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::RestoreStatusNotDistinct => {
+                recovery::CrashRestartVerification::try_new(
                     "supervisor",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -622,10 +588,8 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
                     true,
                 )
             }
-            recovery::CrashRestartEvidenceShapeError::ReadinessStatusNotSeparated
-            | recovery::CrashRestartEvidenceShapeError::CommandOrProcedureMissing => {
-                recovery::CrashRestartEvidenceShape::try_new(
-                    "command",
+            recovery::CrashRestartVerificationError::ReadinessStatusNotDistinct => {
+                recovery::CrashRestartVerification::try_new(
                     "supervisor",
                     recovery::ProcessFailureClass::ProcessCrashObserved,
                     recovery::ProcessFailureClass::ProcessCrashObserved,
@@ -662,7 +626,7 @@ fn recovery_distributed_failover_and_process_evidence_paths_are_asserted() {
             recovery::ProhibitedDistributedStateBehavior::AuditReplayMutatesWithoutRestorePolicy,
             recovery::ProhibitedDistributedStateBehavior::TwoOwnersAcceptedWithoutConflictRule,
             recovery::ProhibitedDistributedStateBehavior::UnboundedReplicationLagOrHandoffWindow,
-            recovery::ProhibitedDistributedStateBehavior::TestFakeAsProductionDistributedStateEvidence,
+            recovery::ProhibitedDistributedStateBehavior::TestFakeAsProductionDistributedState,
         ]
         .len(),
         7
@@ -752,7 +716,7 @@ fn runtime_task_lifecycle_time_policy_and_cancellation_paths_are_asserted() {
         None,
         runtime::RuntimeTaskOwningLayer::CoreObservedRuntimePort,
         runtime::RuntimeTaskInputReferenceClass::None,
-        runtime::RuntimeTaskOutputObservation::NoTaskEvidenceClaim,
+        runtime::RuntimeTaskOutputObservation::NoTaskObservation,
         runtime::CancellationPropagationRule::NotApplicable,
         false,
         false,
@@ -821,20 +785,15 @@ fn runtime_task_lifecycle_time_policy_and_cancellation_paths_are_asserted() {
         )
         .is_ok());
     }
-    for outcome in [
+    assert!(runtime::RuntimeTaskLifecycleDecision::try_new(
+        startup("runtime-failure-loop"),
+        None,
+        worker_policy,
+        Some("opaque-task-ref"),
         runtime::RuntimeTaskLifecycleOutcome::PanicObserved,
-        runtime::RuntimeTaskLifecycleOutcome::CloseNotClaimed,
-    ] {
-        assert!(runtime::RuntimeTaskLifecycleDecision::try_new(
-            startup("runtime-failure-loop"),
-            None,
-            worker_policy,
-            Some("opaque-task-ref"),
-            outcome,
-            Some(runtime::RuntimeFailureKind::RuntimeTaskPanicDetected),
-        )
-        .is_ok());
-    }
+        Some(runtime::RuntimeFailureKind::RuntimeTaskPanicDetected),
+    )
+    .is_ok());
 
     for failure in [
         runtime::RuntimeFailureKind::RuntimeConfigMissing,
@@ -870,7 +829,7 @@ fn runtime_task_lifecycle_time_policy_and_cancellation_paths_are_asserted() {
             runtime::ProhibitedRuntimeClockRandomnessBehavior::RawPlatformTimeWithoutNormalization,
             runtime::ProhibitedRuntimeClockRandomnessBehavior::RandomGeneratorOwnsIdentitySemantics,
             runtime::ProhibitedRuntimeClockRandomnessBehavior::EntrypointsSilentlySubstituteRuntimeDefaults,
-            runtime::ProhibitedRuntimeClockRandomnessBehavior::DeterministicTestClockRngAsProductionEvidence,
+            runtime::ProhibitedRuntimeClockRandomnessBehavior::DeterministicTestClockRngInProductionRuntime,
             runtime::ProhibitedRuntimeClockRandomnessBehavior::RuntimeWorkerOwnsDomainState,
             runtime::ProhibitedRuntimeClockRandomnessBehavior::ImplicitDetachedTaskOrSupervision,
             runtime::ProhibitedRuntimeClockRandomnessBehavior::WallClockAsCrossNodeCausalOrderWithoutTrust,

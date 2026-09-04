@@ -69,164 +69,6 @@ impl InternalServiceTrustAuditGuard {
     }
 }
 
-/// internal service identity / trust evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct InternalServiceTrustEvidenceGuard {
-    trust_class_declared: bool,
-    source_target_service_declared: bool,
-    topology_class_declared: bool,
-    endpoint_resolution_state_declared_when_networked: bool,
-    transport_security_peer_verification_class_declared_when_applicable: bool,
-    proof_reference_class_declared: bool,
-    trust_policy_reference_declared: bool,
-    accepted_scope_and_contract_version_relation_declared: bool,
-    lifetime_expiry_freshness_rule_declared: bool,
-    internal_control_authorization_relation_declared: bool,
-    command_or_procedure_declared: bool,
-    working_directory_declared: bool,
-    expected_outcome_declared: bool,
-    actual_outcome_declared: bool,
-    cataloged_reason_declared_for_non_success: bool,
-    close_not_claimed_scope_declared: bool,
-    diagnostic_logs_not_used_without_required_fields: bool,
-}
-
-/// internal service trust evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum InternalServiceTrustEvidenceError {
-    /// trust class がありません。
-    TrustClassMissing,
-    /// source/target service がありません。
-    SourceTargetServiceMissing,
-    /// topology class がありません。
-    TopologyClassMissing,
-    /// networked evidence の endpoint resolution state がありません。
-    EndpointResolutionStateMissing,
-    /// transport security / peer verification class がありません。
-    PeerVerificationClassMissing,
-    /// proof reference class がありません。
-    ProofReferenceClassMissing,
-    /// trust policy reference がありません。
-    TrustPolicyReferenceMissing,
-    /// accepted scope / contract version relation がありません。
-    ScopeContractRelationMissing,
-    /// lifetime/expiry/freshness rule がありません。
-    LifetimeExpiryFreshnessRuleMissing,
-    /// internal control authorization relation がありません。
-    InternalControlAuthorizationRelationMissing,
-    /// command/procedure がありません。
-    CommandProcedureMissing,
-    /// working directory がありません。
-    WorkingDirectoryMissing,
-    /// expected outcome がありません。
-    ExpectedOutcomeMissing,
-    /// actual outcome がありません。
-    ActualOutcomeMissing,
-    /// non-success の cataloged reason がありません。
-    CatalogedReasonMissing,
-    /// close-not-claimed scope がありません。
-    CloseNotClaimedScopeMissing,
-    /// diagnostic logs だけを evidence として使っています。
-    DiagnosticLogsUsedAsEvidence,
-}
-
-impl InternalServiceTrustEvidenceGuard {
-    /// internal service identity/trust evidence の採用条件を検査します。
-    pub const fn try_new(
-        trust_class_declared: bool,
-        source_target_service_declared: bool,
-        topology_class_declared: bool,
-        endpoint_resolution_state_declared_when_networked: bool,
-        transport_security_peer_verification_class_declared_when_applicable: bool,
-        proof_reference_class_declared: bool,
-        trust_policy_reference_declared: bool,
-        accepted_scope_and_contract_version_relation_declared: bool,
-        lifetime_expiry_freshness_rule_declared: bool,
-        internal_control_authorization_relation_declared: bool,
-        command_or_procedure_declared: bool,
-        working_directory_declared: bool,
-        expected_outcome_declared: bool,
-        actual_outcome_declared: bool,
-        cataloged_reason_declared_for_non_success: bool,
-        close_not_claimed_scope_declared: bool,
-        diagnostic_logs_not_used_without_required_fields: bool,
-    ) -> Result<Self, InternalServiceTrustEvidenceError> {
-        if !trust_class_declared {
-            return Err(InternalServiceTrustEvidenceError::TrustClassMissing);
-        }
-        if !source_target_service_declared {
-            return Err(InternalServiceTrustEvidenceError::SourceTargetServiceMissing);
-        }
-        if !topology_class_declared {
-            return Err(InternalServiceTrustEvidenceError::TopologyClassMissing);
-        }
-        if !endpoint_resolution_state_declared_when_networked {
-            return Err(InternalServiceTrustEvidenceError::EndpointResolutionStateMissing);
-        }
-        if !transport_security_peer_verification_class_declared_when_applicable {
-            return Err(InternalServiceTrustEvidenceError::PeerVerificationClassMissing);
-        }
-        if !proof_reference_class_declared {
-            return Err(InternalServiceTrustEvidenceError::ProofReferenceClassMissing);
-        }
-        if !trust_policy_reference_declared {
-            return Err(InternalServiceTrustEvidenceError::TrustPolicyReferenceMissing);
-        }
-        if !accepted_scope_and_contract_version_relation_declared {
-            return Err(InternalServiceTrustEvidenceError::ScopeContractRelationMissing);
-        }
-        if !lifetime_expiry_freshness_rule_declared {
-            return Err(InternalServiceTrustEvidenceError::LifetimeExpiryFreshnessRuleMissing);
-        }
-        if !internal_control_authorization_relation_declared {
-            return Err(
-                InternalServiceTrustEvidenceError::InternalControlAuthorizationRelationMissing,
-            );
-        }
-        if !command_or_procedure_declared {
-            return Err(InternalServiceTrustEvidenceError::CommandProcedureMissing);
-        }
-        if !working_directory_declared {
-            return Err(InternalServiceTrustEvidenceError::WorkingDirectoryMissing);
-        }
-        if !expected_outcome_declared {
-            return Err(InternalServiceTrustEvidenceError::ExpectedOutcomeMissing);
-        }
-        if !actual_outcome_declared {
-            return Err(InternalServiceTrustEvidenceError::ActualOutcomeMissing);
-        }
-        if !cataloged_reason_declared_for_non_success {
-            return Err(InternalServiceTrustEvidenceError::CatalogedReasonMissing);
-        }
-        if !close_not_claimed_scope_declared {
-            return Err(InternalServiceTrustEvidenceError::CloseNotClaimedScopeMissing);
-        }
-        if !diagnostic_logs_not_used_without_required_fields {
-            return Err(InternalServiceTrustEvidenceError::DiagnosticLogsUsedAsEvidence);
-        }
-
-        Ok(Self {
-            trust_class_declared,
-            source_target_service_declared,
-            topology_class_declared,
-            endpoint_resolution_state_declared_when_networked,
-            transport_security_peer_verification_class_declared_when_applicable,
-            proof_reference_class_declared,
-            trust_policy_reference_declared,
-            accepted_scope_and_contract_version_relation_declared,
-            lifetime_expiry_freshness_rule_declared,
-            internal_control_authorization_relation_declared,
-            command_or_procedure_declared,
-            working_directory_declared,
-            expected_outcome_declared,
-            actual_outcome_declared,
-            cataloged_reason_declared_for_non_success,
-            close_not_claimed_scope_declared,
-            diagnostic_logs_not_used_without_required_fields,
-        })
-    }
-}
-
 /// internal service trust failure mapping の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InternalServiceTrustFailureKind {
@@ -308,10 +150,10 @@ pub enum ProhibitedInternalServiceTrustBehavior {
     MeshPolicyNameBecomesCoreServiceIdentity,
     /// public endpoint credential is reused as internal service identity.
     PublicEndpointCredentialReusedAsInternalServiceIdentity,
-    /// raw service token/certificate/private key/mesh assertion/secret appears in core state/audit body/log/SDK surface/report.
+    /// raw service token/certificate/private key/mesh assertion/secret appears in core state/audit body/log/SDK surface/output.
     RawServiceCredentialMaterialEscapes,
-    /// in-process identity evidence is reused as networked service trust evidence.
-    InProcessIdentityEvidenceReusedAsNetworkedTrustEvidence,
+    /// in-process identity is reused as networked service trust.
+    InProcessIdentityReusedAsNetworkedTrust,
     /// internal service trust failure is recorded as free-text only.
     TrustFailureRecordedAsFreeTextOnly,
 }
@@ -358,7 +200,7 @@ impl InternalControlPlaneClass {
         matches!(self, Self::NodeAffinityPlaneCall)
     }
 
-    /// operator/admin authorization Canonical への relation が必要になる class です。
+    /// operator/admin authorization policy への relation が必要になる class です。
     pub const fn requires_admin_authorization_relation(self) -> bool {
         matches!(self, Self::AdminPlaneCall)
     }
@@ -501,4 +343,3 @@ pub struct InternalControlPlaneContractGuard {
     internal_transport_encoding_not_domain_semantics: bool,
     service_discovery_not_domain_authority: bool,
 }
-

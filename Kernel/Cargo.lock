@@ -367,14 +367,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "arcrtc-regulated"
-version = "0.0.0"
-dependencies = [
- "arcrtc-core-identity",
-]
-
-[[package]]
-name = "arcrtc-roadmap-integration-tests"
+name = "arcrtc-kernel-integration-test-suite"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-audit",
@@ -394,7 +387,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "arcrtc-roadmap-tests"
+name = "arcrtc-kernel-test-suite"
 version = "0.0.0"
 dependencies = [
  "arcrtc-core-audit",
@@ -432,9 +425,15 @@ dependencies = [
  "arcrtc-entrypoint-internal-control",
  "arcrtc-entrypoint-topology",
  "arcrtc-regulated",
- "criterion",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "arcrtc-regulated"
+version = "0.0.0"
+dependencies = [
+ "arcrtc-core-identity",
 ]
 
 [[package]]

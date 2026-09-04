@@ -47,7 +47,7 @@ pub fn dispatch_real_device_command(
             RealDeviceClass::IosPhysical,
             RealDeviceInternalCommandClass::IosDevice,
             RealDeviceNetworkClass::LocalUsb,
-            "xcrun xctrace list devices",
+            "xcrun devicectl list devices",
         )),
         (CliPlatform::Ios, CliDeviceClass::IosSimulator) => Ok(ios(
             RealDeviceClass::IosSimulator,

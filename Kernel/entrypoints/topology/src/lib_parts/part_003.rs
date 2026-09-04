@@ -19,7 +19,7 @@ impl ServiceDiscoveryResolutionAdmissionGuard {
         audit_shape_declared: bool,
         registry_contract_declared_when_required: bool,
         mesh_policy_not_used_as_authorization: bool,
-        test_resolver_evidence_is_test_only: bool,
+        test_resolver_is_test_only: bool,
     ) -> Result<Self, ServiceDiscoveryResolutionAdmissionError> {
         if !discovery_source_class_declared {
             return Err(ServiceDiscoveryResolutionAdmissionError::DiscoverySourceClassMissing);
@@ -77,9 +77,9 @@ impl ServiceDiscoveryResolutionAdmissionGuard {
         if discovery_source_class.is_mesh_resolution() && !mesh_policy_not_used_as_authorization {
             return Err(ServiceDiscoveryResolutionAdmissionError::MeshPolicyUsedAsAuthorization);
         }
-        if discovery_source_class.is_test_only() && !test_resolver_evidence_is_test_only {
+        if discovery_source_class.is_test_only() && !test_resolver_is_test_only {
             return Err(
-                ServiceDiscoveryResolutionAdmissionError::TestResolverUsedOutsideTestEvidence,
+                ServiceDiscoveryResolutionAdmissionError::TestResolverUsedOutsideTestScope,
             );
         }
 
@@ -102,7 +102,7 @@ impl ServiceDiscoveryResolutionAdmissionGuard {
             audit_shape_declared,
             registry_contract_declared_when_required,
             mesh_policy_not_used_as_authorization,
-            test_resolver_evidence_is_test_only,
+            test_resolver_is_test_only,
         })
     }
 }
@@ -115,7 +115,7 @@ pub struct EndpointFallbackPolicyGuard {
     stale_endpoint_rejection_rule_declared: bool,
     public_internal_separation_rule_declared: bool,
     audit_reason_for_primary_failure_declared: bool,
-    evidence_limitation_declared: bool,
+    fallback_scope_limitation_declared: bool,
     unverified_endpoint_fails_closed: bool,
 }
 
@@ -132,8 +132,8 @@ pub enum EndpointFallbackPolicyError {
     PublicInternalSeparationRuleMissing,
     /// primary failure の audit reason がありません。
     PrimaryFailureAuditReasonMissing,
-    /// evidence limitation がありません。
-    EvidenceLimitationMissing,
+    /// fallback scope limitation がありません。
+    FallbackScopeLimitationMissing,
     /// unverified endpoint が fail-closed ではありません。
     UnverifiedEndpointNotFailClosed,
 }
@@ -146,7 +146,7 @@ impl EndpointFallbackPolicyGuard {
         stale_endpoint_rejection_rule_declared: bool,
         public_internal_separation_rule_declared: bool,
         audit_reason_for_primary_failure_declared: bool,
-        evidence_limitation_declared: bool,
+        fallback_scope_limitation_declared: bool,
         unverified_endpoint_fails_closed: bool,
     ) -> Result<Self, EndpointFallbackPolicyError> {
         if !fallback_source_class_declared {
@@ -164,8 +164,8 @@ impl EndpointFallbackPolicyGuard {
         if !audit_reason_for_primary_failure_declared {
             return Err(EndpointFallbackPolicyError::PrimaryFailureAuditReasonMissing);
         }
-        if !evidence_limitation_declared {
-            return Err(EndpointFallbackPolicyError::EvidenceLimitationMissing);
+        if !fallback_scope_limitation_declared {
+            return Err(EndpointFallbackPolicyError::FallbackScopeLimitationMissing);
         }
         if !unverified_endpoint_fails_closed {
             return Err(EndpointFallbackPolicyError::UnverifiedEndpointNotFailClosed);
@@ -177,7 +177,7 @@ impl EndpointFallbackPolicyGuard {
             stale_endpoint_rejection_rule_declared,
             public_internal_separation_rule_declared,
             audit_reason_for_primary_failure_declared,
-            evidence_limitation_declared,
+            fallback_scope_limitation_declared,
             unverified_endpoint_fails_closed,
         })
     }
@@ -281,148 +281,6 @@ impl ServiceDiscoveryAuditGuard {
     }
 }
 
-/// service discovery evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ServiceDiscoveryResolutionEvidenceGuard {
-    discovery_source_class_declared: bool,
-    audit_shape_declared: bool,
-    topology_class_declared: bool,
-    target_service_declared: bool,
-    endpoint_scope_declared: bool,
-    endpoint_reference_or_redacted_endpoint_declared: bool,
-    ttl_cache_rule_declared: bool,
-    staleness_state_declared: bool,
-    fallback_behavior_declared: bool,
-    contract_version_reference_declared: bool,
-    command_or_procedure_declared: bool,
-    working_directory_declared: bool,
-    rerun_condition_declared: bool,
-    service_identity_trust_relation_or_close_not_claimed_declared_when_internal_control: bool,
-    diagnostic_output_not_used_without_required_fields: bool,
-}
-
-/// service discovery evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ServiceDiscoveryResolutionEvidenceError {
-    /// discovery source class がありません。
-    DiscoverySourceClassMissing,
-    /// audit shape がありません。
-    AuditShapeMissing,
-    /// topology class がありません。
-    TopologyClassMissing,
-    /// target service がありません。
-    TargetServiceMissing,
-    /// endpoint scope がありません。
-    EndpointScopeMissing,
-    /// endpoint reference/redacted endpoint がありません。
-    EndpointReferenceMissing,
-    /// TTL/cache rule がありません。
-    TtlCacheRuleMissing,
-    /// staleness state がありません。
-    StalenessStateMissing,
-    /// fallback behavior がありません。
-    FallbackBehaviorMissing,
-    /// contract/version reference がありません。
-    ContractVersionReferenceMissing,
-    /// command/procedure がありません。
-    CommandProcedureMissing,
-    /// working directory がありません。
-    WorkingDirectoryMissing,
-    /// rerun condition がありません。
-    RerunConditionMissing,
-    /// internal control target の trust relation / close-not-claimed がありません。
-    ServiceIdentityTrustRelationMissing,
-    /// diagnostic output だけを evidence として使っています。
-    DiagnosticOutputUsedAsEvidence,
-}
-
-impl ServiceDiscoveryResolutionEvidenceGuard {
-    /// service discovery evidence の採用条件を検査します。
-    pub const fn try_new(
-        discovery_source_class_declared: bool,
-        audit_shape_declared: bool,
-        topology_class_declared: bool,
-        target_service_declared: bool,
-        endpoint_scope_declared: bool,
-        endpoint_reference_or_redacted_endpoint_declared: bool,
-        ttl_cache_rule_declared: bool,
-        staleness_state_declared: bool,
-        fallback_behavior_declared: bool,
-        contract_version_reference_declared: bool,
-        command_or_procedure_declared: bool,
-        working_directory_declared: bool,
-        rerun_condition_declared: bool,
-        service_identity_trust_relation_or_close_not_claimed_declared_when_internal_control: bool,
-        diagnostic_output_not_used_without_required_fields: bool,
-    ) -> Result<Self, ServiceDiscoveryResolutionEvidenceError> {
-        if !discovery_source_class_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::DiscoverySourceClassMissing);
-        }
-        if !audit_shape_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::AuditShapeMissing);
-        }
-        if !topology_class_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::TopologyClassMissing);
-        }
-        if !target_service_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::TargetServiceMissing);
-        }
-        if !endpoint_scope_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::EndpointScopeMissing);
-        }
-        if !endpoint_reference_or_redacted_endpoint_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::EndpointReferenceMissing);
-        }
-        if !ttl_cache_rule_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::TtlCacheRuleMissing);
-        }
-        if !staleness_state_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::StalenessStateMissing);
-        }
-        if !fallback_behavior_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::FallbackBehaviorMissing);
-        }
-        if !contract_version_reference_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::ContractVersionReferenceMissing);
-        }
-        if !command_or_procedure_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::CommandProcedureMissing);
-        }
-        if !working_directory_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::WorkingDirectoryMissing);
-        }
-        if !rerun_condition_declared {
-            return Err(ServiceDiscoveryResolutionEvidenceError::RerunConditionMissing);
-        }
-        if !service_identity_trust_relation_or_close_not_claimed_declared_when_internal_control {
-            return Err(
-                ServiceDiscoveryResolutionEvidenceError::ServiceIdentityTrustRelationMissing,
-            );
-        }
-        if !diagnostic_output_not_used_without_required_fields {
-            return Err(ServiceDiscoveryResolutionEvidenceError::DiagnosticOutputUsedAsEvidence);
-        }
-
-        Ok(Self {
-            discovery_source_class_declared,
-            audit_shape_declared,
-            topology_class_declared,
-            target_service_declared,
-            endpoint_scope_declared,
-            endpoint_reference_or_redacted_endpoint_declared,
-            ttl_cache_rule_declared,
-            staleness_state_declared,
-            fallback_behavior_declared,
-            contract_version_reference_declared,
-            command_or_procedure_declared,
-            working_directory_declared,
-            rerun_condition_declared,
-            service_identity_trust_relation_or_close_not_claimed_declared_when_internal_control,
-            diagnostic_output_not_used_without_required_fields,
-        })
-    }
-}
-
 /// service discovery / endpoint resolution failure mapping の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ServiceDiscoveryResolutionFailureKind {
@@ -488,14 +346,14 @@ pub enum ProhibitedServiceDiscoveryResolutionBehavior {
     ServiceDiscoveryOwnsDomainDecision,
     /// fallback endpoint is used without policy and audit reason.
     FallbackEndpointUsedWithoutPolicyAndAuditReason,
-    /// stale cached endpoint is used as fresh evidence.
-    StaleCachedEndpointUsedAsFreshEvidence,
+    /// stale cached endpoint is used as a fresh resolution.
+    StaleCachedEndpointUsedAsFreshResolution,
     /// resolved internal endpoint is exposed as public endpoint by naming.
     ResolvedInternalEndpointExposedPublicByNaming,
     /// mesh policy or resolver status becomes application authorization by default.
     MeshPolicyBecomesApplicationAuthorization,
     /// resolved endpoint is treated as trusted service identity.
     ResolvedEndpointTreatedAsTrustedServiceIdentity,
-    /// in-process resolution evidence is reused as networked discovery evidence.
-    InProcessEvidenceReusedAsNetworkedDiscoveryEvidence,
+    /// in-process resolution is reused as networked discovery.
+    InProcessResolutionReusedAsNetworkedDiscovery,
 }

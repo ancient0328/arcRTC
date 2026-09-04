@@ -4,9 +4,8 @@
 mod evidence;
 
 use arcrtc_distro_evidence::{
-    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason,
-    DistroEvidenceRecord, DistroLayer, DistroNonClaimScope,
-    DistroPlane, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
+    DistroCommandClass, DistroEnvironmentClass, DistroEvidenceReason, DistroEvidenceRecord,
+    DistroLayer, DistroNonClaimScope, DistroPlane, DISTRO_COMMAND_ROOT, DISTRO_EVIDENCE_ROOT,
 };
 use evidence::{
     validate_kpi_bounded_real_device_evidence, validate_real_device_evidence_record,
@@ -108,7 +107,7 @@ fn ios_physical_record(exit_status: i32) -> RealDeviceEvidenceRecord {
         runtime_version_class: RealDeviceVersionClass::IosSystemVersion,
         execution_surface: RealDeviceExecutionSurface::NativeSdkCommand,
         network_class: RealDeviceNetworkClass::LocalUsb,
-        platform_command: Some("xcrun xctrace list devices".to_owned()),
+        platform_command: Some("xcrun devicectl list devices".to_owned()),
         preflight_outcome: REAL_DEVICE_PREFLIGHT_PLATFORM_COMMAND_UNAVAILABLE.to_owned(),
         logs_metrics_location: format!("{DISTRO_EVIDENCE_ROOT}/real-device/ios.json"),
         redacted_device_identifier: (exit_status == 0).then(|| "redacted".to_owned()),
@@ -149,10 +148,7 @@ fn kpi_real_device_command_matrix_requires_bounded_evidence_fields() {
         } else {
             REAL_DEVICE_PREFLIGHT_WRAPPER_LOCAL_CAPABILITY
         };
-        assert_eq!(
-            record.base.command_class,
-            DistroCommandClass::RealDevice
-        );
+        assert_eq!(record.base.command_class, DistroCommandClass::RealDevice);
         assert_eq!(
             record.base.environment_class,
             DistroEnvironmentClass::RealDeviceBounded
@@ -164,10 +160,7 @@ fn kpi_real_device_command_matrix_requires_bounded_evidence_fields() {
                     record.base.actual_outcome,
                     "wrapper-local capability recorded"
                 );
-                assert_eq!(
-                    record.base.distro_reason,
-                    DistroEvidenceReason::DistroOk
-                );
+                assert_eq!(record.base.distro_reason, DistroEvidenceReason::DistroOk);
             }
             Some(3) => {
                 assert_eq!(
@@ -221,9 +214,7 @@ fn real_device_evidence_rejects_context_mismatches() {
     missing_native_non_claim
         .base
         .non_claim_scope
-        .retain(|scope| {
-            *scope != DistroNonClaimScope::NativeApplicationReadinessNotClaimed
-        });
+        .retain(|scope| *scope != DistroNonClaimScope::NativeApplicationReadinessNotClaimed);
     assert_eq!(
         validate_real_device_evidence_record(&missing_native_non_claim),
         Err(RealDeviceEvidenceValidationError::Base(

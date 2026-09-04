@@ -14,9 +14,9 @@ pub struct EntrypointConfigurationSurface;
 /// v0.2 initial architecture の profile class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ConfigurationProfileClass {
-    /// local manual run profile. production evidence にはしません。
+    /// local manual run profile. managed runtime には使用しません。
     DevelopmentLocal,
-    /// deterministic clock/RNG/fake driver profile. test evidence only.
+    /// deterministic clock/RNG/fake driver profile. test-only.
     TestDeterministic,
     /// controlled integration profile.
     IntegrationControlled,
@@ -24,122 +24,6 @@ pub enum ConfigurationProfileClass {
     BenchmarkControlled,
     /// production-like candidate profile.
     ProductionCandidate,
-}
-
-impl ConfigurationProfileClass {
-    /// profile class ごとの evidence adoption rule を返します。
-    pub const fn adoption_rule(self) -> ConfigurationProfileAdoptionRule {
-        match self {
-            Self::DevelopmentLocal => ConfigurationProfileAdoptionRule::LocalManualOnly,
-            Self::TestDeterministic => ConfigurationProfileAdoptionRule::TestEvidenceOnly,
-            Self::IntegrationControlled => {
-                ConfigurationProfileAdoptionRule::IntegrationEvidenceOnly
-            }
-            Self::BenchmarkControlled => ConfigurationProfileAdoptionRule::BenchmarkEvidenceOnly,
-            Self::ProductionCandidate => {
-                ConfigurationProfileAdoptionRule::ProductionCandidateRequiresExplicitReport
-            }
-        }
-    }
-}
-
-/// profile evidence / claim class の閉集合です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ConfigurationProfileEvidenceClaimClass {
-    /// local manual run evidence.
-    LocalManualEvidence,
-    /// deterministic test evidence.
-    TestEvidence,
-    /// controlled integration evidence.
-    IntegrationEvidence,
-    /// benchmark evidence.
-    BenchmarkEvidence,
-    /// runtime claim.
-    RuntimeClaim,
-    /// production evidence claim.
-    ProductionEvidence,
-}
-
-/// profile class ごとの採用規則です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ConfigurationProfileAdoptionRule {
-    /// development_local は local manual evidence にだけ採用します。
-    LocalManualOnly,
-    /// test_deterministic は test evidence にだけ採用します。
-    TestEvidenceOnly,
-    /// integration_controlled は integration evidence にだけ採用します。
-    IntegrationEvidenceOnly,
-    /// benchmark_controlled は benchmark evidence にだけ採用します。
-    BenchmarkEvidenceOnly,
-    /// production_candidate の runtime/prod claim は明示 report 参照を必須にします。
-    ProductionCandidateRequiresExplicitReport,
-}
-
-impl ConfigurationProfileAdoptionRule {
-    /// profile class と evidence/claim class の対応を fail-closed で判定します。
-    pub const fn admits_claim(
-        self,
-        claim_class: ConfigurationProfileEvidenceClaimClass,
-        explicit_evidence_report_reference_present: bool,
-    ) -> Result<(), ConfigurationProfileEvidenceError> {
-        match self {
-            Self::LocalManualOnly => {
-                if matches!(
-                    claim_class,
-                    ConfigurationProfileEvidenceClaimClass::LocalManualEvidence
-                ) {
-                    Ok(())
-                } else {
-                    Err(ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-                }
-            }
-            Self::TestEvidenceOnly => {
-                if matches!(
-                    claim_class,
-                    ConfigurationProfileEvidenceClaimClass::TestEvidence
-                ) {
-                    Ok(())
-                } else {
-                    Err(ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-                }
-            }
-            Self::IntegrationEvidenceOnly => {
-                if matches!(
-                    claim_class,
-                    ConfigurationProfileEvidenceClaimClass::IntegrationEvidence
-                ) {
-                    Ok(())
-                } else {
-                    Err(ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-                }
-            }
-            Self::BenchmarkEvidenceOnly => {
-                if matches!(
-                    claim_class,
-                    ConfigurationProfileEvidenceClaimClass::BenchmarkEvidence
-                ) {
-                    Ok(())
-                } else {
-                    Err(ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted)
-                }
-            }
-            Self::ProductionCandidateRequiresExplicitReport => {
-                if !matches!(
-                    claim_class,
-                    ConfigurationProfileEvidenceClaimClass::RuntimeClaim
-                        | ConfigurationProfileEvidenceClaimClass::ProductionEvidence
-                ) {
-                    return Err(ConfigurationProfileEvidenceError::ProfileClaimClassNotAdmitted);
-                }
-                if !explicit_evidence_report_reference_present {
-                    return Err(
-                        ConfigurationProfileEvidenceError::ExplicitEvidenceReportReferenceMissing,
-                    );
-                }
-                Ok(())
-            }
-        }
-    }
 }
 
 /// configuration / policy bundle class の閉集合です。
@@ -163,13 +47,13 @@ pub enum ConfigurationBundleClass {
     RuntimeTask,
     /// secret source references, accepted generations, overlap/revocation.
     SecretRotation,
-    /// dependency, license, vulnerability, lockfile, toolchain evidence.
+    /// dependency, license, vulnerability, lockfile, toolchain policy.
     SupplyChain,
     /// SDK client-local profile.
     SdkClient,
     /// regulated optional mapping bundle.
     RegulatedMapping,
-    /// deterministic/fake settings for test evidence only.
+    /// deterministic/fake settings for test-only execution.
     TestProfile,
 }
 
@@ -208,9 +92,7 @@ pub struct ConfigurationBundleValidationGuard {
     internal_service_trust_explicit_when_required: bool,
     runtime_task_supervision_explicit_when_required: bool,
     secret_rotation_policy_present_when_required: bool,
-    supply_chain_evidence_class_declared_for_build_claim: bool,
-    profile_evidence_class_declared: bool,
-    partial_acceptance_admitted_by_canonical: bool,
+    partial_acceptance_allowed_by_source_policy: bool,
     startup_validation_not_runtime_hotswap_permission: bool,
 }
 
@@ -239,18 +121,14 @@ pub enum ConfigurationBundleValidationError {
     RuntimeTaskMissing,
     /// secret rotation policy が必要時にありません。
     SecretRotationPolicyMissing,
-    /// build/release claim に supply-chain evidence class がありません。
-    SupplyChainEvidenceMissing,
-    /// profile evidence class がありません。
-    ProfileEvidenceClassMissing,
-    /// partial bundle acceptance が Canonical で認められていません。
-    PartialAcceptanceNotAdmitted,
+    /// partial bundle acceptance が source policy で認められていません。
+    PartialAcceptanceNotAllowed,
     /// startup validation を runtime hotswap permission として扱っています。
     StartupValidationAsRuntimeHotSwapPermission,
 }
 
 impl ConfigurationBundleValidationGuard {
-    /// Configuration Profile Policy Bundle Canonical の validation order を検査します。
+    /// configuration profile policy bundle の validation order を検査します。
     pub const fn try_new(
         profile_class: ConfigurationProfileClass,
         entrypoint_composition_bundle_parseable_and_complete: bool,
@@ -264,9 +142,7 @@ impl ConfigurationBundleValidationGuard {
         internal_service_trust_explicit_when_required: bool,
         runtime_task_supervision_explicit_when_required: bool,
         secret_rotation_policy_present_when_required: bool,
-        supply_chain_evidence_class_declared_for_build_claim: bool,
-        profile_evidence_class_declared: bool,
-        partial_acceptance_admitted_by_canonical: bool,
+        partial_acceptance_allowed_by_source_policy: bool,
         startup_validation_not_runtime_hotswap_permission: bool,
     ) -> Result<Self, ConfigurationBundleValidationError> {
         if !entrypoint_composition_bundle_parseable_and_complete {
@@ -302,14 +178,8 @@ impl ConfigurationBundleValidationGuard {
         if !secret_rotation_policy_present_when_required {
             return Err(ConfigurationBundleValidationError::SecretRotationPolicyMissing);
         }
-        if !supply_chain_evidence_class_declared_for_build_claim {
-            return Err(ConfigurationBundleValidationError::SupplyChainEvidenceMissing);
-        }
-        if !profile_evidence_class_declared {
-            return Err(ConfigurationBundleValidationError::ProfileEvidenceClassMissing);
-        }
-        if !partial_acceptance_admitted_by_canonical {
-            return Err(ConfigurationBundleValidationError::PartialAcceptanceNotAdmitted);
+        if !partial_acceptance_allowed_by_source_policy {
+            return Err(ConfigurationBundleValidationError::PartialAcceptanceNotAllowed);
         }
         if !startup_validation_not_runtime_hotswap_permission {
             return Err(
@@ -330,9 +200,7 @@ impl ConfigurationBundleValidationGuard {
             internal_service_trust_explicit_when_required,
             runtime_task_supervision_explicit_when_required,
             secret_rotation_policy_present_when_required,
-            supply_chain_evidence_class_declared_for_build_claim,
-            profile_evidence_class_declared,
-            partial_acceptance_admitted_by_canonical,
+            partial_acceptance_allowed_by_source_policy,
             startup_validation_not_runtime_hotswap_permission,
         })
     }
@@ -495,19 +363,3 @@ impl ConfigurationBundleFailure {
         Self { kind, reason }
     }
 }
-
-/// profile evidence adoption の guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ConfigurationProfileEvidenceGuard {
-    profile_class: ConfigurationProfileClass,
-    claim_class: ConfigurationProfileEvidenceClaimClass,
-    profile_class_declared: bool,
-    bundle_sources_declared_without_raw_secret_material: bool,
-    explicit_evidence_report_reference_present: bool,
-    evidence_not_promoted_to_another_profile_without_new_report: bool,
-    build_or_release_claim_depends_on_artifact: bool,
-    supply_chain_identity_declared_when_build_claim_depends_on_artifact: bool,
-    runtime_profile_change_claimed: bool,
-    runtime_change_includes_reconfiguration_class_and_generation: bool,
-}
-

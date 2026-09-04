@@ -90,7 +90,7 @@ impl<Command, Result> UseCaseBoundary<Command, Result> {
     }
 }
 
-/// Canonical が定める application use case の標準順序です。
+/// source contract が定める application use case の標準順序です。
 pub const ENTRYPOINTLICATION_USE_CASE_ORDER: &[UseCaseStep] = &[
     UseCaseStep::ReceiveCoreOwnedCommand,
     UseCaseStep::VerifyCoreGuards,

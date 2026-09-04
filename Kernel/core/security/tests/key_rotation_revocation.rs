@@ -1,13 +1,9 @@
-#![allow(non_snake_case)]
-
 use arcrtc_core_identity::{OpaqueReference, ReferenceAuthority};
 use arcrtc_core_security::{
     select_key_for_verification, CredentialVerifierKeyRef, KeyRevocationListRef,
     KeyRotationOverlapPolicy, KeyRotationWindow, KeySelectionDecision, KeySelectionEvaluation,
     KeySelectionVerificationContext, RotationInstantRef, SecretRotationDecisionRef,
 };
-
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
 
 fn reference(value: &str) -> OpaqueReference {
     OpaqueReference::accept(value, ReferenceAuthority::CorePolicy)
@@ -41,15 +37,15 @@ fn selection_context(
 }
 
 #[test]
-fn t_sec_02_rotation_revocation_key_selection() {
-    assert_t_sec_02__active_key();
-    assert_t_sec_02__overlap_window();
-    assert_t_sec_02__revoked_key();
-    assert_t_sec_02__stale_key();
-    assert_t_sec_02__rotation_failure();
+fn rotation_revocation_key_selection_is_deterministic() {
+    assert_active_key();
+    assert_overlap_window();
+    assert_revoked_key();
+    assert_stale_key();
+    assert_rotation_failure();
 }
 
-fn assert_t_sec_02__active_key() {
+fn assert_active_key() {
     let decision = select_key_for_verification(selection_context(
         Some(key_ref()),
         KeyRotationOverlapPolicy::NoOverlap,
@@ -59,7 +55,7 @@ fn assert_t_sec_02__active_key() {
     assert_eq!(decision, KeySelectionDecision::Selected);
 }
 
-fn assert_t_sec_02__overlap_window() {
+fn assert_overlap_window() {
     let context = selection_context(
         Some(key_ref()),
         KeyRotationOverlapPolicy::BoundedOverlap,
@@ -76,7 +72,7 @@ fn assert_t_sec_02__overlap_window() {
     );
 }
 
-fn assert_t_sec_02__revoked_key() {
+fn assert_revoked_key() {
     let decision = select_key_for_verification(selection_context(
         Some(key_ref()),
         KeyRotationOverlapPolicy::NoOverlap,
@@ -86,7 +82,7 @@ fn assert_t_sec_02__revoked_key() {
     assert_eq!(decision, KeySelectionDecision::Revoked);
 }
 
-fn assert_t_sec_02__stale_key() {
+fn assert_stale_key() {
     let decision = select_key_for_verification(selection_context(
         Some(key_ref()),
         KeyRotationOverlapPolicy::NoOverlap,
@@ -96,7 +92,7 @@ fn assert_t_sec_02__stale_key() {
     assert_eq!(decision, KeySelectionDecision::Expired);
 }
 
-fn assert_t_sec_02__rotation_failure() {
+fn assert_rotation_failure() {
     let decision = select_key_for_verification(selection_context(
         Some(key_ref()),
         KeyRotationOverlapPolicy::NoOverlap,

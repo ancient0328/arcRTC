@@ -466,67 +466,6 @@ pub fn native_clock_unix_epoch_millis_now() -> Result<u128, NativeDriverFailure>
     }
 }
 
-/// native driver initial scope 外の feature です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum NativeOutOfScopeFeature {
-    /// camera / microphone capture.
-    CameraMicrophoneCapture,
-    /// media track rendering.
-    MediaTrackRendering,
-    /// PeerConnection public SDK abstraction.
-    PeerConnectionPublicSdkAbstraction,
-    /// screen sharing.
-    ScreenSharing,
-    /// recording.
-    Recording,
-    /// chat.
-    Chat,
-    /// DataChannel application semantics.
-    DataChannelApplicationSemantics,
-    /// UI / end-user workflow.
-    UserInterfaceWorkflow,
-    /// push notification workflow.
-    PushNotificationWorkflow,
-    /// regulated workflow ownership.
-    RegulatedWorkflowOwnership,
-    /// user account or auth issuance.
-    UserAccountOrAuthIssuance,
-}
-
-/// native initial scope の out-of-scope admission guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NativeOutOfScopeAdmissionGuard {
-    feature: NativeOutOfScopeFeature,
-    adr_or_canonical_admission_present: bool,
-    feature_absent_from_initial_scope: bool,
-}
-
-/// native out-of-scope admission guard の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum NativeOutOfScopeAdmissionError {
-    /// initial scope 外 feature が ADR/Canonical なしで入っています。
-    OutOfScopeFeatureAdmitted,
-}
-
-impl NativeOutOfScopeAdmissionGuard {
-    /// out-of-scope feature を v0.2 initial native driver に混入させない guard です。
-    pub const fn try_new(
-        feature: NativeOutOfScopeFeature,
-        adr_or_canonical_admission_present: bool,
-        feature_absent_from_initial_scope: bool,
-    ) -> Result<Self, NativeOutOfScopeAdmissionError> {
-        if !feature_absent_from_initial_scope && !adr_or_canonical_admission_present {
-            return Err(NativeOutOfScopeAdmissionError::OutOfScopeFeatureAdmitted);
-        }
-
-        Ok(Self {
-            feature,
-            adr_or_canonical_admission_present,
-            feature_absent_from_initial_scope,
-        })
-    }
-}
-
 /// native driver 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedNativeDriverBehavior {
@@ -544,6 +483,6 @@ pub enum ProhibitedNativeDriverBehavior {
     PlatformPermissionOrMediaDeviceAsCoreState,
     /// platform-specific error text becomes authoritative reason.
     PlatformSpecificErrorTextAsAuthoritativeReason,
-    /// out-of-scope native feature is admitted without ADR/Canonical.
-    OutOfScopeFeatureWithoutCanonicalAdmission,
+    /// out-of-scope native feature executes without a core admission decision.
+    OutOfScopeFeatureExecutedWithoutAdmissionDecision,
 }

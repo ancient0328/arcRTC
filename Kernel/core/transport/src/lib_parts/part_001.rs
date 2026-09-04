@@ -472,8 +472,8 @@ impl IceCandidatePolicy {
 /// ICE observation は relay acceptance ではないことを示す class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IceObservationMeaning {
-    /// diagnostic/evidence class です。
-    DiagnosticEvidenceOnly,
+    /// diagnostic observation class です。
+    DiagnosticObservationOnly,
     /// Signaling success ではありません。
     NotSignalingRelaySuccess,
     /// TURN/SFU/secure media binding ではありません。
@@ -489,7 +489,7 @@ pub enum IceFailureKind {
     IceCandidateMappingInvalid,
     /// candidate material requires redaction.
     IceCandidateRedactionRequired,
-    /// candidate gathering failed before relay evidence.
+    /// candidate gathering failed before relay acceptance.
     IceGatheringFailed,
     /// connectivity check failed.
     IceConnectivityCheckFailed,

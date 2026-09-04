@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use arcrtc_core_identity::{OpaqueReference, ReferenceAuthority, UntrustedReference};
 use arcrtc_core_ports::{
     LoadedCoreStateRef, PersistenceAcknowledgement, PersistenceIntentClass,
@@ -88,7 +85,7 @@ fn checkpoint_tmp_path(root: &std::path::Path) -> std::path::PathBuf {
 }
 
 #[test]
-fn assert_t_persist_01__restore() {
+fn assert_restore() {
     let dir = temp_dir("restore");
     let executor = FileSystemPersistenceExecutor::new(dir.0.clone());
 
@@ -116,7 +113,7 @@ fn assert_t_persist_01__restore() {
 }
 
 #[test]
-fn assert_t_persist_01__atomic_write() {
+fn assert_atomic_write() {
     let dir = temp_dir("atomic");
     let executor = FileSystemPersistenceExecutor::new(dir.0.clone());
 
@@ -132,7 +129,7 @@ fn assert_t_persist_01__atomic_write() {
 }
 
 #[test]
-fn assert_t_persist_01__partial_failure() {
+fn assert_partial_failure() {
     let dir = temp_dir("partial");
     let executor = FileSystemPersistenceExecutor::new(dir.0.clone());
 
@@ -153,7 +150,7 @@ fn assert_t_persist_01__partial_failure() {
 }
 
 #[test]
-fn assert_t_persist_01__corruption_rejection() {
+fn assert_corruption_rejection() {
     let dir = temp_dir("corruption");
     let executor = FileSystemPersistenceExecutor::new(dir.0.clone());
 

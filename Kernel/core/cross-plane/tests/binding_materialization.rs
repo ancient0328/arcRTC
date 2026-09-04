@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use arcrtc_core_cross_plane::{
     materialize_cross_plane_binding, CrossPlaneBindingClass, CrossPlaneBindingDecision,
     CrossPlaneBindingFailureKind, CrossPlaneBindingMaterializationInput, CrossPlaneBindingOutcome,
@@ -107,7 +104,7 @@ fn materialized_input(
 }
 
 #[test]
-fn assert_t_cross_01__all_admitted_binding_classes() {
+fn assert_all_admitted_binding_classes() {
     for binding_class in [
         CrossPlaneBindingClass::NoCrossPlaneBindingRequired,
         CrossPlaneBindingClass::SignalingParticipantBinding,
@@ -132,7 +129,7 @@ fn assert_t_cross_01__all_admitted_binding_classes() {
 }
 
 #[test]
-fn assert_t_cross_01__implicit_binding_rejection() {
+fn assert_implicit_binding_rejection() {
     let decision = materialize_cross_plane_binding(materialized_input(
         CrossPlaneBindingClass::ImplicitBindingRequested,
     ));
@@ -152,7 +149,7 @@ fn assert_t_cross_01__implicit_binding_rejection() {
 }
 
 #[test]
-fn assert_t_cross_01__missing_binding_rejection() {
+fn assert_missing_binding_rejection() {
     let decision = materialize_cross_plane_binding(CrossPlaneBindingMaterializationInput::new(
         CrossPlaneReference::Participant(ParticipantId::new(reference(
             "participant:missing-target",

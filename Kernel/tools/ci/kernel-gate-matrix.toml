@@ -1,4 +1,4 @@
-# CI gate matrix の source です。job result・evidence 採用・readiness proof は定義しません。
+# CI job と実行 command の source matrix です。
 
 [closed_sets]
 job_ids = ["kernel-rust", "sdk-typescript", "sdk-android", "sdk-ios", "supply-chain", "coverage", "benchmark", "security"]
@@ -70,7 +70,7 @@ command_family = "supply-chain-policy-check"
 command_id = "supply-chain-policy-check"
 gate_class = "source-shape"
 working_directory = "."
-command_line = "cargo test -p arcrtc-roadmap-tests --test release_supply_chain_policy"
+command_line = "cargo test -p arcrtc-kernel-test-suite --test release_supply_chain_policy"
 
 [[commands]]
 job_id = "coverage"
@@ -78,7 +78,7 @@ command_family = "coverage-denominator-check"
 command_id = "coverage-denominator-check"
 gate_class = "test"
 working_directory = "."
-command_line = "cargo test -p arcrtc-roadmap-tests --test coverage_denominator_policy"
+command_line = "cargo test -p arcrtc-kernel-test-suite --test coverage_denominator_policy"
 
 [[commands]]
 job_id = "benchmark"

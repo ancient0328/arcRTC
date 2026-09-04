@@ -1,103 +1,3 @@
-/// public endpoint evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct PublicEndpointEvidenceGuard {
-    endpoint_class_declared: bool,
-    protocol_declared: bool,
-    listener_owner_declared: bool,
-    target_core_or_operational_contract_declared: bool,
-    auth_security_profile_declared: bool,
-    bound_policy_declared: bool,
-    correlation_rule_declared: bool,
-    observed_lifecycle_transition_declared: bool,
-    discovery_evidence_declared_when_endpoint_resolved: bool,
-    listener_startup_not_used_as_domain_or_readiness_evidence: bool,
-}
-
-/// public endpoint evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PublicEndpointEvidenceError {
-    /// endpoint class がありません。
-    EndpointClassMissing,
-    /// protocol がありません。
-    ProtocolMissing,
-    /// listener owner がありません。
-    ListenerOwnerMissing,
-    /// target contract がありません。
-    TargetContractMissing,
-    /// auth/security profile がありません。
-    AuthSecurityProfileMissing,
-    /// bound policy がありません。
-    BoundPolicyMissing,
-    /// correlation rule がありません。
-    CorrelationRuleMissing,
-    /// observed lifecycle transition がありません。
-    LifecycleTransitionMissing,
-    /// resolved endpoint の discovery evidence がありません。
-    DiscoveryEvidenceMissing,
-    /// listener startup を domain/readiness evidence に使っています。
-    ListenerStartupUsedAsReadinessEvidence,
-}
-
-impl PublicEndpointEvidenceGuard {
-    /// public endpoint evidence の採用条件を検査します。
-    pub const fn try_new(
-        endpoint_class_declared: bool,
-        protocol_declared: bool,
-        listener_owner_declared: bool,
-        target_core_or_operational_contract_declared: bool,
-        auth_security_profile_declared: bool,
-        bound_policy_declared: bool,
-        correlation_rule_declared: bool,
-        observed_lifecycle_transition_declared: bool,
-        discovery_evidence_declared_when_endpoint_resolved: bool,
-        listener_startup_not_used_as_domain_or_readiness_evidence: bool,
-    ) -> Result<Self, PublicEndpointEvidenceError> {
-        if !endpoint_class_declared {
-            return Err(PublicEndpointEvidenceError::EndpointClassMissing);
-        }
-        if !protocol_declared {
-            return Err(PublicEndpointEvidenceError::ProtocolMissing);
-        }
-        if !listener_owner_declared {
-            return Err(PublicEndpointEvidenceError::ListenerOwnerMissing);
-        }
-        if !target_core_or_operational_contract_declared {
-            return Err(PublicEndpointEvidenceError::TargetContractMissing);
-        }
-        if !auth_security_profile_declared {
-            return Err(PublicEndpointEvidenceError::AuthSecurityProfileMissing);
-        }
-        if !bound_policy_declared {
-            return Err(PublicEndpointEvidenceError::BoundPolicyMissing);
-        }
-        if !correlation_rule_declared {
-            return Err(PublicEndpointEvidenceError::CorrelationRuleMissing);
-        }
-        if !observed_lifecycle_transition_declared {
-            return Err(PublicEndpointEvidenceError::LifecycleTransitionMissing);
-        }
-        if !discovery_evidence_declared_when_endpoint_resolved {
-            return Err(PublicEndpointEvidenceError::DiscoveryEvidenceMissing);
-        }
-        if !listener_startup_not_used_as_domain_or_readiness_evidence {
-            return Err(PublicEndpointEvidenceError::ListenerStartupUsedAsReadinessEvidence);
-        }
-
-        Ok(Self {
-            endpoint_class_declared,
-            protocol_declared,
-            listener_owner_declared,
-            target_core_or_operational_contract_declared,
-            auth_security_profile_declared,
-            bound_policy_declared,
-            correlation_rule_declared,
-            observed_lifecycle_transition_declared,
-            discovery_evidence_declared_when_endpoint_resolved,
-            listener_startup_not_used_as_domain_or_readiness_evidence,
-        })
-    }
-}
-
 /// public endpoint failure mapping の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PublicEndpointFailureKind {
@@ -163,8 +63,8 @@ pub enum ProhibitedPublicEndpointBehavior {
     ListenerBindTreatedAsDomainSuccess,
     /// public endpoint error hides cataloged core reason behind generic success.
     PublicErrorHidesCatalogedCoreReason,
-    /// endpoint class is added by naming convention without ADR/Canonical update.
-    EndpointClassAddedByNamingConvention,
+    /// endpoint class is added by naming convention without a source contract.
+    EndpointClassAddedWithoutSourceContract,
     /// proxy metadata changes separation without edge trust admission.
     ProxyMetadataChangesSeparationWithoutTrustAdmission,
     /// service discovery changes separation without endpoint admission.
@@ -259,7 +159,7 @@ impl EdgeProxyClass {
         )
     }
 
-    /// test evidence にだけ閉じる edge class です。
+    /// test scope にだけ閉じる edge class です。
     pub const fn is_test_only(self) -> bool {
         matches!(self, Self::TestEdgeSimulator)
     }
@@ -335,7 +235,7 @@ pub struct EdgeProxyTrustAdmissionGuard {
     rate_quota_admission_relation_declared: bool,
     audit_reference_rule_declared: bool,
     redaction_rule_declared: bool,
-    test_edge_evidence_is_test_only: bool,
+    test_edge_is_test_only: bool,
 }
 
 /// edge/proxy trust admission の fail-closed error です。
@@ -367,8 +267,8 @@ pub enum EdgeProxyTrustAdmissionError {
     AuditReferenceRuleMissing,
     /// redaction rule がありません。
     RedactionRuleMissing,
-    /// test edge simulator が test evidence の外で使われています。
-    TestEdgeUsedOutsideTestEvidence,
+    /// test edge simulator が test scope の外で使われています。
+    TestEdgeUsedOutsideTestScope,
 }
 
 impl EdgeProxyTrustAdmissionGuard {
@@ -388,7 +288,7 @@ impl EdgeProxyTrustAdmissionGuard {
         rate_quota_admission_relation_declared: bool,
         audit_reference_rule_declared: bool,
         redaction_rule_declared: bool,
-        test_edge_evidence_is_test_only: bool,
+        test_edge_is_test_only: bool,
     ) -> Result<Self, EdgeProxyTrustAdmissionError> {
         if !edge_class_declared {
             return Err(EdgeProxyTrustAdmissionError::EdgeClassMissing);
@@ -431,8 +331,8 @@ impl EdgeProxyTrustAdmissionGuard {
         if !redaction_rule_declared {
             return Err(EdgeProxyTrustAdmissionError::RedactionRuleMissing);
         }
-        if edge_class.is_test_only() && !test_edge_evidence_is_test_only {
-            return Err(EdgeProxyTrustAdmissionError::TestEdgeUsedOutsideTestEvidence);
+        if edge_class.is_test_only() && !test_edge_is_test_only {
+            return Err(EdgeProxyTrustAdmissionError::TestEdgeUsedOutsideTestScope);
         }
 
         Ok(Self {
@@ -450,7 +350,7 @@ impl EdgeProxyTrustAdmissionGuard {
             rate_quota_admission_relation_declared,
             audit_reference_rule_declared,
             redaction_rule_declared,
-            test_edge_evidence_is_test_only,
+            test_edge_is_test_only,
         })
     }
 }
@@ -483,4 +383,3 @@ pub enum EdgeProxyHeaderSourceError {
     /// proxy request ID が CorrelationId を置換しています。
     ProxyRequestIdReplacesCorrelationId,
 }
-

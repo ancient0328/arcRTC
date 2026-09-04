@@ -45,7 +45,7 @@ impl AuditEventDefinition {
     }
 }
 
-/// canonical に登録された audit event type だけを検索します。
+/// closed source catalog に登録された audit event type だけを検索します。
 pub fn find_audit_event_definition(code: &str) -> Option<&'static AuditEventDefinition> {
     AUDIT_EVENT_DEFINITIONS
         .iter()
@@ -435,7 +435,7 @@ pub enum AuditEventShapeError {
     EmptyTimestamp,
 }
 
-/// canonical 由来の closed audit event type definition table です。
+/// source-owned closed audit event type definition table です。
 pub const AUDIT_EVENT_DEFINITIONS: &[AuditEventDefinition] = &[
     AuditEventDefinition::new("signaling_join_decision"),
     AuditEventDefinition::new("signaling_participant_lifecycle_decision"),
@@ -512,4 +512,3 @@ pub enum HashChainScope {
 /// hash-chain sequence number です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct HashChainSequence(u64);
-

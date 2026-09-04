@@ -33,10 +33,10 @@ pub enum OperatorAdminAuthorizationError {
     OperatorAuthorizationReusedForDomainAction,
     /// target action が allowed core/driver boundary を通っていません。
     TargetActionBoundaryMissing,
-    /// action execution claim の target action event がありません。
+    /// action execution request の target action event がありません。
     TargetActionEventMissing,
-    /// developer-local context を production/operator proof に使っています。
-    DeveloperLocalContextUsedAsProductionProof,
+    /// developer-local context を operator authorization に使っています。
+    DeveloperLocalContextUsedAsOperatorAuthorization,
 }
 
 impl OperatorAdminAuthorizationGuard {
@@ -60,8 +60,8 @@ impl OperatorAdminAuthorizationGuard {
         communication_participant_authorization_not_reused: bool,
         operator_admin_authorization_not_used_for_participant_domain_action: bool,
         target_action_keeps_core_or_driver_boundary: bool,
-        target_action_event_required_when_execution_claimed: bool,
-        developer_local_context_not_used_as_production_operator_evidence: bool,
+        target_action_event_required_when_execution_requested: bool,
+        developer_local_context_not_used_as_operator_authorization: bool,
     ) -> Result<Self, OperatorAdminAuthorizationError> {
         if !operator_admin_class_declared {
             return Err(OperatorAdminAuthorizationError::OperatorAdminClassMissing);
@@ -113,14 +113,14 @@ impl OperatorAdminAuthorizationGuard {
         if !target_action_keeps_core_or_driver_boundary {
             return Err(OperatorAdminAuthorizationError::TargetActionBoundaryMissing);
         }
-        if !target_action_event_required_when_execution_claimed {
+        if !target_action_event_required_when_execution_requested {
             return Err(OperatorAdminAuthorizationError::TargetActionEventMissing);
         }
         if operator_admin_class.is_developer_local()
-            && !developer_local_context_not_used_as_production_operator_evidence
+            && !developer_local_context_not_used_as_operator_authorization
         {
             return Err(
-                OperatorAdminAuthorizationError::DeveloperLocalContextUsedAsProductionProof,
+                OperatorAdminAuthorizationError::DeveloperLocalContextUsedAsOperatorAuthorization,
             );
         }
 
@@ -143,8 +143,8 @@ impl OperatorAdminAuthorizationGuard {
             communication_participant_authorization_not_reused,
             operator_admin_authorization_not_used_for_participant_domain_action,
             target_action_keeps_core_or_driver_boundary,
-            target_action_event_required_when_execution_claimed,
-            developer_local_context_not_used_as_production_operator_evidence,
+            target_action_event_required_when_execution_requested,
+            developer_local_context_not_used_as_operator_authorization,
         })
     }
 }
@@ -239,158 +239,6 @@ impl OperatorAdminAuthorizationAuditGuard {
     }
 }
 
-/// operator/admin authorization evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct OperatorAdminAuthorizationEvidenceGuard {
-    operator_admin_class: OperatorAdminClass,
-    outcome: OperatorAdminAuthorizationOutcome,
-    operator_admin_class_declared: bool,
-    action_class_declared: bool,
-    target_scope_declared: bool,
-    credential_context_class_declared_without_raw_credential: bool,
-    lifetime_expiry_observation_declared_when_relevant: bool,
-    audit_event_type_declared: bool,
-    target_action_event_declared_when_claim_includes_execution: bool,
-    expected_outcome_declared: bool,
-    actual_outcome_declared: bool,
-    cataloged_reason_declared_for_non_success: bool,
-    close_not_claimed_scope_declared: bool,
-    cli_exit_code_not_adopted_as_evidence_without_required_fields: bool,
-    authorization_decision_does_not_replace_target_action_event: bool,
-    developer_local_context_not_used_as_production_operator_evidence: bool,
-    raw_credential_absent_from_audit_log_report: bool,
-}
-
-/// operator/admin authorization evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum OperatorAdminAuthorizationEvidenceError {
-    /// operator/admin class がありません。
-    OperatorAdminClassMissing,
-    /// action class がありません。
-    ActionClassMissing,
-    /// target scope がありません。
-    TargetScopeMissing,
-    /// raw credential を含まない credential/context class がありません。
-    CredentialContextClassMissing,
-    /// lifetime/expiry observation がありません。
-    LifetimeExpiryObservationMissing,
-    /// audit event type がありません。
-    AuditEventTypeMissing,
-    /// action execution claim の target action event がありません。
-    TargetActionEventMissing,
-    /// expected outcome がありません。
-    ExpectedOutcomeMissing,
-    /// actual outcome がありません。
-    ActualOutcomeMissing,
-    /// non-success の cataloged reason がありません。
-    CatalogedReasonMissing,
-    /// close-not-claimed scope がありません。
-    CloseNotClaimedScopeMissing,
-    /// CLI exit code だけを evidence として採用しています。
-    CliExitCodeAdoptedAsEvidence,
-    /// authorization decision が target action event を置換しています。
-    AuthorizationDecisionReplacesTargetActionEvent,
-    /// developer-local context を production/operator proof に使っています。
-    DeveloperLocalContextUsedAsProductionProof,
-    /// raw operator credential が audit/log/report に入っています。
-    RawCredentialEscaped,
-}
-
-impl OperatorAdminAuthorizationEvidenceGuard {
-    /// operator/admin authorization evidence の採用条件を検査します。
-    pub const fn try_new(
-        operator_admin_class: OperatorAdminClass,
-        outcome: OperatorAdminAuthorizationOutcome,
-        operator_admin_class_declared: bool,
-        action_class_declared: bool,
-        target_scope_declared: bool,
-        credential_context_class_declared_without_raw_credential: bool,
-        lifetime_expiry_observation_declared_when_relevant: bool,
-        audit_event_type_declared: bool,
-        target_action_event_declared_when_claim_includes_execution: bool,
-        expected_outcome_declared: bool,
-        actual_outcome_declared: bool,
-        cataloged_reason_declared_for_non_success: bool,
-        close_not_claimed_scope_declared: bool,
-        cli_exit_code_not_adopted_as_evidence_without_required_fields: bool,
-        authorization_decision_does_not_replace_target_action_event: bool,
-        developer_local_context_not_used_as_production_operator_evidence: bool,
-        raw_credential_absent_from_audit_log_report: bool,
-    ) -> Result<Self, OperatorAdminAuthorizationEvidenceError> {
-        if !operator_admin_class_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::OperatorAdminClassMissing);
-        }
-        if !action_class_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::ActionClassMissing);
-        }
-        if !target_scope_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::TargetScopeMissing);
-        }
-        if !credential_context_class_declared_without_raw_credential {
-            return Err(OperatorAdminAuthorizationEvidenceError::CredentialContextClassMissing);
-        }
-        if !lifetime_expiry_observation_declared_when_relevant {
-            return Err(OperatorAdminAuthorizationEvidenceError::LifetimeExpiryObservationMissing);
-        }
-        if !audit_event_type_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::AuditEventTypeMissing);
-        }
-        if !target_action_event_declared_when_claim_includes_execution {
-            return Err(OperatorAdminAuthorizationEvidenceError::TargetActionEventMissing);
-        }
-        if !expected_outcome_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::ExpectedOutcomeMissing);
-        }
-        if !actual_outcome_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::ActualOutcomeMissing);
-        }
-        if outcome.requires_reason() && !cataloged_reason_declared_for_non_success {
-            return Err(OperatorAdminAuthorizationEvidenceError::CatalogedReasonMissing);
-        }
-        if !close_not_claimed_scope_declared {
-            return Err(OperatorAdminAuthorizationEvidenceError::CloseNotClaimedScopeMissing);
-        }
-        if !cli_exit_code_not_adopted_as_evidence_without_required_fields {
-            return Err(OperatorAdminAuthorizationEvidenceError::CliExitCodeAdoptedAsEvidence);
-        }
-        if !authorization_decision_does_not_replace_target_action_event {
-            return Err(
-                OperatorAdminAuthorizationEvidenceError::AuthorizationDecisionReplacesTargetActionEvent,
-            );
-        }
-        if operator_admin_class.is_developer_local()
-            && !developer_local_context_not_used_as_production_operator_evidence
-        {
-            return Err(
-                OperatorAdminAuthorizationEvidenceError::DeveloperLocalContextUsedAsProductionProof,
-            );
-        }
-        if !raw_credential_absent_from_audit_log_report {
-            return Err(OperatorAdminAuthorizationEvidenceError::RawCredentialEscaped);
-        }
-
-        Ok(Self {
-            operator_admin_class,
-            outcome,
-            operator_admin_class_declared,
-            action_class_declared,
-            target_scope_declared,
-            credential_context_class_declared_without_raw_credential,
-            lifetime_expiry_observation_declared_when_relevant,
-            audit_event_type_declared,
-            target_action_event_declared_when_claim_includes_execution,
-            expected_outcome_declared,
-            actual_outcome_declared,
-            cataloged_reason_declared_for_non_success,
-            close_not_claimed_scope_declared,
-            cli_exit_code_not_adopted_as_evidence_without_required_fields,
-            authorization_decision_does_not_replace_target_action_event,
-            developer_local_context_not_used_as_production_operator_evidence,
-            raw_credential_absent_from_audit_log_report,
-        })
-    }
-}
-
 /// operator/admin authorization failure mapping の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OperatorAdminAuthorizationFailureKind {
@@ -459,16 +307,16 @@ pub enum ProhibitedOperatorAdminAuthorizationBehavior {
     CommunicationParticipantTokenAuthorizesOperatorAction,
     /// operator/admin authorization is inferred from localhost, network reachability, or deployment environment.
     OperatorAuthorizationInferredFromEnvironment,
-    /// raw operator credential appears in audit/log/report.
-    RawOperatorCredentialAppearsInAuditLogReport,
-    /// admin UI or CLI response becomes domain decision evidence.
-    AdminUiOrCliResponseBecomesDomainDecisionEvidence,
-    /// developer-local context is used as production operator proof.
-    DeveloperLocalContextUsedAsProductionOperatorProof,
+    /// raw operator credential appears in audit/log/output.
+    RawOperatorCredentialAppearsInAuditLogOutput,
+    /// admin UI or CLI response becomes domain decision authority.
+    AdminUiOrCliResponseBecomesDomainDecisionAuthority,
+    /// developer-local context is used as operator authorization.
+    DeveloperLocalContextUsedAsOperatorAuthorization,
     /// operator authorization and communication authorization are treated as the same decision.
     OperatorAndCommunicationAuthorizationMerged,
     /// operator/admin denial is recorded only as free-text.
     OperatorAdminDenialRecordedAsFreeTextOnly,
-    /// authorization decision replaces target action boundary evidence.
-    AuthorizationDecisionReplacesTargetActionBoundaryEvidence,
+    /// authorization decision replaces target action boundary.
+    AuthorizationDecisionReplacesTargetActionBoundary,
 }

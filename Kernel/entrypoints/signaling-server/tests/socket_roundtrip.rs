@@ -82,8 +82,12 @@ fn assert_rejected_reason(label: &str, input: &[u8], expected_reason: &str) {
 fn well_formed_join_is_accepted() {
     let (mut server, addr) = ServerProc::spawn();
     let response = exchange(&addr, JOIN_FRAME);
-    println!("case=T1 input={JOIN_FRAME:?} response={response:?}");
-    assert_eq!(response.first().copied(), Some(JOINED), "T1 must accept");
+    println!("case=accepted-join input={JOIN_FRAME:?} response={response:?}");
+    assert_eq!(
+        response.first().copied(),
+        Some(JOINED),
+        "well-formed join must be accepted"
+    );
     assert_eq!(response.len(), 1, "accepted join must not expose payload");
     server.kill_and_wait();
 }
@@ -92,23 +96,27 @@ fn well_formed_join_is_accepted() {
 fn adversarial_inputs_fail_closed() {
     let cases: &[(&str, &[u8], &str)] = &[
         (
-            "T2-unknown-discriminant",
+            "adversarial-unknown-discriminant",
             &[0x07, 0x00, 0x01, 0x72, 0x63],
             "external_enum_unmapped",
         ),
-        ("T2-short-header", &[0x00, 0x00], "external_decode_failed"),
         (
-            "T2-room-len-overflow",
+            "adversarial-short-header",
+            &[0x00, 0x00],
+            "external_decode_failed",
+        ),
+        (
+            "adversarial-room-len-overflow",
             &[0x00, 0xFF, 0xFF],
             "external_decode_failed",
         ),
         (
-            "T2-empty-room",
+            "adversarial-empty-room",
             &[0x00, 0x00, 0x00, 0x63],
             "missing_required_wire_field",
         ),
         (
-            "T2-missing-correlation",
+            "adversarial-missing-correlation",
             &[0x00, 0x00, 0x01, 0x72],
             "missing_correlation_id",
         ),

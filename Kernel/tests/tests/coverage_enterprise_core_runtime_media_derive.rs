@@ -128,7 +128,6 @@ fn command_decision(
             target_surface,
         )],
         audit_projection: command::AuditProjectionRequirement::Required,
-        evidence_class: command::DecisionEvidenceClass::RuntimeProofNotClaimed,
     })
     .expect("decision shape is valid")
 }
@@ -161,9 +160,8 @@ fn restore_eligibility() -> recovery::RestoreEligibility {
     .expect("signaling idempotency checkpoint restore is eligible")
 }
 
-fn crash_restart_evidence() -> recovery::CrashRestartEvidenceShape {
-    recovery::CrashRestartEvidenceShape::try_new(
-        "restart --recover",
+fn crash_restart_verification() -> recovery::CrashRestartVerification {
+    recovery::CrashRestartVerification::try_new(
         "supervisor",
         recovery::ProcessFailureClass::SupervisorRestartObserved,
         recovery::ProcessFailureClass::SupervisorRestartObserved,
@@ -174,7 +172,7 @@ fn crash_restart_evidence() -> recovery::CrashRestartEvidenceShape {
         true,
         true,
     )
-    .expect("crash restart evidence has separated evidence classes")
+    .expect("crash restart verification has distinct runtime states")
 }
 
 #[test]
@@ -337,10 +335,6 @@ fn audit_and_command_surface_derives_accessors_and_fail_closed_edges_execute() {
     assert_eq!(
         decision.audit_projection(),
         command::AuditProjectionRequirement::Required
-    );
-    assert_eq!(
-        decision.evidence_class(),
-        command::DecisionEvidenceClass::RuntimeProofNotClaimed
     );
     touch_eq(decision.clone());
 
@@ -599,7 +593,7 @@ fn ports_and_cross_plane_public_shapes_execute_remaining_derive_paths() {
         cross_plane::BindingExpiryBehavior::NotApplicable,
         cross_plane::BindingExpiryBehavior::RejectNewTargetPlaneAction,
         cross_plane::BindingExpiryBehavior::TargetPlaneClosesThroughOwnStateMachine,
-        cross_plane::BindingExpiryBehavior::RecordCloseNotClaimed,
+        cross_plane::BindingExpiryBehavior::RecordExpiredRelation,
     ] {
         touch_hash(behavior);
     }
@@ -619,14 +613,14 @@ fn ports_and_cross_plane_public_shapes_execute_remaining_derive_paths() {
         Some(security::AuthorizationContextClass::VerifiedCredentialContext),
         cross_plane::BindingLifecyclePrecondition::ParticipantJoined,
         cross_plane::BindingLifecyclePrecondition::SecureMediaProtectionActive,
-        cross_plane::BindingExpiryBehavior::RecordCloseNotClaimed,
+        cross_plane::BindingExpiryBehavior::RecordExpiredRelation,
         cross_plane::BindingReplayRelation::ConflictRejected,
     );
     touch_hash(policy.clone());
     let decision = cross_plane::CrossPlaneBindingDecision::new(
         correlation("cross-plane-decision"),
         policy,
-        cross_plane::CrossPlaneBindingOutcome::CloseNotClaimed,
+        cross_plane::CrossPlaneBindingOutcome::Rejected,
         Some(cross_plane::CrossPlaneBindingFailureKind::SecureMediaProtectionNotActive),
     );
     touch_hash(decision);
@@ -656,7 +650,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
     }
 
     let default_metrics =
-        recovery::StateFamilyRecoveryPolicy::canonical_default(state::StateFamily::MetricsBacklog);
+        recovery::StateFamilyRecoveryPolicy::default_for(state::StateFamily::MetricsBacklog);
     assert!(!default_metrics.permits_core_restore_candidate());
     let explicit_metrics = recovery::StateFamilyRecoveryPolicy::metrics_backlog_retry_configured();
     assert!(!explicit_metrics.permits_domain_mutation_replay_candidate());
@@ -665,7 +659,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
 
     assert_eq!(
         recovery::RestoreEligibility::try_new(
-            recovery::StateFamilyRecoveryPolicy::canonical_default(state::StateFamily::AuditEvent),
+            recovery::StateFamilyRecoveryPolicy::default_for(state::StateFamily::AuditEvent),
             state::StateClass::AuditOnlyState,
             restore_preconditions(),
         ),
@@ -681,7 +675,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         touch_hash(mode);
     }
     touch_hash(
-        recovery::ReplayPolicyCoverage::try_new(true, true, true, true, true, true, true, true)
+        recovery::ReplayPolicyCoverage::try_new(true, true, true, true, true, true, true)
             .expect("complete replay policy coverage"),
     );
     for failure in [
@@ -708,7 +702,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         recovery::ProhibitedRecoveryBehavior::TurnRelayStateSilentlyRestored,
         recovery::ProhibitedRecoveryBehavior::SdkReconnectStateAsServerParticipantState,
         recovery::ProhibitedRecoveryBehavior::DriverLocalConflictResolution,
-        recovery::ProhibitedRecoveryBehavior::RestoreSuccessClaimWithoutEvidence,
+        recovery::ProhibitedRecoveryBehavior::RestoreSuccessWithoutVerification,
         recovery::ProhibitedRecoveryBehavior::CrashObservationAsRestoreSuccess,
         recovery::ProhibitedRecoveryBehavior::ReplacementProcessAsFailoverSuccess,
         recovery::ProhibitedRecoveryBehavior::ReplicationInferredFromRestore,
@@ -735,11 +729,10 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
             Some(startup("after")),
             None,
             recovery::ProcessFailureClass::PanicObserved,
-            Some(recovery::PriorDrainStatus::GracefulDrainEvidenceRecorded),
+            Some(recovery::PriorDrainStatus::GracefulDrainObserved),
             Some(recovery::AuditPersistenceStatus::AuditPersistenceCompleted),
             recovery::RestoreReplayPolicyApplication::RestoreEligibilityApplied,
             recovery::RestartReadinessClass::NotClaimed,
-            recovery::CloseNotClaimedScope::AffectedDomainState,
         ),
         Err(recovery::ProcessFailureClassificationError::ProcessIdentityMissing)
     );
@@ -752,10 +745,9 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         Some(recovery::AuditPersistenceStatus::AuditPersistenceIncompleteOrAbsent),
         recovery::RestoreReplayPolicyApplication::RestoreEligibilityApplied,
         recovery::RestartReadinessClass::NotClaimed,
-        recovery::CloseNotClaimedScope::AffectedDomainState,
     )
     .expect("process failure classification is complete");
-    assert!(classification.treated_as_unclean_for_closeout());
+    assert!(classification.is_unclean_shutdown());
     touch_hash(classification.clone());
     assert_eq!(
         recovery::RestartDomainStateClaim::try_new(
@@ -763,17 +755,17 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
             Some(restore_eligibility()),
             None,
         ),
-        Err(recovery::RestartDomainStateClaimError::CrashRestartEvidenceRequired)
+        Err(recovery::RestartDomainStateClaimError::CrashRestartVerificationRequired)
     );
     touch_hash(
         recovery::RestartDomainStateClaim::try_new(
             classification,
             Some(restore_eligibility()),
-            Some(crash_restart_evidence()),
+            Some(crash_restart_verification()),
         )
-        .expect("crash restart claim includes restore eligibility and evidence"),
+        .expect("crash restart claim includes restore eligibility and verification"),
     );
-    touch_hash(crash_restart_evidence());
+    touch_hash(crash_restart_verification());
 
     for mapping in [
         recovery::ProcessFailureMappingKind::ProcessPanicDetected,
@@ -789,10 +781,10 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
     for prohibited in [
         recovery::ProhibitedProcessFailureBehavior::UncleanCrashAsGracefulShutdown,
         recovery::ProhibitedProcessFailureBehavior::SupervisorRestartAsReadiness,
-        recovery::ProhibitedProcessFailureBehavior::CrashRecoveryInferredWithoutRestoreEvidence,
+        recovery::ProhibitedProcessFailureBehavior::CrashRecoveryInferredWithoutRestoreVerification,
         recovery::ProhibitedProcessFailureBehavior::PanicLogTextAsAuthoritativeReason,
         recovery::ProhibitedProcessFailureBehavior::RestartReusesDomainStateWithoutRestorePolicy,
-        recovery::ProhibitedProcessFailureBehavior::CrashEvidenceOmitsAuditOrDrainStatus,
+        recovery::ProhibitedProcessFailureBehavior::CrashVerificationOmitsAuditOrDrainStatus,
         recovery::ProhibitedProcessFailureBehavior::TaskPanicCollapsedIntoReadinessOrDriverFailure,
     ] {
         touch_hash(prohibited);
@@ -841,7 +833,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         runtime::ProhibitedRuntimeClockRandomnessBehavior::RawPlatformTimeWithoutNormalization,
         runtime::ProhibitedRuntimeClockRandomnessBehavior::RandomGeneratorOwnsIdentitySemantics,
         runtime::ProhibitedRuntimeClockRandomnessBehavior::EntrypointsSilentlySubstituteRuntimeDefaults,
-        runtime::ProhibitedRuntimeClockRandomnessBehavior::DeterministicTestClockRngAsProductionEvidence,
+        runtime::ProhibitedRuntimeClockRandomnessBehavior::DeterministicTestClockRngInProductionRuntime,
         runtime::ProhibitedRuntimeClockRandomnessBehavior::RuntimeWorkerOwnsDomainState,
         runtime::ProhibitedRuntimeClockRandomnessBehavior::ImplicitDetachedTaskOrSupervision,
         runtime::ProhibitedRuntimeClockRandomnessBehavior::WallClockAsCrossNodeCausalOrderWithoutTrust,
@@ -871,7 +863,6 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         runtime::RuntimeTaskLifecycleOutcome::Cancelled,
         runtime::RuntimeTaskLifecycleOutcome::Failed,
         runtime::RuntimeTaskLifecycleOutcome::PanicObserved,
-        runtime::RuntimeTaskLifecycleOutcome::CloseNotClaimed,
     ] {
         touch_hash(outcome);
     }
@@ -903,7 +894,7 @@ fn recovery_runtime_and_sfu_closed_vocabularies_execute_derive_paths() {
         runtime::ProhibitedRuntimeTaskWorkerBehavior::TaskCancellationRewritesPriorDecision,
         runtime::ProhibitedRuntimeTaskWorkerBehavior::TaskPanicAsGracefulShutdownOrRecovery,
         runtime::ProhibitedRuntimeTaskWorkerBehavior::UnboundedTaskQueueMailboxJoinOrRestart,
-        runtime::ProhibitedRuntimeTaskWorkerBehavior::SupervisorRestartAsReadinessOrRestoreEvidence,
+        runtime::ProhibitedRuntimeTaskWorkerBehavior::SupervisorRestartAsReadinessOrRestoreSuccess,
         runtime::ProhibitedRuntimeTaskWorkerBehavior::DriverWorkerOwnsDomainSemantics,
     ] {
         touch_hash(prohibited);

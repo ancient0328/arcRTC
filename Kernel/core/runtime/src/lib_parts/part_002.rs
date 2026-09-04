@@ -15,8 +15,6 @@ pub enum RuntimeTaskLifecycleOutcome {
     Failed,
     /// panic observed.
     PanicObserved,
-    /// close-not-claimed.
-    CloseNotClaimed,
 }
 
 /// RuntimePort が core へ返せる opaque task observation です。
@@ -61,7 +59,6 @@ impl RuntimeTaskLifecycleDecision {
             RuntimeTaskLifecycleOutcome::Rejected
             | RuntimeTaskLifecycleOutcome::Failed
             | RuntimeTaskLifecycleOutcome::PanicObserved
-            | RuntimeTaskLifecycleOutcome::CloseNotClaimed
                 if reason.is_none() =>
             {
                 return Err(RuntimeTaskLifecycleDecisionError::ReasonRequired);
@@ -115,12 +112,12 @@ impl TaskCancellationSurface {
     pub const fn required_relation(self) -> &'static str {
         match self {
             Self::BeforeDriverCoreConversion => "driver-local cancellation; no domain mutation",
-            Self::AfterCommandEnteredCore => "prior core decision evidence remains authoritative",
-            Self::DuringShutdownDrain => "follows shutdown drain canonical",
+            Self::AfterCommandEnteredCore => "prior core decision result remains authoritative",
+            Self::DuringShutdownDrain => "follows shutdown drain policy",
             Self::DuringDriverQueueCacheExecution => {
                 "driver failure/shutdown/resource reason; domain decision is not rewritten"
             }
-            Self::DuringTestHarnessTimeout => "testing evidence records timeout/cancel class",
+            Self::DuringTestHarnessTimeout => "test harness observes timeout/cancel class",
         }
     }
 }
@@ -140,8 +137,8 @@ pub enum ProhibitedRuntimeTaskWorkerBehavior {
     TaskPanicAsGracefulShutdownOrRecovery,
     /// unbounded task queue, mailbox, join wait, or restart loop is allowed.
     UnboundedTaskQueueMailboxJoinOrRestart,
-    /// entrypoints supervisor restart is used as runtime readiness or domain restore evidence.
-    SupervisorRestartAsReadinessOrRestoreEvidence,
+    /// entrypoints supervisor restart is used as runtime readiness or domain restore success.
+    SupervisorRestartAsReadinessOrRestoreSuccess,
     /// driver worker owns domain semantics.
     DriverWorkerOwnsDomainSemantics,
 }

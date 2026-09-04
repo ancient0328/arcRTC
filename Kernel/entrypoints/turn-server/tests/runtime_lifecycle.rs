@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use std::io::BufRead;
 use std::net::UdpSocket;
 use std::process::{Child, Command, Stdio};
@@ -135,7 +132,7 @@ fn runtime_decision(
 }
 
 #[test]
-fn assert_t_runtime_01__concurrency() {
+fn assert_concurrency() {
     let (mut server, addr) = ServerProc::spawn();
     let addr = Arc::new(addr);
     let allocate = Arc::new(datagram(0x0003, vec![attribute(0x0006, b"credential")]));
@@ -154,7 +151,7 @@ fn assert_t_runtime_01__concurrency() {
 }
 
 #[test]
-fn assert_t_runtime_01__bounded_workers() {
+fn assert_bounded_workers() {
     let decision = runtime_decision(
         RuntimeWorkerBound::new(false, true, true),
         ShutdownDrainDecision::Continue,
@@ -169,7 +166,7 @@ fn assert_t_runtime_01__bounded_workers() {
 }
 
 #[test]
-fn assert_t_runtime_01__shutdown_drain() {
+fn assert_shutdown_drain() {
     let decision = runtime_decision(
         RuntimeWorkerBound::new(true, true, true),
         ShutdownDrainDecision::Draining,
@@ -181,7 +178,7 @@ fn assert_t_runtime_01__shutdown_drain() {
 }
 
 #[test]
-fn assert_t_runtime_01__supervisor_observation() {
+fn assert_supervisor_observation() {
     let decision = runtime_decision(
         RuntimeWorkerBound::new(true, true, true),
         ShutdownDrainDecision::Continue,

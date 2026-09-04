@@ -1,5 +1,5 @@
 impl BackpressureDecision {
-    /// Canonical mapping 済みの decision を作ります。
+    /// source policy mapping 済みの decision を作ります。
     pub fn try_new(
         kind: BackpressureDecisionKind,
         target: BackpressureTargetRef,
@@ -48,8 +48,8 @@ pub enum AuditBacklogOverflowRule {
     EmitSingleReservedOverflowRecord,
     /// audit-required path を reject/stop します。
     RejectNewAuditRequiredPath,
-    /// audit failed decision を closeout evidence に使うことを禁止します。
-    ProhibitCloseoutEvidence,
+    /// failed audit outcome を成功 record として扱うことを禁止します。
+    RejectFailedAuditOutcomeAsSuccess,
 }
 
 /// resource/backpressure 境界で禁止する fail-open 動作です。

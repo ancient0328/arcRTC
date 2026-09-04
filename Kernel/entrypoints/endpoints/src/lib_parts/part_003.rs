@@ -60,7 +60,7 @@ pub struct EdgeTlsTerminationGuard {
     backend_transport_security_requirement_declared: bool,
     trusted_edge_identity_declared: bool,
     certificate_or_secret_reference_class_declared: bool,
-    audit_evidence_relation_declared: bool,
+    audit_event_relation_declared: bool,
     missing_downstream_protection_failure_mapping_declared: bool,
     edge_tls_not_used_as_secure_media_proof: bool,
 }
@@ -76,8 +76,8 @@ pub enum EdgeTlsTerminationError {
     TrustedEdgeIdentityMissing,
     /// certificate/secret reference class がありません。
     CertificateSecretReferenceClassMissing,
-    /// audit evidence relation がありません。
-    AuditEvidenceRelationMissing,
+    /// audit event relation がありません。
+    AuditEventRelationMissing,
     /// missing downstream protection の failure mapping がありません。
     MissingDownstreamProtectionFailureMappingMissing,
     /// edge TLS を secure media proof として扱っています。
@@ -91,7 +91,7 @@ impl EdgeTlsTerminationGuard {
         backend_transport_security_requirement_declared: bool,
         trusted_edge_identity_declared: bool,
         certificate_or_secret_reference_class_declared: bool,
-        audit_evidence_relation_declared: bool,
+        audit_event_relation_declared: bool,
         missing_downstream_protection_failure_mapping_declared: bool,
         edge_tls_not_used_as_secure_media_proof: bool,
     ) -> Result<Self, EdgeTlsTerminationError> {
@@ -110,8 +110,8 @@ impl EdgeTlsTerminationGuard {
         if !certificate_or_secret_reference_class_declared {
             return Err(EdgeTlsTerminationError::CertificateSecretReferenceClassMissing);
         }
-        if !audit_evidence_relation_declared {
-            return Err(EdgeTlsTerminationError::AuditEvidenceRelationMissing);
+        if !audit_event_relation_declared {
+            return Err(EdgeTlsTerminationError::AuditEventRelationMissing);
         }
         if !missing_downstream_protection_failure_mapping_declared {
             return Err(EdgeTlsTerminationError::MissingDownstreamProtectionFailureMappingMissing);
@@ -125,133 +125,9 @@ impl EdgeTlsTerminationGuard {
             backend_transport_security_requirement_declared,
             trusted_edge_identity_declared,
             certificate_or_secret_reference_class_declared,
-            audit_evidence_relation_declared,
+            audit_event_relation_declared,
             missing_downstream_protection_failure_mapping_declared,
             edge_tls_not_used_as_secure_media_proof,
-        })
-    }
-}
-
-/// edge/proxy trust evidence guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EdgeProxyTrustEvidenceGuard {
-    edge_class_declared: bool,
-    topology_class_declared: bool,
-    trusted_upstream_scope_declared: bool,
-    accepted_metadata_classes_declared: bool,
-    header_precedence_declared: bool,
-    hop_count_declared: bool,
-    tls_termination_relation_declared: bool,
-    origin_host_policy_declared: bool,
-    client_address_use_limit_declared: bool,
-    command_or_procedure_declared: bool,
-    working_directory_declared: bool,
-    rerun_condition_declared: bool,
-    diagnostic_snippet_not_used_without_required_fields: bool,
-}
-
-/// edge/proxy trust evidence の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EdgeProxyTrustEvidenceError {
-    /// edge class がありません。
-    EdgeClassMissing,
-    /// topology class がありません。
-    TopologyClassMissing,
-    /// trusted upstream scope がありません。
-    TrustedUpstreamScopeMissing,
-    /// accepted metadata classes がありません。
-    AcceptedMetadataClassesMissing,
-    /// header precedence がありません。
-    HeaderPrecedenceMissing,
-    /// hop count がありません。
-    HopCountMissing,
-    /// TLS termination relation がありません。
-    TlsTerminationRelationMissing,
-    /// origin/host policy がありません。
-    OriginHostPolicyMissing,
-    /// client address use limit がありません。
-    ClientAddressUseLimitMissing,
-    /// command/procedure がありません。
-    CommandProcedureMissing,
-    /// working directory がありません。
-    WorkingDirectoryMissing,
-    /// rerun condition がありません。
-    RerunConditionMissing,
-    /// diagnostic snippet だけを evidence として使っています。
-    DiagnosticSnippetUsedAsEvidence,
-}
-
-impl EdgeProxyTrustEvidenceGuard {
-    /// edge/proxy trust evidence の採用条件を検査します。
-    pub const fn try_new(
-        edge_class_declared: bool,
-        topology_class_declared: bool,
-        trusted_upstream_scope_declared: bool,
-        accepted_metadata_classes_declared: bool,
-        header_precedence_declared: bool,
-        hop_count_declared: bool,
-        tls_termination_relation_declared: bool,
-        origin_host_policy_declared: bool,
-        client_address_use_limit_declared: bool,
-        command_or_procedure_declared: bool,
-        working_directory_declared: bool,
-        rerun_condition_declared: bool,
-        diagnostic_snippet_not_used_without_required_fields: bool,
-    ) -> Result<Self, EdgeProxyTrustEvidenceError> {
-        if !edge_class_declared {
-            return Err(EdgeProxyTrustEvidenceError::EdgeClassMissing);
-        }
-        if !topology_class_declared {
-            return Err(EdgeProxyTrustEvidenceError::TopologyClassMissing);
-        }
-        if !trusted_upstream_scope_declared {
-            return Err(EdgeProxyTrustEvidenceError::TrustedUpstreamScopeMissing);
-        }
-        if !accepted_metadata_classes_declared {
-            return Err(EdgeProxyTrustEvidenceError::AcceptedMetadataClassesMissing);
-        }
-        if !header_precedence_declared {
-            return Err(EdgeProxyTrustEvidenceError::HeaderPrecedenceMissing);
-        }
-        if !hop_count_declared {
-            return Err(EdgeProxyTrustEvidenceError::HopCountMissing);
-        }
-        if !tls_termination_relation_declared {
-            return Err(EdgeProxyTrustEvidenceError::TlsTerminationRelationMissing);
-        }
-        if !origin_host_policy_declared {
-            return Err(EdgeProxyTrustEvidenceError::OriginHostPolicyMissing);
-        }
-        if !client_address_use_limit_declared {
-            return Err(EdgeProxyTrustEvidenceError::ClientAddressUseLimitMissing);
-        }
-        if !command_or_procedure_declared {
-            return Err(EdgeProxyTrustEvidenceError::CommandProcedureMissing);
-        }
-        if !working_directory_declared {
-            return Err(EdgeProxyTrustEvidenceError::WorkingDirectoryMissing);
-        }
-        if !rerun_condition_declared {
-            return Err(EdgeProxyTrustEvidenceError::RerunConditionMissing);
-        }
-        if !diagnostic_snippet_not_used_without_required_fields {
-            return Err(EdgeProxyTrustEvidenceError::DiagnosticSnippetUsedAsEvidence);
-        }
-
-        Ok(Self {
-            edge_class_declared,
-            topology_class_declared,
-            trusted_upstream_scope_declared,
-            accepted_metadata_classes_declared,
-            header_precedence_declared,
-            hop_count_declared,
-            tls_termination_relation_declared,
-            origin_host_policy_declared,
-            client_address_use_limit_declared,
-            command_or_procedure_declared,
-            working_directory_declared,
-            rerun_condition_declared,
-            diagnostic_snippet_not_used_without_required_fields,
         })
     }
 }

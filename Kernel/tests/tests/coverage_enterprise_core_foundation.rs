@@ -145,18 +145,6 @@ fn coverage_core_foundation_configuration_domain_features_and_identity_are_close
     ];
     assert_eq!(feature_classes.len(), 7);
     assert_eq!(requested_surfaces.len(), 8);
-    let _requirements = [
-        features::FutureAdmissionRequirement::FeatureClass,
-        features::FutureAdmissionRequirement::OwnerPackageLayer,
-        features::FutureAdmissionRequirement::GenericCoreRelation,
-        features::FutureAdmissionRequirement::PublicSdkApiSurface,
-        features::FutureAdmissionRequirement::DriverRuntimeDependencyBoundary,
-        features::FutureAdmissionRequirement::SecurityPrivacyRedactionBoundary,
-        features::FutureAdmissionRequirement::ReasonCatalogAdditions,
-        features::FutureAdmissionRequirement::AuditEventRelation,
-        features::FutureAdmissionRequirement::EvidenceClass,
-        features::FutureAdmissionRequirement::MigrationDeprecationRelation,
-    ];
     let decision = features::FeatureAdmissionDecision::new(
         Some(correlation("feature-correlation")),
         features::ExcludedFeatureClass::ChatApplicationSemantics,
@@ -178,12 +166,11 @@ fn coverage_core_foundation_configuration_domain_features_and_identity_are_close
     );
     let _admission_classes = [
         features::FeatureAdmissionDecisionClass::Rejected,
-        features::FeatureAdmissionDecisionClass::CloseNotClaimed,
-        features::FeatureAdmissionDecisionClass::AdmittedByCanonical,
+        features::FeatureAdmissionDecisionClass::SupportedBySourceContract,
     ];
     for kind in [
         features::FeatureAdmissionFailureKind::FeatureOutOfScope,
-        features::FeatureAdmissionFailureKind::FeatureAdmissionNotDocumented,
+        features::FeatureAdmissionFailureKind::FeatureNotSupported,
         features::FeatureAdmissionFailureKind::ChatNotSupported,
         features::FeatureAdmissionFailureKind::RecordingNotSupported,
         features::FeatureAdmissionFailureKind::ScreenShareNotSupported,
@@ -338,7 +325,6 @@ fn coverage_core_foundation_command_and_audit_shapes_are_exercised() {
         state_transition: command::StateTransitionSummary::Changed("room joined"),
         port_intents: vec![intent],
         audit_projection: command::AuditProjectionRequirement::Required,
-        evidence_class: command::DecisionEvidenceClass::SourceDecisionOnly,
     })
     .expect("accepted decision must not carry reason");
     assert_eq!(accepted.outcome(), command::UseCaseOutcome::Accepted);
@@ -357,7 +343,6 @@ fn coverage_core_foundation_command_and_audit_shapes_are_exercised() {
             state_transition: command::StateTransitionSummary::NoStateChange,
             port_intents: vec![],
             audit_projection: command::AuditProjectionRequirement::NotRequired,
-            evidence_class: command::DecisionEvidenceClass::RuntimeProofNotClaimed,
         }),
         Err(command::DecisionShapeError::SuccessMustNotCarryReason)
     );
@@ -777,7 +762,6 @@ fn coverage_core_foundation_security_time_transport_and_cross_plane_are_exercise
         time::TimeSynchronizationConcern::CrossNodeSkewPolicy,
         time::TimeSynchronizationConcern::ExternalTimeSource,
         time::TimeSynchronizationConcern::TimestampNormalization,
-        time::TimeSynchronizationConcern::EvidenceTimestampClaim,
     ] {
         assert!(!format!("{:?}", concern.owner()).is_empty());
     }
@@ -790,7 +774,7 @@ fn coverage_core_foundation_security_time_transport_and_cross_plane_are_exercise
         time::TimeTrustClass::TimeUntrusted,
     ] {
         assert_eq!(
-            trust_class.runtime_evidence_allowed(),
+            trust_class.supports_runtime_trust_decision(),
             matches!(
                 trust_class,
                 time::TimeTrustClass::SingleProcessMonotonic
@@ -819,7 +803,7 @@ fn coverage_core_foundation_security_time_transport_and_cross_plane_are_exercise
         time::PrecisionClass::DeclaredPrecisionLabel("ntp"),
         time::SamplingWindow::PolicyLabel("skew-window"),
         time::TrustedTimeSourceClass::ExternalTimeSourceObservation,
-        time::ClockSkewImpact::Evidence,
+        time::ClockSkewImpact::Verification,
     )
     .expect("bounded skew policy has max skew");
     for kind in [
@@ -1064,7 +1048,6 @@ fn coverage_core_foundation_security_time_transport_and_cross_plane_are_exercise
         cross_plane::CrossPlaneBindingOutcome::Rejected,
         cross_plane::CrossPlaneBindingOutcome::Expired,
         cross_plane::CrossPlaneBindingOutcome::Failed,
-        cross_plane::CrossPlaneBindingOutcome::CloseNotClaimed,
     ] {
         assert!(!outcome.code().is_empty());
         assert_eq!(
@@ -1095,11 +1078,6 @@ fn coverage_core_foundation_security_time_transport_and_cross_plane_are_exercise
         Some(cross_plane::CrossPlaneBindingFailureKind::LifecycleConflict),
     );
     assert_eq!(decision.audit_event_type(), "cross_plane_binding_decision");
-    let _evidence_classes = [
-        cross_plane::CrossPlaneEvidenceAdoption::SinglePlaneOnly,
-        cross_plane::CrossPlaneEvidenceAdoption::CrossPlaneBindingEvidence,
-        cross_plane::CrossPlaneEvidenceAdoption::CloseNotClaimed,
-    ];
     let _prohibited = [
         cross_plane::ProhibitedCrossPlaneEquivalence::SignalingJoinAsSfuAdmission,
         cross_plane::ProhibitedCrossPlaneEquivalence::TokenOrAuthorizationAsPlaneBinding,
@@ -1372,7 +1350,7 @@ fn coverage_core_foundation_protocol_envelope_and_state_policy_are_exercised() {
     }
     let _prohibited_state = [
         state::ProhibitedStatePersistenceBehavior::DriverSchemaAsDomainSourceOfTruth,
-        state::ProhibitedStatePersistenceBehavior::CheckpointRestoreWithoutRestoreCanonical,
+        state::ProhibitedStatePersistenceBehavior::CheckpointRestoreWithoutRestorePolicy,
         state::ProhibitedStatePersistenceBehavior::SfuRouteDurableByDefault,
         state::ProhibitedStatePersistenceBehavior::TurnAllocationSilentlyRestored,
         state::ProhibitedStatePersistenceBehavior::AuditLogAsMutableStateStore,

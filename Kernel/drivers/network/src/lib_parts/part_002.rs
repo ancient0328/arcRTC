@@ -127,12 +127,12 @@ impl<ResponseModel> WireEnvelopeEncodeInput<ResponseModel> {
     }
 }
 
-/// external wire encoding と canonical evidence encoding の関係です。
+/// external wire encoding と canonical encoding の関係です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum WireCanonicalEvidenceRelation {
-    /// external wire format is not canonical evidence encoding.
-    ExternalWireIsNotCanonicalEvidence,
-    /// deterministic canonical serialization rule is required before evidence use.
+pub enum WireCanonicalEncodingRelation {
+    /// external wire format is not canonical encoding.
+    ExternalWireIsNotCanonicalEncoding,
+    /// deterministic canonical serialization rule is required before digest use.
     RequiresDeterministicCanonicalRule,
 }
 
@@ -145,12 +145,12 @@ pub enum ProhibitedWireEnvelopeBehavior {
     CoreReasonLostInExternalErrorMapping,
     /// pre-core conversion failure enters domain state machine.
     PreCoreFailureEntersDomainStateMachine,
-    /// correlation rule differs per driver without Canonical update.
+    /// correlation rule differs from shared source policy.
     DriverSpecificCorrelationRule,
     /// protocol version semantics are owned by driver.
     DriverOwnsProtocolVersionSemantics,
-    /// canonical evidence hash depends on driver wire formatting.
-    CanonicalEvidenceHashDependsOnWireFormatting,
+    /// canonical digest depends on driver wire formatting.
+    CanonicalDigestDependsOnWireFormatting,
 }
 
 /// external error を投影する surface です。
@@ -500,4 +500,3 @@ pub enum NetworkIoFailureKind {
     /// driver is shutting down.
     DriverShutdown,
 }
-

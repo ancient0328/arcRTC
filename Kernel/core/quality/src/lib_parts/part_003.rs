@@ -1,4 +1,4 @@
-/// v0.2 initial canonical の required bound closed action catalog です。
+/// v0.2 source policy の required bound closed action catalog です。
 pub const REQUIRED_RESOURCE_BOUND_CLOSED_ACTIONS: &[ResourceBoundClosedAction] = &[
     ResourceBoundClosedAction::new(
         ResourceBoundKind::ActiveRoomSet,
@@ -325,7 +325,7 @@ pub struct ResourceBoundDecision {
 }
 
 impl ResourceBoundDecision {
-    /// Canonical mapping 済みの decision を作ります。
+    /// source policy mapping 済みの decision を作ります。
     pub fn try_new(
         closed_action: ResourceBoundClosedAction,
         references: ResourceBoundReferenceSet,
@@ -503,4 +503,3 @@ pub enum BackpressureDecisionShapeError {
     /// action requires endpoint target.
     EndpointTargetRequired,
 }
-

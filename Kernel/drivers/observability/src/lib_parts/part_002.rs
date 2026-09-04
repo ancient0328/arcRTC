@@ -13,31 +13,28 @@ impl ObservabilitySignalClass {
         }
     }
 
-    /// signal class ごとの required evidence adoption rule です。
-    pub const fn required_evidence_rule(self) -> SignalEvidenceAdoptionRule {
+    /// signal class から source-owned runtime use を導出します。
+    pub const fn use_class(self) -> SignalUseClass {
         match self {
-            Self::AuditSignal => SignalEvidenceAdoptionRule::AuditCanonical,
-            Self::QualityDecisionMetric => SignalEvidenceAdoptionRule::QualityCanonical,
-            Self::ResourceBoundMetric => SignalEvidenceAdoptionRule::ResourceBoundCanonical,
-            Self::OperationalMetric | Self::StructuredLog => {
-                SignalEvidenceAdoptionRule::ReportRequiredForEvidence
-            }
+            Self::AuditSignal => SignalUseClass::AuditRecord,
+            Self::QualityDecisionMetric => SignalUseClass::QualityDecisionInput,
+            Self::ResourceBoundMetric => SignalUseClass::ResourceBoundDecisionInput,
+            Self::OperationalMetric | Self::StructuredLog => SignalUseClass::OperationalObservation,
             Self::TraceSpan | Self::AlertSignal | Self::ProfilingSignal => {
-                SignalEvidenceAdoptionRule::DiagnosticOnly
+                SignalUseClass::DiagnosticOnly
             }
         }
     }
 }
 
-/// sampling が required evidence を隠さないことを確認する guard です。
+/// sampling が source-owned audit / decision input を欠落させないことを確認する guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SignalSamplingGuard {
     signal_class: ObservabilitySignalClass,
     sampling_rule: SignalSamplingRule,
     audit_completeness_preserved: bool,
-    resource_bound_evidence_preserved: bool,
+    resource_bound_signal_preserved: bool,
     quality_input_sampling_allowed: bool,
-    closed_gate_evidence_preserved: bool,
 }
 
 /// sampling guard の fail-closed error です。
@@ -45,38 +42,35 @@ pub struct SignalSamplingGuard {
 pub enum SignalSamplingGuardError {
     /// sampling policy が必要なのにありません。
     SamplingPolicyMissing,
-    /// sampling が required evidence を隠しています。
-    SamplingHidesRequiredEvidence,
+    /// sampling が required audit / decision signal を隠しています。
+    SamplingHidesRequiredSignal,
 }
 
 impl SignalSamplingGuard {
-    /// sampling が audit / quality / resource / Closed Gate evidence を壊さないことを確認します。
+    /// sampling が audit / quality / resource-bound input を壊さないことを確認します。
     pub const fn try_new(
         signal_class: ObservabilitySignalClass,
         sampling_rule: SignalSamplingRule,
         audit_completeness_preserved: bool,
-        resource_bound_evidence_preserved: bool,
+        resource_bound_signal_preserved: bool,
         quality_input_sampling_allowed: bool,
-        closed_gate_evidence_preserved: bool,
     ) -> Result<Self, SignalSamplingGuardError> {
         if matches!(sampling_rule, SignalSamplingRule::MissingPolicy) {
             return Err(SignalSamplingGuardError::SamplingPolicyMissing);
         }
         if !audit_completeness_preserved
-            || !resource_bound_evidence_preserved
+            || !resource_bound_signal_preserved
             || !quality_input_sampling_allowed
-            || !closed_gate_evidence_preserved
         {
-            return Err(SignalSamplingGuardError::SamplingHidesRequiredEvidence);
+            return Err(SignalSamplingGuardError::SamplingHidesRequiredSignal);
         }
 
         Ok(Self {
             signal_class,
             sampling_rule,
             audit_completeness_preserved,
-            resource_bound_evidence_preserved,
+            resource_bound_signal_preserved,
             quality_input_sampling_allowed,
-            closed_gate_evidence_preserved,
         })
     }
 }
@@ -158,59 +152,6 @@ impl ObservabilitySignalFailure {
     }
 }
 
-/// observability evidence adoption shape です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ObservabilitySignalEvidenceShape {
-    signal_class_recorded: bool,
-    sampling_recorded: bool,
-    cardinality_recorded: bool,
-    time_window_recorded: bool,
-    source_recorded: bool,
-    redaction_recorded: bool,
-    report_rerun_condition_recorded: bool,
-}
-
-/// signal evidence shape の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ObservabilitySignalEvidenceShapeError {
-    /// evidence adoption に必要な field が不足しています。
-    RequiredSignalEvidenceFieldMissing,
-}
-
-impl ObservabilitySignalEvidenceShape {
-    /// operational signal を evidence に採用する前の必須 field を確認します。
-    pub const fn try_new(
-        signal_class_recorded: bool,
-        sampling_recorded: bool,
-        cardinality_recorded: bool,
-        time_window_recorded: bool,
-        source_recorded: bool,
-        redaction_recorded: bool,
-        report_rerun_condition_recorded: bool,
-    ) -> Result<Self, ObservabilitySignalEvidenceShapeError> {
-        if !signal_class_recorded
-            || !sampling_recorded
-            || !cardinality_recorded
-            || !time_window_recorded
-            || !source_recorded
-            || !redaction_recorded
-            || !report_rerun_condition_recorded
-        {
-            return Err(ObservabilitySignalEvidenceShapeError::RequiredSignalEvidenceFieldMissing);
-        }
-
-        Ok(Self {
-            signal_class_recorded,
-            sampling_recorded,
-            cardinality_recorded,
-            time_window_recorded,
-            source_recorded,
-            redaction_recorded,
-            report_rerun_condition_recorded,
-        })
-    }
-}
-
 /// `observability_signal_decision` audit event に必要な shape です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ObservabilitySignalAuditShape {
@@ -263,16 +204,16 @@ pub enum ProhibitedObservabilitySignalTaxonomyBehavior {
     TraceSpanNameAsAuditEventType,
     /// alert status becomes domain decision.
     AlertStatusAsDomainDecision,
-    /// sampled operational metric is used as complete audit evidence.
-    SampledMetricAsCompleteAuditEvidence,
+    /// sampled operational metric is used as a complete audit record.
+    SampledMetricAsCompleteAuditRecord,
     /// metric label contains raw identity/token/packet/regulated payload.
     RawSensitiveLabelValue,
     /// dashboard state is treated as runtime correctness proof.
     DashboardStateAsRuntimeCorrectnessProof,
     /// exporter aggregation changes quality decision semantics.
     ExporterAggregationChangesQualityDecision,
-    /// taxonomy differs by driver without Canonical update.
-    DriverSpecificTaxonomyWithoutCanonical,
+    /// taxonomy differs by driver without a source contract change.
+    DriverSpecificTaxonomyWithoutSourceContract,
 }
 
 /// privacy/redaction/retention 境界で扱う data class の閉集合です。
@@ -282,7 +223,7 @@ pub enum PrivacyDataClass {
     CoreReference,
     /// closed reason category/code.
     CatalogReason,
-    /// Canonical allowlist 済みの non-sensitive tag.
+    /// source allowlist 済みの non-sensitive tag.
     NonSensitiveTag,
     /// raw secret / credential material.
     RawSecret,
@@ -331,8 +272,6 @@ pub enum PrivacyTargetSurface {
     Audit,
     /// log / trace / metric sink.
     ObservabilitySink,
-    /// evidence record.
-    ReportEvidence,
     /// SDK public error / client-visible surface.
     SdkPublicSurface,
     /// driver-local packet lifecycle.
@@ -346,7 +285,7 @@ pub enum PrivacyTargetSurface {
 /// redaction 後に境界へ渡す出力分類です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RedactedOutputClass {
-    /// Canonical allowlist 済み field.
+    /// source allowlist 済み field.
     AllowlistedField,
     /// core-owned opaque reference.
     OpaqueReference,
@@ -354,8 +293,8 @@ pub enum RedactedOutputClass {
     RedactedExcerpt,
     /// sink/export せず drop する。
     Dropped,
-    /// evidence として採用しない。
-    RejectedEvidence,
+    /// boundary 通過を拒否する。
+    Rejected,
 }
 
 /// privacy/redaction 境界通過前の admission guard です。
@@ -365,7 +304,7 @@ pub struct PrivacyRedactionAdmission {
     target_surface: PrivacyTargetSurface,
     output_class: RedactedOutputClass,
     raw_sensitive_material_absent: bool,
-    canonical_allowlist_field: bool,
+    allowlisted_field: bool,
     redacted_reference_defined_when_needed: bool,
     external_sink_default_not_relied_on: bool,
     diagnostic_detail_non_authoritative: bool,
@@ -378,7 +317,7 @@ pub struct PrivacyRedactionAdmission {
 pub enum PrivacyRedactionAdmissionError {
     /// raw sensitive material が境界に残っています。
     RawSensitiveMaterialPresent,
-    /// Canonical allowlist 外の field です。
+    /// source allowlist 外の field です。
     FieldNotAllowlisted,
     /// redacted reference が未定義です。
     RedactedReferenceMissing,
@@ -399,7 +338,7 @@ impl PrivacyRedactionAdmission {
         target_surface: PrivacyTargetSurface,
         output_class: RedactedOutputClass,
         raw_sensitive_material_absent: bool,
-        canonical_allowlist_field: bool,
+        allowlisted_field: bool,
         redacted_reference_defined_when_needed: bool,
         external_sink_default_not_relied_on: bool,
         diagnostic_detail_non_authoritative: bool,
@@ -413,7 +352,7 @@ impl PrivacyRedactionAdmission {
             return Err(PrivacyRedactionAdmissionError::RawSensitiveMaterialPresent);
         }
         if matches!(output_class, RedactedOutputClass::AllowlistedField)
-            && (!canonical_allowlist_field || data_class.is_raw_sensitive())
+            && (!allowlisted_field || data_class.is_raw_sensitive())
         {
             return Err(PrivacyRedactionAdmissionError::FieldNotAllowlisted);
         }
@@ -422,7 +361,7 @@ impl PrivacyRedactionAdmission {
                 output_class,
                 RedactedOutputClass::OpaqueReference
                     | RedactedOutputClass::Dropped
-                    | RedactedOutputClass::RejectedEvidence
+                    | RedactedOutputClass::Rejected
             )
         {
             return Err(PrivacyRedactionAdmissionError::RedactedReferenceMissing);
@@ -454,7 +393,7 @@ impl PrivacyRedactionAdmission {
             target_surface,
             output_class,
             raw_sensitive_material_absent,
-            canonical_allowlist_field,
+            allowlisted_field,
             redacted_reference_defined_when_needed,
             external_sink_default_not_relied_on,
             diagnostic_detail_non_authoritative,
@@ -479,8 +418,6 @@ pub enum PrivacyRetentionTarget {
     PacketCache,
     /// driver-local key cache.
     KeyCache,
-    /// evidence record.
-    ReportEvidence,
     /// SDK client local data.
     SdkClientLocalData,
     /// regulated-only payload store.
@@ -494,11 +431,8 @@ pub enum PrivacyRetentionOwner {
     Core,
     /// driver owns operational/cache retention.
     Driver,
-    /// evidence reports.
-    Reports,
     /// SDK client local owner.
     Sdk,
     /// regulated-only owner.
     Regulated,
 }
-

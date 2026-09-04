@@ -11,7 +11,7 @@ fn production_profile_parses_typed_config_validation_observation() {
         RollbackProfileClass::Automatic,
     ));
 
-    // configuration entrypoint は typed observation を作るだけで、readiness proof は所有しません。
+    // configuration entrypoint は typed observation を作るだけで、readiness decision は所有しません。
     assert_eq!(
         observation.profile_class,
         ProductionProfileClass::Production

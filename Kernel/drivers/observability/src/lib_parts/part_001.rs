@@ -45,7 +45,6 @@ pub struct ObservabilityProjectionGuard {
     exporter_aggregation_not_policy: bool,
     log_text_not_authoritative_reason: bool,
     trace_name_not_audit_event_type: bool,
-    not_closeout_evidence_without_report: bool,
 }
 
 /// observability projection guard の fail-closed error です。
@@ -57,8 +56,6 @@ pub enum ObservabilityProjectionError {
     DecisionSemanticsChangedByProjection,
     /// log/free-text/span 名を authoritative reason/audit event として使っています。
     FreeTextAsAuthority,
-    /// reproducible report なしに closeout evidence として使っています。
-    ObservabilityAsCloseoutEvidence,
 }
 
 impl ObservabilityProjectionGuard {
@@ -71,7 +68,6 @@ impl ObservabilityProjectionGuard {
         exporter_aggregation_not_policy: bool,
         log_text_not_authoritative_reason: bool,
         trace_name_not_audit_event_type: bool,
-        not_closeout_evidence_without_report: bool,
     ) -> Result<Self, ObservabilityProjectionError> {
         if !audit_meaning_remains_core_owned {
             return Err(ObservabilityProjectionError::AuditMeaningTakenByDriver);
@@ -85,10 +81,6 @@ impl ObservabilityProjectionGuard {
         if !log_text_not_authoritative_reason || !trace_name_not_audit_event_type {
             return Err(ObservabilityProjectionError::FreeTextAsAuthority);
         }
-        if !not_closeout_evidence_without_report {
-            return Err(ObservabilityProjectionError::ObservabilityAsCloseoutEvidence);
-        }
-
         Ok(Self {
             projection_class,
             audit_meaning_remains_core_owned,
@@ -97,7 +89,6 @@ impl ObservabilityProjectionGuard {
             exporter_aggregation_not_policy,
             log_text_not_authoritative_reason,
             trace_name_not_audit_event_type,
-            not_closeout_evidence_without_report,
         })
     }
 }
@@ -226,59 +217,6 @@ impl ObservabilityFailureSource {
     }
 }
 
-/// observability output を evidence として採用する場合の最低 shape です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ObservabilityEvidenceShape {
-    correlation_id_recorded: bool,
-    command_recorded: bool,
-    environment_recorded: bool,
-    reproducible_procedure_recorded: bool,
-    time_window_recorded: bool,
-    source_recorded: bool,
-    bound_definition_recorded: bool,
-}
-
-/// observability evidence shape の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ObservabilityEvidenceShapeError {
-    /// reproducible report として必要な field が不足しています。
-    RequiredEvidenceFieldMissing,
-}
-
-impl ObservabilityEvidenceShape {
-    /// observability sample を evidence に昇格する前の shape を確認します。
-    pub const fn try_new(
-        correlation_id_recorded: bool,
-        command_recorded: bool,
-        environment_recorded: bool,
-        reproducible_procedure_recorded: bool,
-        time_window_recorded: bool,
-        source_recorded: bool,
-        bound_definition_recorded: bool,
-    ) -> Result<Self, ObservabilityEvidenceShapeError> {
-        if !correlation_id_recorded
-            || !command_recorded
-            || !environment_recorded
-            || !reproducible_procedure_recorded
-            || !time_window_recorded
-            || !source_recorded
-            || !bound_definition_recorded
-        {
-            return Err(ObservabilityEvidenceShapeError::RequiredEvidenceFieldMissing);
-        }
-
-        Ok(Self {
-            correlation_id_recorded,
-            command_recorded,
-            environment_recorded,
-            reproducible_procedure_recorded,
-            time_window_recorded,
-            source_recorded,
-            bound_definition_recorded,
-        })
-    }
-}
-
 /// drivers/observability が core-owned MetricsSinkPort を実装する marker です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ObservabilityMetricsSinkDriverPort;
@@ -316,7 +254,7 @@ pub enum ProhibitedObservabilityBoundaryBehavior {
 /// v0.2 で許可する observability signal class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObservabilitySignalClass {
-    /// canonical audit event or hash-chain record.
+    /// core-owned audit event or hash-chain record.
     AuditSignal,
     /// metric used by quality decision.
     QualityDecisionMetric,
@@ -337,7 +275,7 @@ pub enum ObservabilitySignalClass {
 /// signal owner の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObservabilitySignalOwner {
-    /// audit Canonical / core model.
+    /// core audit model.
     CoreAudit,
     /// core quality policy.
     CoreQualityPolicy,
@@ -397,17 +335,17 @@ pub enum SignalSamplingRule {
     MissingPolicy,
 }
 
-/// signal evidence adoption rule です。
+/// signal class から一意に導出される runtime use です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SignalEvidenceAdoptionRule {
-    /// audit Canonical owns evidence meaning.
-    AuditCanonical,
-    /// quality Canonical owns decision evidence.
-    QualityCanonical,
-    /// resource bound Canonical owns decision evidence.
-    ResourceBoundCanonical,
-    /// report with rerunnable procedure is required.
-    ReportRequiredForEvidence,
+pub enum SignalUseClass {
+    /// core audit record input.
+    AuditRecord,
+    /// core quality decision input.
+    QualityDecisionInput,
+    /// core resource-bound decision input.
+    ResourceBoundDecisionInput,
+    /// driver-owned operational observation.
+    OperationalObservation,
     /// diagnostic only.
     DiagnosticOnly,
 }
@@ -422,7 +360,6 @@ pub struct ObservabilitySignalDescriptor {
     cardinality_class: SignalCardinalityClass,
     sampling_rule: SignalSamplingRule,
     retention_redaction_rule_declared: bool,
-    evidence_adoption_rule: SignalEvidenceAdoptionRule,
 }
 
 /// signal taxonomy descriptor の fail-closed error です。
@@ -440,8 +377,6 @@ pub enum ObservabilitySignalDescriptorError {
     SamplingPolicyMissing,
     /// retention/redaction rule がありません。
     RetentionRedactionRuleMissing,
-    /// evidence adoption rule が class と一致していません。
-    EvidenceAdoptionRuleMismatch,
 }
 
 impl ObservabilitySignalDescriptor {
@@ -454,7 +389,6 @@ impl ObservabilitySignalDescriptor {
         cardinality_class: SignalCardinalityClass,
         sampling_rule: SignalSamplingRule,
         retention_redaction_rule_declared: bool,
-        evidence_adoption_rule: SignalEvidenceAdoptionRule,
     ) -> Result<Self, ObservabilitySignalDescriptorError> {
         if owner != signal_class.required_owner() {
             return Err(ObservabilitySignalDescriptorError::SignalOwnerMismatch);
@@ -484,10 +418,6 @@ impl ObservabilitySignalDescriptor {
         if !retention_redaction_rule_declared {
             return Err(ObservabilitySignalDescriptorError::RetentionRedactionRuleMissing);
         }
-        if evidence_adoption_rule != signal_class.required_evidence_rule() {
-            return Err(ObservabilitySignalDescriptorError::EvidenceAdoptionRuleMismatch);
-        }
-
         Ok(Self {
             signal_class,
             owner,
@@ -496,8 +426,6 @@ impl ObservabilitySignalDescriptor {
             cardinality_class,
             sampling_rule,
             retention_redaction_rule_declared,
-            evidence_adoption_rule,
         })
     }
 }
-

@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use arcrtc_core_audit::{
     AuditLedgerAppendInput, AuditLedgerFailureKind, AuditLedgerRecord, AuditLedgerWriterAuthority,
     AuditReason, CanonicalEventPayloadDigest, HashAlgorithm, PreviousRecordHash,
@@ -11,9 +9,6 @@ use arcrtc_core_operation::{
     AtomicWriteDecision, AtomicWriteEffectSlot, AtomicWriteInput, CorruptionRejectionReason,
     PartialFailureCompensation,
 };
-
-// Test Roadmap の named assertion rule は task id と assertion target を
-// `assert_<task>__<target>` で結合するため、この test source だけ lint を限定します。
 
 fn audit_event_type() -> arcrtc_core_audit::AuditEventType {
     arcrtc_core_audit::find_audit_event_definition("atomicity_compensation_decision")
@@ -39,14 +34,14 @@ fn accepted_record() -> AuditLedgerRecord<()> {
 }
 
 #[test]
-fn t_audit_02_atomic_append_and_corruption_rejection() {
-    assert_t_audit_02__accepted_append();
-    assert_t_audit_02__rejected_append();
-    assert_t_audit_02__compensation_required();
-    assert_t_audit_02__corruption_rejection();
+fn atomic_append_rejects_corruption() {
+    assert_accepted_append();
+    assert_rejected_append();
+    assert_compensation_required();
+    assert_corruption_rejection();
 }
 
-fn assert_t_audit_02__accepted_append() {
+fn assert_accepted_append() {
     let intent = prepare_atomic_ledger_append(accepted_record());
 
     assert_eq!(
@@ -57,7 +52,7 @@ fn assert_t_audit_02__accepted_append() {
     assert_eq!(intent.record().outcome(), UseCaseOutcome::Accepted);
 }
 
-fn assert_t_audit_02__rejected_append() {
+fn assert_rejected_append() {
     let input = AuditLedgerAppendInput::<()>::new(
         audit_event_type(),
         UseCaseOutcome::Accepted,
@@ -73,7 +68,7 @@ fn assert_t_audit_02__rejected_append() {
     );
 }
 
-fn assert_t_audit_02__compensation_required() {
+fn assert_compensation_required() {
     let input = AtomicWriteInput::new(
         AtomicWriteEffectSlot::AuditMetadataWrite,
         AtomicWriteBoundary::Commit,
@@ -87,7 +82,7 @@ fn assert_t_audit_02__compensation_required() {
     );
 }
 
-fn assert_t_audit_02__corruption_rejection() {
+fn assert_corruption_rejection() {
     let input = AtomicWriteInput::new(
         AtomicWriteEffectSlot::AuditMetadataWrite,
         AtomicWriteBoundary::Commit,

@@ -7,7 +7,7 @@ pub enum DurableStateFamily {
     AuditEvent,
     /// audit hash-chain restore pointer.
     AuditHashChainRecord,
-    /// atomicity / compensation evidence restore pointer.
+    /// atomicity / compensation state restore pointer.
     AtomicityCompensationEvidence,
     /// bounded resource counter checkpoint.
     ResourceBoundCounters,

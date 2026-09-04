@@ -422,8 +422,8 @@ export interface SdkProjectionEntry {
 
 export interface SdkPublicApiProjection {
   readonly platform: ArcRtcSdkPlatform;
-  readonly sourceContractVersion: SignalingContractVersion;
-  readonly sourceContract: "SIGNALING_CONTRACT_CANONICAL";
+  readonly sourceProtocolVersion: SignalingContractVersion;
+  readonly sourceProtocol: "SIGNALING_PROTOCOL";
   readonly projectionClass: "platform_api_projection";
   readonly generatedArtifactIsSemanticAuthority: false;
   readonly commands: readonly SignalingCommandKind[];
@@ -629,8 +629,8 @@ export const arcrtcTypeScriptSdkProjectionEntries = [
 
 export const arcrtcTypeScriptSdkProjection: SdkPublicApiProjection = {
   platform: arcrtcTypeScriptSdkPlatform,
-  sourceContractVersion: arcrtcSignalingContractVersion,
-  sourceContract: "SIGNALING_CONTRACT_CANONICAL",
+  sourceProtocolVersion: arcrtcSignalingContractVersion,
+  sourceProtocol: "SIGNALING_PROTOCOL",
   projectionClass: "platform_api_projection",
   generatedArtifactIsSemanticAuthority: false,
   commands: signalingCommandKinds,
@@ -676,7 +676,7 @@ export function assertSignalingOnlyProjection(
   const projectedKinds = projection.entries.map((entry) => entry.sourceSignalingKind);
 
   return (
-    projection.sourceContract === "SIGNALING_CONTRACT_CANONICAL" &&
+    projection.sourceProtocol === "SIGNALING_PROTOCOL" &&
     projection.generatedArtifactIsSemanticAuthority === false &&
     sameStringSet(projection.commands, signalingCommandKinds) &&
     sameStringSet(projection.events, signalingEventKinds) &&

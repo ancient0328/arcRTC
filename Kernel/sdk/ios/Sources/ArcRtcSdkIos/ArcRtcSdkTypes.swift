@@ -7,8 +7,8 @@ public enum SignalingContractVersion: String, Sendable {
     case v0_2 = "v0.2"
 }
 
-public enum SdkSourceContract: String, Sendable {
-    case signalingContractCanonical = "SIGNALING_CONTRACT_CANONICAL"
+public enum SdkSourceProtocol: String, Sendable {
+    case signalingProtocol = "SIGNALING_PROTOCOL"
 }
 
 public enum SdkProjectionClass: String, Sendable {

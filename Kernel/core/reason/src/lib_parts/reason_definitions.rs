@@ -1,4 +1,4 @@
-/// canonical 由来の closed reason definition table です。
+/// source-owned closed reason definition table です。
 #[rustfmt::skip]
 pub const REASON_DEFINITIONS: &[ReasonDefinition] = &[
     ReasonDefinition::new("action_delayed_by_backpressure", ReasonCategory::Backpressure),
@@ -72,7 +72,7 @@ pub const REASON_DEFINITIONS: &[ReasonDefinition] = &[
     ReasonDefinition::new("external_enum_unmapped", ReasonCategory::MalformedInput),
     ReasonDefinition::new("external_type_leak_blocked", ReasonCategory::DriverFailure),
     ReasonDefinition::new("failover_not_proven", ReasonCategory::ForbiddenState),
-    ReasonDefinition::new("feature_admission_not_documented", ReasonCategory::ForbiddenState),
+    ReasonDefinition::new("feature_not_supported", ReasonCategory::ForbiddenState),
     ReasonDefinition::new("feature_out_of_scope", ReasonCategory::ForbiddenState),
     ReasonDefinition::new("fixture_invalid", ReasonCategory::MalformedInput),
     ReasonDefinition::new("fixture_redaction_required", ReasonCategory::MalformedInput),

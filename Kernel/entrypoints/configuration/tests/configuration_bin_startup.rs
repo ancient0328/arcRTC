@@ -20,7 +20,7 @@ fn assert_case(args: &[&str], stdout: &str, stderr: &str, code: i32) {
 fn configuration_bin_startup_cases_match_fixed_surface() {
     assert_case(
         &["test-deterministic"],
-        "profile_class=test-deterministic adoption_rule=TestEvidenceOnly",
+        "profile_class=test-deterministic selected_profile=TestDeterministic",
         "",
         0,
     );

@@ -108,6 +108,7 @@ impl ClosedPlatformCommand {
     fn runtime_summary(&self) -> &'static str {
         match (self.program, self.args) {
             ("adb", ["devices", "-l"]) => "adb devices -l",
+            ("xcrun", ["devicectl", "list", "devices"]) => "xcrun devicectl list devices",
             ("xcrun", ["xctrace", "list", "devices"]) => "xcrun xctrace list devices",
             ("xcrun", ["simctl", "list", "devices"]) => "xcrun simctl list devices",
             _ => "real-device-platform-command",
@@ -120,6 +121,10 @@ fn closed_command(command: Option<&'static str>) -> Option<ClosedPlatformCommand
         Some("adb devices -l") => Some(ClosedPlatformCommand {
             program: "adb",
             args: &["devices", "-l"],
+        }),
+        Some("xcrun devicectl list devices") => Some(ClosedPlatformCommand {
+            program: "xcrun",
+            args: &["devicectl", "list", "devices"],
         }),
         Some("xcrun xctrace list devices") => Some(ClosedPlatformCommand {
             program: "xcrun",
@@ -271,7 +276,7 @@ mod tests {
         assert_eq!(success.toolchain_runtime_version, "adb devices -l");
 
         let nonzero = RealDevicePlatformExecutor::execute_with_runner(
-            &dispatch(Some("xcrun xctrace list devices")),
+            &dispatch(Some("xcrun devicectl list devices")),
             &Runner {
                 result: Ok(RealDeviceProcessOutput {
                     stdout: String::new(),
@@ -290,7 +295,7 @@ mod tests {
         );
         assert_eq!(
             nonzero.toolchain_runtime_version,
-            "xcrun xctrace list devices"
+            "xcrun devicectl list devices"
         );
 
         let unavailable = RealDevicePlatformExecutor::execute_with_runner(
@@ -317,6 +322,10 @@ mod tests {
     fn platform_executor_unit_covers_closed_command_and_spawn_helpers() {
         for (command, runtime) in [
             (Some("adb devices -l"), "adb devices -l"),
+            (
+                Some("xcrun devicectl list devices"),
+                "xcrun devicectl list devices",
+            ),
             (
                 Some("xcrun xctrace list devices"),
                 "xcrun xctrace list devices",

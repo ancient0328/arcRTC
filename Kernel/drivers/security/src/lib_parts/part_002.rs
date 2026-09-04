@@ -11,8 +11,8 @@ pub enum SecretRotationPolicyError {
     ActiveCredentialRelationMissing,
     /// stale/revoked/unavailable failure reason が未宣言です。
     FailureReasonMissing,
-    /// audit/evidence relation が未宣言です。
-    AuditEvidenceRelationMissing,
+    /// audit relation が未宣言です。
+    AuditRelationMissing,
     /// redaction rule が未宣言です。
     RedactionRuleMissing,
 }
@@ -26,7 +26,7 @@ impl SecretRotationPolicyGuard {
         revocation_behavior_declared: bool,
         active_credential_session_relation_declared: bool,
         failure_reason_declared: bool,
-        audit_evidence_relation_declared: bool,
+        audit_relation_declared: bool,
         redaction_rule_declared: bool,
     ) -> Result<Self, SecretRotationPolicyError> {
         if !generation_reference_format_declared {
@@ -44,8 +44,8 @@ impl SecretRotationPolicyGuard {
         if !failure_reason_declared {
             return Err(SecretRotationPolicyError::FailureReasonMissing);
         }
-        if !audit_evidence_relation_declared {
-            return Err(SecretRotationPolicyError::AuditEvidenceRelationMissing);
+        if !audit_relation_declared {
+            return Err(SecretRotationPolicyError::AuditRelationMissing);
         }
         if !redaction_rule_declared {
             return Err(SecretRotationPolicyError::RedactionRuleMissing);
@@ -58,7 +58,7 @@ impl SecretRotationPolicyGuard {
             revocation_behavior_declared,
             active_credential_session_relation_declared,
             failure_reason_declared,
-            audit_evidence_relation_declared,
+            audit_relation_declared,
             redaction_rule_declared,
         })
     }
@@ -199,135 +199,6 @@ impl SecretRotationFailure {
     }
 }
 
-/// rotation evidence の redaction shape です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SecretRotationEvidenceShape {
-    opaque_secret_reference_recorded: bool,
-    generation_reference_hash_or_fingerprint_policy_allowed: bool,
-    rotation_state_recorded: bool,
-    overlap_window_recorded: bool,
-    redacted_diagnostic_summary_recorded: bool,
-    raw_secret_absent: bool,
-    raw_token_absent: bool,
-    raw_private_key_absent: bool,
-    backend_secret_payload_absent: bool,
-}
-
-/// rotation evidence shape の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SecretRotationEvidenceShapeError {
-    /// required rotation evidence field が不足しています。
-    RequiredRotationEvidenceFieldMissing,
-    /// raw secret/private material が evidence に含まれています。
-    RawSecretMaterialInEvidence,
-}
-
-impl SecretRotationEvidenceShape {
-    /// rotation evidence に raw material が含まれないことを検査します。
-    pub const fn try_new(
-        opaque_secret_reference_recorded: bool,
-        generation_reference_hash_or_fingerprint_policy_allowed: bool,
-        rotation_state_recorded: bool,
-        overlap_window_recorded: bool,
-        redacted_diagnostic_summary_recorded: bool,
-        raw_secret_absent: bool,
-        raw_token_absent: bool,
-        raw_private_key_absent: bool,
-        backend_secret_payload_absent: bool,
-    ) -> Result<Self, SecretRotationEvidenceShapeError> {
-        if !opaque_secret_reference_recorded
-            || !generation_reference_hash_or_fingerprint_policy_allowed
-            || !rotation_state_recorded
-            || !overlap_window_recorded
-            || !redacted_diagnostic_summary_recorded
-        {
-            return Err(SecretRotationEvidenceShapeError::RequiredRotationEvidenceFieldMissing);
-        }
-        if !raw_secret_absent
-            || !raw_token_absent
-            || !raw_private_key_absent
-            || !backend_secret_payload_absent
-        {
-            return Err(SecretRotationEvidenceShapeError::RawSecretMaterialInEvidence);
-        }
-
-        Ok(Self {
-            opaque_secret_reference_recorded,
-            generation_reference_hash_or_fingerprint_policy_allowed,
-            rotation_state_recorded,
-            overlap_window_recorded,
-            redacted_diagnostic_summary_recorded,
-            raw_secret_absent,
-            raw_token_absent,
-            raw_private_key_absent,
-            backend_secret_payload_absent,
-        })
-    }
-}
-
-/// `secret_rotation_decision` audit event に必要な shape です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SecretRotationAuditShape {
-    secret_rotation_decision_event_recorded: bool,
-    secret_class_recorded: bool,
-    opaque_generation_reference_recorded: bool,
-    startup_run_id_recorded: bool,
-    command_scoped: bool,
-    correlation_id_recorded_when_command_scoped: bool,
-}
-
-/// secret rotation audit shape の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SecretRotationAuditShapeError {
-    /// `secret_rotation_decision` audit event type がありません。
-    SecretRotationDecisionEventMissing,
-    /// secret class がありません。
-    SecretClassMissing,
-    /// opaque generation reference がありません。
-    OpaqueGenerationReferenceMissing,
-    /// startup run ID がありません。
-    StartupRunIdMissing,
-    /// command-scoped decision なのに CorrelationId がありません。
-    CorrelationIdMissing,
-}
-
-impl SecretRotationAuditShape {
-    /// secret_rotation_decision の audit field を検査します。
-    pub const fn try_new(
-        secret_rotation_decision_event_recorded: bool,
-        secret_class_recorded: bool,
-        opaque_generation_reference_recorded: bool,
-        startup_run_id_recorded: bool,
-        command_scoped: bool,
-        correlation_id_recorded_when_command_scoped: bool,
-    ) -> Result<Self, SecretRotationAuditShapeError> {
-        if !secret_rotation_decision_event_recorded {
-            return Err(SecretRotationAuditShapeError::SecretRotationDecisionEventMissing);
-        }
-        if !secret_class_recorded {
-            return Err(SecretRotationAuditShapeError::SecretClassMissing);
-        }
-        if !opaque_generation_reference_recorded {
-            return Err(SecretRotationAuditShapeError::OpaqueGenerationReferenceMissing);
-        }
-        if !startup_run_id_recorded {
-            return Err(SecretRotationAuditShapeError::StartupRunIdMissing);
-        }
-        if command_scoped && !correlation_id_recorded_when_command_scoped {
-            return Err(SecretRotationAuditShapeError::CorrelationIdMissing);
-        }
-
-        Ok(Self {
-            secret_rotation_decision_event_recorded,
-            secret_class_recorded,
-            opaque_generation_reference_recorded,
-            startup_run_id_recorded,
-            command_scoped,
-            correlation_id_recorded_when_command_scoped,
-        })
-    }
-}
-
 /// rotation execution が policy を silently 変更しないことを確認する guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SecretRotationExecutionBoundaryGuard {
@@ -354,7 +225,7 @@ pub enum SecretRotationExecutionBoundaryError {
     InsecureFallback,
     /// token issuance を arcRTC responsibility として扱っています。
     TokenIssuanceMixed,
-    /// raw secret material が evidence surface に出ます。
+    /// raw secret material が audit/observation surface に出ます。
     RawSecretMaterialExposed,
     /// raw secret material が core state または SDK public error に出ます。
     RawSecretMaterialCrossesCoreOrSdk,
@@ -419,13 +290,13 @@ pub enum ProhibitedSecretRotationLifecycleBehavior {
     /// rotation failure falls back to insecure mode.
     RotationFailureInsecureFallback,
     /// raw secret material is written to audit/log/metric/report.
-    RawSecretMaterialWrittenToEvidence,
+    RawSecretMaterialWrittenToAuditOrObservation,
     /// raw secret material crosses into core state or SDK public error.
     RawSecretMaterialCrossesCoreOrSdk,
     /// driver-local rotation state changes core security policy silently.
     DriverStateChangesCorePolicySilently,
     /// token issuance is treated as arcRTC responsibility.
     TokenIssuanceOwnedByArcRtc,
-    /// current/previous/pending semantics differ by driver without Canonical update.
+    /// current/previous/pending semantics differ from shared source policy.
     DriverSpecificGenerationSemantics,
 }

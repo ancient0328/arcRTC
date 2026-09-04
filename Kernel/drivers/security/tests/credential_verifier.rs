@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use std::fs;
 use std::path::PathBuf;
 
@@ -10,8 +8,6 @@ use arcrtc_core_security::{
     KeySelectionContext, VerifierProfileRef,
 };
 use arcrtc_driver_security::FileCredentialVerifierAdapter;
-
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
 
 fn reference(value: &str, authority: ReferenceAuthority) -> OpaqueReference {
     OpaqueReference::accept(value, authority).expect("test fixture uses accepted opaque references")
@@ -55,15 +51,15 @@ fn fixture_key_material_path(name: &str, bytes: &[u8]) -> PathBuf {
 }
 
 #[test]
-fn t_sec_01_credential_verifier_positive_and_negative_paths() {
-    assert_t_sec_01__accepted_credential();
-    assert_t_sec_01__missing_key();
-    assert_t_sec_01__revoked_credential();
-    assert_t_sec_01__invalid_signature_class();
-    assert_t_sec_01__expired_credential();
+fn credential_verifier_positive_and_negative_paths() {
+    assert_accepted_credential();
+    assert_missing_key();
+    assert_revoked_credential();
+    assert_invalid_signature_class();
+    assert_expired_credential();
 }
 
-fn assert_t_sec_01__accepted_credential() {
+fn assert_accepted_credential() {
     let path = fixture_key_material_path("accepted", b"test-key-material");
     let adapter = FileCredentialVerifierAdapter::new(path.clone());
     let output = adapter
@@ -79,7 +75,7 @@ fn assert_t_sec_01__accepted_credential() {
     fs::remove_file(path).ok();
 }
 
-fn assert_t_sec_01__missing_key() {
+fn assert_missing_key() {
     let path = fixture_key_material_path("missing-key", b"test-key-material");
     let adapter = FileCredentialVerifierAdapter::new(path.clone());
     let failure = adapter
@@ -95,7 +91,7 @@ fn assert_t_sec_01__missing_key() {
     fs::remove_file(path).ok();
 }
 
-fn assert_t_sec_01__revoked_credential() {
+fn assert_revoked_credential() {
     let path = fixture_key_material_path("revoked", b"test-key-material");
     let adapter = FileCredentialVerifierAdapter::new(path.clone());
     let output = adapter
@@ -111,7 +107,7 @@ fn assert_t_sec_01__revoked_credential() {
     fs::remove_file(path).ok();
 }
 
-fn assert_t_sec_01__invalid_signature_class() {
+fn assert_invalid_signature_class() {
     let path = fixture_key_material_path("invalid-signature", b"crypto_backend=failed");
     let adapter = FileCredentialVerifierAdapter::new(path.clone());
     let failure = adapter
@@ -130,7 +126,7 @@ fn assert_t_sec_01__invalid_signature_class() {
     fs::remove_file(path).ok();
 }
 
-fn assert_t_sec_01__expired_credential() {
+fn assert_expired_credential() {
     let path = fixture_key_material_path("expired", b"test-key-material");
     let adapter = FileCredentialVerifierAdapter::new(path.clone());
     let failure = adapter

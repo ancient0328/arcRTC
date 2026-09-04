@@ -472,7 +472,7 @@ impl SfuTransitionRule {
         self.trigger
     }
 
-    /// Canonical の pre-state tuple notation です。
+    /// transition source contract の pre-state tuple notation です。
     pub const fn allowed_pre_state(&self) -> &'static str {
         self.allowed_pre_state
     }
@@ -487,4 +487,3 @@ impl SfuTransitionRule {
         self.reject_reasons
     }
 }
-

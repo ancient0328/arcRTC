@@ -9,7 +9,7 @@ fn main() {
         std::process::exit(2);
     };
 
-    // R8 は probe class の typed decode に閉じ、readiness 実体の成立は主張しません。
+    // Admin probe CLI は typed decode に閉じ、readiness 実体の成立は主張しません。
     let _probe_class = match token.as_str() {
         "process-liveness" => AdminProbeClass::ProcessLiveness,
         "driver-dependency-readiness" => AdminProbeClass::DriverDependencyReadiness,

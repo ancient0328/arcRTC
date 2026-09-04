@@ -38,7 +38,7 @@ impl ShutdownDrainObservationRef {
         Self { value }
     }
 
-    /// observation ref value です。runtime success claim ではありません。
+    /// observation ref value です。runtime lifecycle success を決定しません。
     pub const fn as_str(&self) -> &'static str {
         self.value
     }
@@ -79,7 +79,7 @@ impl ShutdownSupervisionObservationInput {
 
 /// shutdown / supervision を typed observation ref として返します。
 ///
-/// この関数は runtime lifecycle decision、runtime success claim、domain state transition を生成しません。
+/// この関数は runtime lifecycle decision、runtime lifecycle success、domain state transition を生成しません。
 pub const fn observe_shutdown_and_supervision(
     input: ShutdownSupervisionObservationInput,
 ) -> ShutdownDrainObservationRef {

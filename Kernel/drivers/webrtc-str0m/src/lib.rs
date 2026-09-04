@@ -88,7 +88,7 @@ impl Str0mDriverResourceBound {
 }
 
 impl Str0mOwnedResourceClass {
-    /// core quality canonical に対応する resource kind です。
+    /// core quality source contract に対応する resource kind です。
     pub const fn required_resource_bound_kind(self) -> Option<ResourceBoundKind> {
         match self {
             Self::BoundedPacketCache => Some(ResourceBoundKind::SfuPacketCache),
@@ -104,7 +104,7 @@ impl Str0mOwnedResourceClass {
         }
     }
 
-    /// core quality canonical に対応する exceeded reason code です。
+    /// core quality source contract に対応する exceeded reason code です。
     pub const fn required_resource_reason_code(self) -> Option<&'static str> {
         match self {
             Self::BoundedPacketCache => Some("packet_cache_bound_exceeded"),

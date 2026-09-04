@@ -17,8 +17,8 @@ object ArcRtcAndroidSdkSurface {
   val projection: SdkPublicApiProjection =
     SdkPublicApiProjection(
       platform = platform,
-      sourceContractVersion = signalingContractVersion,
-      sourceContract = SdkSourceContract.SignalingContractCanonical,
+      sourceProtocolVersion = signalingContractVersion,
+      sourceProtocol = SdkSourceProtocol.SignalingProtocol,
       projectionClass = SdkProjectionClass.PlatformApiProjection,
       generatedArtifactIsSemanticAuthority = false,
       commands = commandKinds,
@@ -52,8 +52,8 @@ object ArcRtcAndroidSdkSurface {
       }
 
     return projection.platform == SdkPlatform.Android &&
-      projection.sourceContractVersion == SignalingContractVersion.V0_2 &&
-      projection.sourceContract == SdkSourceContract.SignalingContractCanonical &&
+      projection.sourceProtocolVersion == SignalingContractVersion.V0_2 &&
+      projection.sourceProtocol == SdkSourceProtocol.SignalingProtocol &&
       projection.projectionClass == SdkProjectionClass.PlatformApiProjection &&
       !projection.generatedArtifactIsSemanticAuthority &&
       projection.commands == commandKinds &&
@@ -78,8 +78,8 @@ enum class SignalingContractVersion {
   V0_2,
 }
 
-enum class SdkSourceContract {
-  SignalingContractCanonical,
+enum class SdkSourceProtocol {
+  SignalingProtocol,
 }
 
 enum class SdkProjectionClass {
@@ -538,8 +538,8 @@ enum class SdkUnsupportedSurfaceBehavior {
 
 data class SdkPublicApiProjection(
   val platform: SdkPlatform,
-  val sourceContractVersion: SignalingContractVersion,
-  val sourceContract: SdkSourceContract,
+  val sourceProtocolVersion: SignalingContractVersion,
+  val sourceProtocol: SdkSourceProtocol,
   val projectionClass: SdkProjectionClass,
   val generatedArtifactIsSemanticAuthority: Boolean,
   val commands: Set<SignalingCommandKind>,

@@ -176,7 +176,7 @@ pub enum ProhibitedNetworkIoBehavior {
     EndpointClassInferredFromRouteName,
     /// source address, host, origin, or forwarded header becomes core identity.
     NetworkMetadataAsCoreIdentity,
-    /// resolved network endpoint becomes semantic owner, auth proof, or readiness proof.
+    /// resolved network endpoint becomes semantic owner or authorization authority.
     ResolvedEndpointAsSemanticAuthority,
 }
 
@@ -515,4 +515,3 @@ pub enum TurnWireOutputClass {
     /// deny/drop behavior preserving core reason in audit.
     DropOrDeny,
 }
-

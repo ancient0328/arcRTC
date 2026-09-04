@@ -395,7 +395,7 @@ pub struct ResourceOwnerTuple {
 }
 
 impl ResourceOwnerTuple {
-    /// Canonical 上の owner tuple を作ります。
+    /// source-defined owner tuple を作ります。
     const fn new(
         policy_owner: ResourcePolicyOwner,
         physical_owner: ResourcePhysicalOwner,
@@ -411,7 +411,7 @@ impl ResourceOwnerTuple {
     }
 }
 
-/// v0.2 initial canonical が要求する bounded resource の閉集合です。
+/// v0.2 source policy が要求する bounded resource の閉集合です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ResourceBoundKind {
     /// active room set.
@@ -465,7 +465,7 @@ pub enum ResourceBoundKind {
 }
 
 impl ResourceBoundKind {
-    /// Canonical の resource name です。
+    /// source contract の resource name です。
     pub const fn resource_name(self) -> &'static str {
         match self {
             Self::ActiveRoomSet => "active room set",

@@ -1,12 +1,12 @@
 /// retention bound の接続先です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrivacyRetentionBoundClass {
-    /// retained closed canonical fields only.
-    CanonicalClosedFields,
-    /// bound is connected to resource bounds Canonical.
-    ResourceBoundsCanonical,
-    /// bound is connected to a specialized retention Canonical.
-    SpecializedRetentionCanonical,
+    /// retained closed field set only.
+    ClosedFieldSet,
+    /// bound is connected to the source-owned resource bound policy.
+    ResourceBoundPolicy,
+    /// bound is connected to a specialized source-owned retention policy.
+    SpecializedRetentionPolicy,
     /// value is not retained.
     NotRetained,
     /// unbounded retention; prohibited.
@@ -73,8 +73,8 @@ impl PrivacyRetentionPolicy {
         ) && (!driver_cache_bounded_local_only
             || !matches!(
                 bound_class,
-                PrivacyRetentionBoundClass::ResourceBoundsCanonical
-                    | PrivacyRetentionBoundClass::SpecializedRetentionCanonical
+                PrivacyRetentionBoundClass::ResourceBoundPolicy
+                    | PrivacyRetentionBoundClass::SpecializedRetentionPolicy
             ))
         {
             return Err(PrivacyRetentionPolicyError::DriverCacheNotBoundedLocal);
@@ -101,7 +101,6 @@ impl PrivacyRetentionTarget {
             Self::LogTrace | Self::Metrics | Self::PacketCache | Self::KeyCache => {
                 PrivacyRetentionOwner::Driver
             }
-            Self::ReportEvidence => PrivacyRetentionOwner::Reports,
             Self::SdkClientLocalData => PrivacyRetentionOwner::Sdk,
             Self::RegulatedOnly => PrivacyRetentionOwner::Regulated,
         }
@@ -125,70 +124,6 @@ impl PrivacyDataClass {
     }
 }
 
-/// report evidence に raw sensitive material を採用しないための guard です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct PrivacyReportEvidenceGuard {
-    correlation_or_reference_recorded: bool,
-    reproducible_command_or_summary_recorded: bool,
-    raw_secret_absent: bool,
-    raw_token_absent: bool,
-    raw_key_material_absent: bool,
-    raw_packet_payload_absent: bool,
-    regulated_payload_absent: bool,
-    redacted_excerpt_or_opaque_reference_used: bool,
-}
-
-/// report evidence privacy guard の fail-closed error です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PrivacyReportEvidenceGuardError {
-    /// report evidence の識別・再現 field が不足しています。
-    ReportEvidenceFieldMissing,
-    /// report evidence に raw sensitive material が含まれています。
-    RawSensitiveMaterialInReport,
-    /// redacted excerpt または opaque reference がありません。
-    RedactedEvidenceReferenceMissing,
-}
-
-impl PrivacyReportEvidenceGuard {
-    /// evidence として採用できる shape だけを通します。
-    pub const fn try_new(
-        correlation_or_reference_recorded: bool,
-        reproducible_command_or_summary_recorded: bool,
-        raw_secret_absent: bool,
-        raw_token_absent: bool,
-        raw_key_material_absent: bool,
-        raw_packet_payload_absent: bool,
-        regulated_payload_absent: bool,
-        redacted_excerpt_or_opaque_reference_used: bool,
-    ) -> Result<Self, PrivacyReportEvidenceGuardError> {
-        if !correlation_or_reference_recorded || !reproducible_command_or_summary_recorded {
-            return Err(PrivacyReportEvidenceGuardError::ReportEvidenceFieldMissing);
-        }
-        if !raw_secret_absent
-            || !raw_token_absent
-            || !raw_key_material_absent
-            || !raw_packet_payload_absent
-            || !regulated_payload_absent
-        {
-            return Err(PrivacyReportEvidenceGuardError::RawSensitiveMaterialInReport);
-        }
-        if !redacted_excerpt_or_opaque_reference_used {
-            return Err(PrivacyReportEvidenceGuardError::RedactedEvidenceReferenceMissing);
-        }
-
-        Ok(Self {
-            correlation_or_reference_recorded,
-            reproducible_command_or_summary_recorded,
-            raw_secret_absent,
-            raw_token_absent,
-            raw_key_material_absent,
-            raw_packet_payload_absent,
-            regulated_payload_absent,
-            redacted_excerpt_or_opaque_reference_used,
-        })
-    }
-}
-
 /// metric/log label の privacy guard です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PrivacyLabelGuard {
@@ -203,7 +138,7 @@ pub struct PrivacyLabelGuard {
 /// metric/log label privacy guard の fail-closed error です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrivacyLabelGuardError {
-    /// label が Canonical allowlist 外です。
+    /// label が source allowlist 外です。
     LabelNotAllowlisted,
     /// label に sensitive identity/payload が含まれています。
     SensitiveLabelValue,
@@ -256,16 +191,16 @@ pub enum PrivacyRedactionRetentionFailureKind {
     SecretUnavailable,
     /// verification detail is not safely exposable.
     UnsafeVerificationDetailSuppressed,
-    /// packet payload was requested as report evidence.
-    PacketPayloadEvidenceRejected,
+    /// packet payload export was rejected.
+    PacketPayloadExportRejected,
     /// metric/log label contains sensitive material.
     SensitiveLabelRejected,
     /// sensitive identity would be exposed by signal cardinality.
     SensitiveCardinalityRejected,
     /// retention owner/bound is invalid.
     RetentionPolicyInvalid,
-    /// rotation evidence would expose raw secret material.
-    RotationEvidenceRejected,
+    /// rotation detail export would expose raw secret material.
+    RotationDetailExportRejected,
 }
 
 impl PrivacyRedactionRetentionFailureKind {
@@ -273,8 +208,8 @@ impl PrivacyRedactionRetentionFailureKind {
     pub const fn reason_code(self) -> &'static str {
         match self {
             Self::ExportRedactionRequired
-            | Self::PacketPayloadEvidenceRejected
-            | Self::RotationEvidenceRejected => "export_redaction_required",
+            | Self::PacketPayloadExportRejected
+            | Self::RotationDetailExportRejected => "export_redaction_required",
             Self::SecretUnavailable => "secret_unavailable",
             Self::UnsafeVerificationDetailSuppressed
             | Self::SensitiveLabelRejected
@@ -303,18 +238,18 @@ impl PrivacyRedactionRetentionFailure {
 /// privacy/redaction/retention 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedPrivacyRedactionRetentionBehavior {
-    /// raw secret/token/key is included in core/audit/log/metric/report.
+    /// raw secret/token/key is included in core/audit/log/metric export.
     RawCredentialMaterialExported,
-    /// packet payload bytes are used as closeout evidence.
-    PacketPayloadAsCloseoutEvidence,
-    /// regulated payload is added to generic core audit/report path.
-    RegulatedPayloadInGenericEvidence,
+    /// packet payload bytes are exported outside the driver packet lifecycle.
+    RawPacketPayloadExported,
+    /// regulated payload is added to a generic core audit/export path.
+    RegulatedPayloadInGenericExport,
     /// redaction is delegated to external sink default behavior.
     ExternalSinkDefaultRedaction,
     /// free-text diagnostic detail becomes authoritative reason.
     DiagnosticDetailAsAuthoritativeReason,
-    /// report preserves sensitive material for reproducibility.
-    SensitiveMaterialInReportForReproducibility,
+    /// diagnostic export preserves raw sensitive material.
+    SensitiveMaterialRetainedForDiagnostics,
     /// raw edge/proxy metadata is logged as identity.
     RawEdgeProxyMetadataAsIdentity,
     /// retention owner or bound is missing.

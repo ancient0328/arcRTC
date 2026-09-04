@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use arcrtc_core_ports::{MetricsExportAcknowledgement, MetricsSinkInput, MetricsSinkOutput};
 use arcrtc_core_quality::{
     MetricCardinalityPolicy, ObservabilitySignalInput, QualityMetric, QualityMetricKind,
@@ -54,7 +51,7 @@ fn redacted_signal(
 }
 
 #[test]
-fn assert_t_obs_01__metric_shape() {
+fn assert_metric_shape() {
     let dir = temp_dir();
     let path = dir.0.join("metrics.log");
     let sink = FileMetricsSink::new(path.clone());
@@ -84,19 +81,17 @@ fn assert_t_obs_01__metric_shape() {
         true,
         true,
         true,
-        true,
     )
     .is_ok());
 }
 
 #[test]
-fn assert_t_obs_01__log_shape() {
+fn assert_log_shape() {
     let sink = FileTelemetrySink::new("sink:structured-log");
     let signal = redacted_signal("signal:structured-log", TelemetrySignalClass::Log);
 
     assert!(ObservabilityProjectionGuard::try_new(
         ObservabilityProjectionClass::Log,
-        true,
         true,
         true,
         true,
@@ -118,13 +113,12 @@ fn assert_t_obs_01__log_shape() {
 }
 
 #[test]
-fn assert_t_obs_01__trace_shape() {
+fn assert_trace_shape() {
     let sink = FileTelemetrySink::new("sink:trace");
     let signal = redacted_signal("signal:trace", TelemetrySignalClass::Trace);
 
     assert!(ObservabilityProjectionGuard::try_new(
         ObservabilityProjectionClass::Trace,
-        true,
         true,
         true,
         true,
@@ -146,7 +140,7 @@ fn assert_t_obs_01__trace_shape() {
 }
 
 #[test]
-fn assert_t_obs_01__redaction() {
+fn assert_redaction() {
     let sink = FileTelemetrySink::new("sink:redaction");
     let raw_signal =
         TelemetryDriverSignal::new("signal:redaction", TelemetrySignalClass::Log, false);
@@ -161,7 +155,7 @@ fn assert_t_obs_01__redaction() {
 }
 
 #[test]
-fn assert_t_obs_01__cardinality() {
+fn assert_cardinality() {
     let adapter = CardinalityBoundAdapter::new("cardinality-policy:v0");
     let accepted = TelemetryMetricSignal::new(
         redacted_signal("signal:metric:accepted", TelemetrySignalClass::Metric),
@@ -187,11 +181,10 @@ fn assert_t_obs_01__cardinality() {
 }
 
 #[test]
-fn assert_t_obs_01__sampling() {
+fn assert_sampling() {
     assert!(SignalSamplingGuard::try_new(
         ObservabilitySignalClass::OperationalMetric,
         SignalSamplingRule::ExplicitPolicy,
-        true,
         true,
         true,
         true,
@@ -201,7 +194,6 @@ fn assert_t_obs_01__sampling() {
         SignalSamplingGuard::try_new(
             ObservabilitySignalClass::OperationalMetric,
             SignalSamplingRule::MissingPolicy,
-            true,
             true,
             true,
             true,

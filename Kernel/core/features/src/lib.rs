@@ -49,40 +49,13 @@ pub enum FeatureRequestedSurface {
     Regulated,
 }
 
-/// future admission に必須の declaration です。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum FutureAdmissionRequirement {
-    /// feature class の明示です。
-    FeatureClass,
-    /// owner package/layer の明示です。
-    OwnerPackageLayer,
-    /// generic communication core との関係です。
-    GenericCoreRelation,
-    /// public SDK/API surface です。
-    PublicSdkApiSurface,
-    /// driver/runtime dependency boundary です。
-    DriverRuntimeDependencyBoundary,
-    /// security/privacy/redaction boundary です。
-    SecurityPrivacyRedactionBoundary,
-    /// reason catalog additions です。
-    ReasonCatalogAdditions,
-    /// audit event relation です。
-    AuditEventRelation,
-    /// evidence class です。
-    EvidenceClass,
-    /// migration/deprecation relation です。
-    MigrationDeprecationRelation,
-}
-
 /// excluded feature request に対する decision class です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FeatureAdmissionDecisionClass {
     /// fail-closed rejection です。
     Rejected,
-    /// current target の close claim に採用しない扱いです。
-    CloseNotClaimed,
-    /// separate ADR/Canonical によって admission された扱いです。
-    AdmittedByCanonical,
+    /// source contract が feature を明示的に support しています。
+    SupportedBySourceContract,
 }
 
 /// out-of-scope feature decision です。
@@ -134,8 +107,8 @@ impl FeatureAdmissionDecision {
 pub enum FeatureAdmissionFailureKind {
     /// requested feature is outside v0.2 scope.
     FeatureOutOfScope,
-    /// feature admission lacks ADR/Canonical.
-    FeatureAdmissionNotDocumented,
+    /// requested feature is not supported by the source contract.
+    FeatureNotSupported,
     /// chat semantics requested.
     ChatNotSupported,
     /// recording workflow requested.
@@ -157,7 +130,7 @@ impl FeatureAdmissionFailureKind {
     pub const fn reason_code(self) -> &'static str {
         match self {
             Self::FeatureOutOfScope => "feature_out_of_scope",
-            Self::FeatureAdmissionNotDocumented => "feature_admission_not_documented",
+            Self::FeatureNotSupported => "feature_not_supported",
             Self::ChatNotSupported => "chat_not_supported",
             Self::RecordingNotSupported => "recording_not_supported",
             Self::ScreenShareNotSupported => "screen_share_not_supported",

@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 use std::io::{BufRead, Read, Write};
 use std::net::TcpStream;
 use std::process::{Child, Command, Stdio};
@@ -7,8 +5,6 @@ use std::time::Duration;
 
 const JOIN_FRAME: &[u8] = &[0x00, 0x00, 0x02, 0x72, 0x31, 0x63, 0x31];
 const JOINED: u8 = 0x00;
-
-// Test Roadmap の named assertion rule に合わせ、二重アンダースコア名を維持します。
 
 struct ServerProc {
     child: Child,
@@ -66,11 +62,11 @@ fn exchange(addr: &str, input: &[u8]) -> Vec<u8> {
 }
 
 #[test]
-fn t_sig_01_accepted_join_socket() {
-    assert_t_sig_01__accepted_join();
+fn accepted_join_socket_roundtrip() {
+    assert_accepted_join();
 }
 
-fn assert_t_sig_01__accepted_join() {
+fn assert_accepted_join() {
     let (mut server, addr) = ServerProc::spawn();
     let response = exchange(&addr, JOIN_FRAME);
 

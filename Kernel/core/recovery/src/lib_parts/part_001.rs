@@ -52,8 +52,8 @@ impl StateFamilyRecoveryPolicy {
         }
     }
 
-    /// canonical default policy を返します。
-    pub const fn canonical_default(state_family: StateFamily) -> Self {
+    /// state family の default recovery policy を返します。
+    pub const fn default_for(state_family: StateFamily) -> Self {
         let recovery_class = match state_family {
             StateFamily::SignalingIdempotency => RecoveryClass::NoRestore,
             StateFamily::AuditEvent | StateFamily::AuditHashChainRecord => {
@@ -273,7 +273,6 @@ pub struct ReplayPolicyCoverage {
     conflict_resolution_defined: bool,
     lifetime_resource_bound_revalidation_defined: bool,
     failure_reason_mapping_defined: bool,
-    closeout_evidence_adoption_condition_defined: bool,
 }
 
 /// replay policy coverage の fail-closed error です。
@@ -293,8 +292,6 @@ pub enum ReplayPolicyCoverageError {
     BoundRevalidationMissing,
     /// replay failure reason mapping が未定義です。
     FailureReasonMappingMissing,
-    /// replay result を closeout evidence に採用できる条件が未定義です。
-    EvidenceAdoptionConditionMissing,
 }
 
 impl ReplayPolicyCoverage {
@@ -307,7 +304,6 @@ impl ReplayPolicyCoverage {
         conflict_resolution_defined: bool,
         lifetime_resource_bound_revalidation_defined: bool,
         failure_reason_mapping_defined: bool,
-        closeout_evidence_adoption_condition_defined: bool,
     ) -> Result<Self, ReplayPolicyCoverageError> {
         if !event_type_defined {
             return Err(ReplayPolicyCoverageError::EventTypeMissing);
@@ -330,10 +326,6 @@ impl ReplayPolicyCoverage {
         if !failure_reason_mapping_defined {
             return Err(ReplayPolicyCoverageError::FailureReasonMappingMissing);
         }
-        if !closeout_evidence_adoption_condition_defined {
-            return Err(ReplayPolicyCoverageError::EvidenceAdoptionConditionMissing);
-        }
-
         Ok(Self {
             event_type_defined,
             ordering_defined,
@@ -342,7 +334,6 @@ impl ReplayPolicyCoverage {
             conflict_resolution_defined,
             lifetime_resource_bound_revalidation_defined,
             failure_reason_mapping_defined,
-            closeout_evidence_adoption_condition_defined,
         })
     }
 }
@@ -429,7 +420,7 @@ pub enum RecoveryFailureKind {
     DriverShutdown,
     /// unclean source state detected.
     UncleanShutdownDetected,
-    /// failover claimed without distributed evidence.
+    /// failover claimed without distributed verification.
     FailoverNotProven,
     /// state owner conflict detected during recovery.
     StateOwnerConflict,
@@ -470,8 +461,8 @@ pub enum ProhibitedRecoveryBehavior {
     SdkReconnectStateAsServerParticipantState,
     /// restore conflict is resolved by driver-local preference.
     DriverLocalConflictResolution,
-    /// restore success is claimed without checkpoint/replay evidence and correlation ID.
-    RestoreSuccessClaimWithoutEvidence,
+    /// restore success is claimed without checkpoint/replay verification and correlation ID.
+    RestoreSuccessWithoutVerification,
     /// crash/restart observation is treated as restore success.
     CrashObservationAsRestoreSuccess,
     /// service discovery fallback or replacement process start is treated as failover success.
@@ -487,7 +478,7 @@ pub enum DistributedStateClass {
     NodeLocalState,
     /// command/packet must reach owning node.
     AffinityRequiredState,
-    /// restart recovery candidate under restore Canonical.
+    /// restart recovery candidate under explicit restore policy.
     CheckpointCandidateState,
     /// audit/hash-chain can verify ordering/integrity.
     AuditVerificationState,
@@ -513,4 +504,3 @@ impl DistributedStateClass {
         }
     }
 }
-

@@ -1,6 +1,3 @@
-// Roadmap の assertion 名をそのまま残すため、このテストファイルだけ許可します。
-#![allow(non_snake_case)]
-
 use std::io::BufRead;
 use std::net::UdpSocket;
 use std::process::{Child, Command, Stdio};
@@ -88,7 +85,7 @@ impl Drop for SfuHarness {
 }
 
 #[test]
-fn assert_t_sfu_01__ice() {
+fn assert_ice() {
     let mut server = SfuHarness::start();
     let (response, outcome) = server.exchange(b"ARCRTC-SFU/ICE/CONNECTED");
 
@@ -97,7 +94,7 @@ fn assert_t_sfu_01__ice() {
 }
 
 #[test]
-fn assert_t_sfu_01__dtls() {
+fn assert_dtls() {
     let mut server = SfuHarness::start();
     let _ = server.exchange(b"ARCRTC-SFU/ICE/CONNECTED");
     let (response, outcome) = server.exchange(b"ARCRTC-SFU/DTLS/ESTABLISHED");
@@ -107,7 +104,7 @@ fn assert_t_sfu_01__dtls() {
 }
 
 #[test]
-fn assert_t_sfu_01__srtp_protection() {
+fn assert_srtp_protection() {
     let mut server = SfuHarness::start();
     let _ = server.exchange(b"ARCRTC-SFU/ICE/CONNECTED");
     let _ = server.exchange(b"ARCRTC-SFU/DTLS/ESTABLISHED");
@@ -118,7 +115,7 @@ fn assert_t_sfu_01__srtp_protection() {
 }
 
 #[test]
-fn assert_t_sfu_01__secure_media_session_decision() {
+fn assert_secure_media_session_decision() {
     let mut server = SfuHarness::start();
     let _ = server.exchange(b"ARCRTC-SFU/ICE/CONNECTED");
     let _ = server.exchange(b"ARCRTC-SFU/DTLS/ESTABLISHED");
@@ -132,7 +129,7 @@ fn assert_t_sfu_01__secure_media_session_decision() {
 }
 
 #[test]
-fn assert_t_sfu_01__fail_closed_without_secure_media() {
+fn assert_fail_closed_without_secure_media() {
     let mut server = SfuHarness::start();
     let (response, outcome) = server.exchange(b"ARCRTC-SFU/RTP/FORWARD");
 

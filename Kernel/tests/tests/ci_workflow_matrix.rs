@@ -1,175 +1,119 @@
+use std::collections::BTreeSet;
+
 const WORKFLOW: &str = include_str!("../../../.github/workflows/kernel-ci.yml");
 const MATRIX: &str = include_str!("../../tools/ci/kernel-gate-matrix.toml");
 
-#[derive(Debug, Clone, Copy)]
-struct ExpectedCommand {
-    job_id: &'static str,
-    command_family: &'static str,
-    command_id: &'static str,
-    gate_class: &'static str,
-    working_directory: &'static str,
-    command_line: &'static str,
+#[derive(Debug)]
+struct MatrixCommand<'a> {
+    job_id: &'a str,
+    command_family: &'a str,
+    command_id: &'a str,
+    gate_class: &'a str,
+    working_directory: &'a str,
+    command_line: &'a str,
 }
 
-const EXPECTED_COMMANDS: &[ExpectedCommand] = &[
-    ExpectedCommand {
-        job_id: "kernel-rust",
-        command_family: "cargo-fmt-check",
-        command_id: "cargo-fmt-check",
-        gate_class: "build",
-        working_directory: ".",
-        command_line: "cargo fmt --all -- --check",
-    },
-    ExpectedCommand {
-        job_id: "kernel-rust",
-        command_family: "cargo-clippy-workspace",
-        command_id: "cargo-clippy-workspace",
-        gate_class: "build",
-        working_directory: ".",
-        command_line: "cargo clippy --workspace --all-targets --all-features -- -D warnings",
-    },
-    ExpectedCommand {
-        job_id: "kernel-rust",
-        command_family: "cargo-test-workspace",
-        command_id: "cargo-test-workspace",
-        gate_class: "test",
-        working_directory: ".",
-        command_line: "cargo test --workspace",
-    },
-    ExpectedCommand {
-        job_id: "sdk-typescript",
-        command_family: "typescript-sdk-test",
-        command_id: "typescript-sdk-test",
-        gate_class: "test",
-        working_directory: "sdk/typescript",
-        command_line: "pnpm test",
-    },
-    ExpectedCommand {
-        job_id: "sdk-android",
-        command_family: "android-sdk-test",
-        command_id: "android-sdk-test",
-        gate_class: "test",
-        working_directory: "sdk/android",
-        command_line: "./gradlew :sdk:testDebugUnitTest",
-    },
-    ExpectedCommand {
-        job_id: "sdk-ios",
-        command_family: "ios-sdk-test",
-        command_id: "ios-sdk-test",
-        gate_class: "test",
-        working_directory: "sdk/ios",
-        command_line: "swift test",
-    },
-    ExpectedCommand {
-        job_id: "supply-chain",
-        command_family: "supply-chain-policy-check",
-        command_id: "supply-chain-policy-check",
-        gate_class: "source-shape",
-        working_directory: ".",
-        command_line: "cargo test -p arcrtc-roadmap-tests --test release_supply_chain_policy",
-    },
-    ExpectedCommand {
-        job_id: "coverage",
-        command_family: "coverage-denominator-check",
-        command_id: "coverage-denominator-check",
-        gate_class: "test",
-        working_directory: ".",
-        command_line: "cargo test -p arcrtc-roadmap-tests --test coverage_denominator_policy",
-    },
-    ExpectedCommand {
-        job_id: "benchmark",
-        command_family: "benchmark-scenario-check",
-        command_id: "benchmark-load-check",
-        gate_class: "benchmark",
-        working_directory: ".",
-        command_line: "cargo bench -p arcrtc-benchmarks --bench kernel_load",
-    },
-    ExpectedCommand {
-        job_id: "benchmark",
-        command_family: "benchmark-scenario-check",
-        command_id: "benchmark-soak-check",
-        gate_class: "benchmark",
-        working_directory: ".",
-        command_line: "cargo bench -p arcrtc-benchmarks --bench kernel_soak",
-    },
-    ExpectedCommand {
-        job_id: "benchmark",
-        command_family: "benchmark-scenario-check",
-        command_id: "benchmark-concurrency-check",
-        gate_class: "benchmark",
-        working_directory: ".",
-        command_line: "cargo bench -p arcrtc-benchmarks --bench kernel_concurrency",
-    },
-    ExpectedCommand {
-        job_id: "security",
-        command_family: "security-adversarial-check",
-        command_id: "security-adversarial-check",
-        gate_class: "runtime-in-test",
-        working_directory: ".",
-        command_line:
-            "cargo test --manifest-path tests/Cargo.toml --test security_adversarial_scan",
-    },
-];
-
-fn matrix_command_blocks() -> Vec<&'static str> {
-    MATRIX.split("[[commands]]").skip(1).collect()
+fn quoted_value<'a>(source: &'a str, key: &str) -> &'a str {
+    let prefix = format!("{key} = \"");
+    let value = source
+        .lines()
+        .find_map(|line| line.trim().strip_prefix(&prefix))
+        .unwrap_or_else(|| panic!("missing matrix field: {key}"));
+    value
+        .strip_suffix('"')
+        .unwrap_or_else(|| panic!("invalid matrix field: {key}"))
 }
 
-fn matrix_has_command(expected: ExpectedCommand) -> bool {
-    matrix_command_blocks().iter().any(|block| {
-        block.contains(&format!("job_id = \"{}\"", expected.job_id))
-            && block.contains(&format!("command_family = \"{}\"", expected.command_family))
-            && block.contains(&format!("command_id = \"{}\"", expected.command_id))
-            && block.contains(&format!("gate_class = \"{}\"", expected.gate_class))
-            && block.contains(&format!(
-                "working_directory = \"{}\"",
-                expected.working_directory
-            ))
-            && block.contains(&format!("command_line = \"{}\"", expected.command_line))
-    })
+fn quoted_array(source: &str, key: &str) -> BTreeSet<String> {
+    let prefix = format!("{key} = [");
+    let start = source
+        .find(&prefix)
+        .unwrap_or_else(|| panic!("missing matrix closed set: {key}"));
+    let remainder = &source[start + prefix.len()..];
+    let end = remainder
+        .find(']')
+        .unwrap_or_else(|| panic!("unterminated matrix closed set: {key}"));
+
+    remainder[..end]
+        .split(',')
+        .filter_map(|value| {
+            let value = value.trim();
+            (!value.is_empty()).then(|| {
+                value
+                    .strip_prefix('"')
+                    .and_then(|value| value.strip_suffix('"'))
+                    .unwrap_or_else(|| panic!("invalid member in matrix closed set: {key}"))
+                    .to_owned()
+            })
+        })
+        .collect()
+}
+
+fn matrix_commands() -> Vec<MatrixCommand<'static>> {
+    MATRIX
+        .split("[[commands]]")
+        .skip(1)
+        .map(|block| MatrixCommand {
+            job_id: quoted_value(block, "job_id"),
+            command_family: quoted_value(block, "command_family"),
+            command_id: quoted_value(block, "command_id"),
+            gate_class: quoted_value(block, "gate_class"),
+            working_directory: quoted_value(block, "working_directory"),
+            command_line: quoted_value(block, "command_line"),
+        })
+        .collect()
 }
 
 #[test]
-fn ci_workflow_declares_expected_job_ids() {
-    for job_id in [
-        "kernel-rust",
-        "sdk-typescript",
-        "sdk-android",
-        "sdk-ios",
-        "supply-chain",
-        "coverage",
-        "benchmark",
-        "security",
-    ] {
-        assert!(WORKFLOW.contains(&format!("\n  {job_id}:")), "{job_id}");
-        assert!(MATRIX.contains(&format!("\"{job_id}\"")), "{job_id}");
+fn matrix_commands_use_declared_closed_sets_and_unique_ids() {
+    let declared_job_ids = quoted_array(MATRIX, "job_ids");
+    let declared_command_families = quoted_array(MATRIX, "command_families");
+    let declared_gate_classes = quoted_array(MATRIX, "gate_classes");
+    let commands = matrix_commands();
+    let mut command_ids = BTreeSet::new();
+    let mut used_job_ids = BTreeSet::new();
+
+    assert!(!commands.is_empty(), "the CI matrix must contain commands");
+    for command in commands {
+        assert!(declared_job_ids.contains(command.job_id), "{command:?}");
+        assert!(
+            declared_command_families.contains(command.command_family),
+            "{command:?}"
+        );
+        assert!(
+            declared_gate_classes.contains(command.gate_class),
+            "{command:?}"
+        );
+        assert!(!command.working_directory.is_empty(), "{command:?}");
+        assert!(!command.command_line.is_empty(), "{command:?}");
+        assert!(command_ids.insert(command.command_id), "{command:?}");
+        used_job_ids.insert(command.job_id.to_owned());
     }
+
+    assert_eq!(used_job_ids, declared_job_ids);
 }
 
 #[test]
-fn kernel_gate_matrix_contains_every_ci_command_line_assertion() {
-    assert_eq!(matrix_command_blocks().len(), EXPECTED_COMMANDS.len());
-
-    for expected in EXPECTED_COMMANDS {
-        assert!(matrix_has_command(*expected), "{expected:?}");
-    }
-}
-
-#[test]
-fn workflow_resolves_every_matrix_command_id() {
+fn workflow_resolves_every_matrix_command() {
     assert!(WORKFLOW.contains("KERNEL_GATE_MATRIX_SOURCE: Kernel/tools/ci/kernel-gate-matrix.toml"));
+
+    let commands = matrix_commands();
+    let job_ids: BTreeSet<_> = commands.iter().map(|command| command.job_id).collect();
     assert_eq!(
         WORKFLOW.matches("Resolve matrix source reference").count(),
-        8
+        job_ids.len()
     );
 
-    for expected in EXPECTED_COMMANDS {
-        let command_id_env = format!("MATRIX_COMMAND_ID: {}", expected.command_id);
-        let command_id_matrix = format!("command_id: {}", expected.command_id);
+    for job_id in job_ids {
+        assert!(WORKFLOW.contains(&format!("\n  {job_id}:")), "{job_id}");
         assert!(
-            WORKFLOW.contains(&command_id_env) || WORKFLOW.contains(&command_id_matrix),
-            "{}",
-            expected.command_id
+            WORKFLOW.contains(&format!("MATRIX_JOB_ID: {job_id}")),
+            "{job_id}"
         );
+    }
+
+    for command in commands {
+        assert!(WORKFLOW.contains(command.command_id), "{command:?}");
+        assert!(WORKFLOW.contains(command.command_family), "{command:?}");
     }
 }

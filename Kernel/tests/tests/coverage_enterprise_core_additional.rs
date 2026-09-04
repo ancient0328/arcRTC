@@ -1,19 +1,18 @@
 use arcrtc_core_identity::{
     AllocationId, AuditEventId, ConfigurationScopeRef, CorrelationId, EndpointId, OpaqueReference,
     PacketId, ParticipantId, PermissionId, ReferenceAuthority, RoomId, RouteId, SessionId,
-    StartupRunId, StreamId,
+    StreamId,
 };
 use arcrtc_core_operation::{
     AtomicCommitStep, AtomicStepOutcome, AtomicityClass, AtomicityCompensationDecision,
-    AtomicityConcern, AtomicityFailureKind, CommitBoundary, CompensationEvidenceAdoptionRule,
-    CompensationExternalResponseRule, CompensationOwner, CompensationRule, CompensationStatus,
-    DrainSequenceStep, OrderingConcern, OrderingDecision, OrderingFailureKind,
-    PhysicalLockResource, ProhibitedAtomicityBehavior, ProhibitedOrderingLockBehavior,
-    ProhibitedRetryTimeoutCancellationBehavior, ProhibitedShutdownDrainBehavior, RetryAttemptShape,
-    RetryClass, RetryPreconditions, RetryTimeoutConcern, RetryTimeoutFailureKind,
-    SerializationBoundPolicy, SerializationScope, SerializationScopeReference,
-    ShutdownDrainConcern, ShutdownDrainEvidenceShape, ShutdownDrainFailureKind, ShutdownDrainMode,
-    ShutdownDrainOutcome, ShutdownDrainPlane, TimeoutDeadlineSurface, PLANE_DRAIN_RULES,
+    AtomicityConcern, AtomicityFailureKind, CommitBoundary, CompensationExternalResponseRule,
+    CompensationOwner, CompensationRule, CompensationStatus, DrainSequenceStep, OrderingConcern,
+    OrderingDecision, OrderingFailureKind, PhysicalLockResource, ProhibitedAtomicityBehavior,
+    ProhibitedOrderingLockBehavior, ProhibitedRetryTimeoutCancellationBehavior,
+    ProhibitedShutdownDrainBehavior, RetryAttemptShape, RetryClass, RetryPreconditions,
+    RetryTimeoutConcern, RetryTimeoutFailureKind, SerializationBoundPolicy, SerializationScope,
+    SerializationScopeReference, ShutdownDrainConcern, ShutdownDrainFailureKind, ShutdownDrainMode,
+    ShutdownDrainOutcome, TimeoutDeadlineSurface, PLANE_DRAIN_RULES,
 };
 use arcrtc_core_ports::{
     LoadedCoreStateRef, MetricsExportAcknowledgement, MetricsSinkFailure, MetricsSinkFailureKind,
@@ -110,7 +109,7 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
         (DrainSequenceStep::CancelOrJoinRuntimeTasks, 7),
         (DrainSequenceStep::DrainBoundedQueues, 8),
         (DrainSequenceStep::ReleaseBuffersRelayResourcesSockets, 9),
-        (DrainSequenceStep::StopRuntimeAfterEvidencePathAttempt, 10),
+        (DrainSequenceStep::StopRuntimeAfterDrainFinalization, 10),
     ] {
         assert_eq!(step.order(), order);
     }
@@ -132,20 +131,6 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
     }
     assert_eq!(PLANE_DRAIN_RULES.len(), 5);
 
-    let _evidence = ShutdownDrainEvidenceShape::new(
-        correlation("core-operation-drain"),
-        Some(StartupRunId::new(reference("core-operation-startup"))),
-        ShutdownDrainMode::ReconfigurationDrain,
-        Some(ConfigurationScopeRef::new(reference(
-            "core-operation-config",
-        ))),
-        ShutdownDrainPlane::PersistenceAuditMetricsDriver,
-        ShutdownDrainOutcome::Failed,
-        Some(ShutdownDrainFailureKind::AuditBacklogBoundExceeded),
-        true,
-        true,
-        Some(0),
-    );
     let _other_modes = [
         ShutdownDrainMode::GracefulDrain,
         ShutdownDrainMode::AdmissionStopOnly,
@@ -162,9 +147,9 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
         ProhibitedShutdownDrainBehavior::FailureHiddenBehindProcessExitCode,
         ProhibitedShutdownDrainBehavior::UncleanTerminationAsGracefulDrain,
         ProhibitedShutdownDrainBehavior::UnboundedDrainOrFlush,
-        ProhibitedShutdownDrainBehavior::FailedFlushAsCloseoutEvidence,
+        ProhibitedShutdownDrainBehavior::FailedFlushAsSuccessfulShutdown,
         ProhibitedShutdownDrainBehavior::CrossPlaneDrainSuccessInference,
-        ProhibitedShutdownDrainBehavior::SplitServiceDrainWithoutControlPlaneEvidence,
+        ProhibitedShutdownDrainBehavior::SplitServiceDrainWithoutControlPlaneAuditRelation,
         ProhibitedShutdownDrainBehavior::ReconfigurationBeforeRequiredDrainRestart,
         ProhibitedShutdownDrainBehavior::DetachedWorkerDuringGracefulDrainClaim,
     ];
@@ -179,7 +164,6 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
             AtomicityConcern::CompensationDecision,
             "CoreDomainCompensation",
         ),
-        (AtomicityConcern::EvidenceAdoption, "Reports"),
     ] {
         assert_eq!(format!("{:?}", concern.owner()), owner);
     }
@@ -219,7 +203,6 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
     let _other_step_outcomes = [
         AtomicStepOutcome::Accepted,
         AtomicStepOutcome::NotApplicable,
-        AtomicStepOutcome::CloseNotClaimed,
     ];
     let _classes = [
         AtomicityClass::SingleCoreDecision,
@@ -233,10 +216,9 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
         AtomicityFailureKind::CompensationRequired,
         "room membership transition",
         CompensationOwner::CoreWhenDomainStateChanges,
-        "mark transition close-not-claimed",
+        "reject transition after compensation failure",
         "atomicity_compensation_decision",
         CompensationExternalResponseRule::ProjectLaterFailure,
-        CompensationEvidenceAdoptionRule::RequireCompensationResultBeforeCloseEvidence,
     );
     let _driver_rule = CompensationRule::new(
         AtomicityFailureKind::NetworkSendFailed,
@@ -245,7 +227,6 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
         "release external resource",
         "driver_cleanup_observation",
         CompensationExternalResponseRule::NoExternalResponse,
-        CompensationEvidenceAdoptionRule::DriverObservationOrEvidenceLimitation,
     );
     let decision = AtomicityCompensationDecision::new(
         correlation("core-operation-atomicity"),
@@ -269,18 +250,13 @@ fn coverage_core_operation_closed_vocabularies_are_exercised() {
         CompensationExternalResponseRule::ProjectLaterFailure,
         CompensationExternalResponseRule::NoExternalResponse,
     ];
-    let _compensation_evidence_rules = [
-        CompensationEvidenceAdoptionRule::RequireCompensationResultBeforeCloseEvidence,
-        CompensationEvidenceAdoptionRule::DriverObservationOrEvidenceLimitation,
-        CompensationEvidenceAdoptionRule::CloseNotClaimed,
-    ];
     let _prohibited_atomicity = [
         ProhibitedAtomicityBehavior::DriverTransactionDefinesDomainInvariant,
         ProhibitedAtomicityBehavior::PortIntentAsDriverExecutionSuccess,
         ProhibitedAtomicityBehavior::ExternalResponseAsAuditPersistenceSuccess,
         ProhibitedAtomicityBehavior::CompensationWithoutCoreStateMachineRule,
         ProhibitedAtomicityBehavior::PartialSuccessHiddenBehindFinalSuccess,
-        ProhibitedAtomicityBehavior::FailedAuditPersistenceAsCloseEvidence,
+        ProhibitedAtomicityBehavior::FailedAuditPersistenceAsSuccessfulCommit,
     ];
 }
 
@@ -408,7 +384,7 @@ fn coverage_core_operation_ordering_retry_and_timeout_paths_are_exercised() {
         RetryClass::TestOnlyRetry,
     ] {
         assert_eq!(
-            retry_class.runtime_evidence_allowed(),
+            retry_class.is_runtime_retry_class(),
             !matches!(retry_class, RetryClass::TestOnlyRetry)
         );
         assert!(!format!("{:?}", retry_class.owner()).is_empty());
@@ -458,8 +434,8 @@ fn coverage_core_operation_ordering_retry_and_timeout_paths_are_exercised() {
         ProhibitedRetryTimeoutCancellationBehavior::CancellationAsAcceptedDomainTransition,
         ProhibitedRetryTimeoutCancellationBehavior::TimeoutAsGenericSuccessOrFreeTextFailure,
         ProhibitedRetryTimeoutCancellationBehavior::UnboundedRetry,
-        ProhibitedRetryTimeoutCancellationBehavior::TestOnlyRetryAsRuntimeEvidence,
-        ProhibitedRetryTimeoutCancellationBehavior::RetryErasesOriginalCorrelationOrFirstAttemptEvidence,
+        ProhibitedRetryTimeoutCancellationBehavior::TestOnlyRetryAsRuntimePolicy,
+        ProhibitedRetryTimeoutCancellationBehavior::RetryErasesOriginalCorrelationOrFirstAttemptIdentity,
         ProhibitedRetryTimeoutCancellationBehavior::RuntimeTaskCancellationAsDomainSuccess,
     ];
 }
@@ -635,7 +611,7 @@ fn coverage_core_ports_persistence_and_sink_failures_are_closed() {
         vec![PersistenceConsistencyRequirement::OrderedAppend],
         None,
     )
-    .expect("compensation evidence is audit persistence");
+    .expect("compensation state is audit persistence");
     assert_eq!(
         compensation_audit.intent_class(),
         PersistenceIntentClass::AuditPersistence
@@ -830,35 +806,35 @@ fn coverage_core_protocol_versioning_and_compatibility_are_closed() {
     assert_eq!(data_classes.len(), 6);
 
     let defined_rules = CanonicalEncodingRuleSet::new(
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
         UnknownFieldHandling::Reject,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
     );
-    assert!(defined_rules.usable_for_canonical_evidence());
+    assert!(defined_rules.is_complete_for_canonical_encoding());
     let incomplete_rules = CanonicalEncodingRuleSet::new(
-        CanonicalRuleStatus::RequiresAdrOrCanonical,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
+        CanonicalRuleStatus::Unspecified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
         UnknownFieldHandling::IgnoredOnlyWhenCompatibilityAllows,
-        CanonicalRuleStatus::Defined,
-        CanonicalRuleStatus::Defined,
+        CanonicalRuleStatus::Specified,
+        CanonicalRuleStatus::Specified,
     );
-    assert!(!incomplete_rules.usable_for_canonical_evidence());
+    assert!(!incomplete_rules.is_complete_for_canonical_encoding());
 
     let format_version = CanonicalFormatVersion::new("json-c14n", "1");
     assert_eq!(format_version.format(), "json-c14n");
@@ -962,12 +938,9 @@ fn coverage_core_protocol_versioning_and_compatibility_are_closed() {
     assert_eq!(range.surface(), VersionedSurface::SignalingContract);
     let lifecycle_steps = vec![
         DeprecationLifecycleStep::IdentifyAffectedSurfaceAndVersion,
-        DeprecationLifecycleStep::RecordAdrOrCanonicalUpdate,
         DeprecationLifecycleStep::DefineUnsupportedVersionBehavior,
         DeprecationLifecycleStep::UpdateSdkParityAndDriverMapping,
-        DeprecationLifecycleStep::AddCompatibilityNegativePlan,
-        DeprecationLifecycleStep::RecordExecutionEvidence,
-        DeprecationLifecycleStep::RemoveAfterDocumentedCondition,
+        DeprecationLifecycleStep::RemoveAfterCompatibilityWindow,
     ];
     let deprecation = DeprecationDecision::new(
         VersionedSurface::SignalingContract,
@@ -976,7 +949,7 @@ fn coverage_core_protocol_versioning_and_compatibility_are_closed() {
         range,
         lifecycle_steps,
     );
-    assert_eq!(deprecation.lifecycle_steps().len(), 7);
+    assert_eq!(deprecation.lifecycle_steps().len(), 4);
     for kind in [
         CompatibilityFailureKind::UnsupportedCommandVersion,
         CompatibilityFailureKind::UnsupportedMediaContractVersion,
@@ -1255,6 +1228,6 @@ fn coverage_core_quality_resource_and_backpressure_rules_are_closed() {
     let _audit_backlog_rules = [
         AuditBacklogOverflowRule::EmitSingleReservedOverflowRecord,
         AuditBacklogOverflowRule::RejectNewAuditRequiredPath,
-        AuditBacklogOverflowRule::ProhibitCloseoutEvidence,
+        AuditBacklogOverflowRule::RejectFailedAuditOutcomeAsSuccess,
     ];
 }

@@ -80,8 +80,8 @@ public struct SdkProjectionEntry: Equatable, Sendable {
 
 public struct SdkPublicApiProjection: Equatable, Sendable {
     public let platform: ArcRtcSdkPlatform
-    public let sourceContractVersion: SignalingContractVersion
-    public let sourceContract: SdkSourceContract
+    public let sourceProtocolVersion: SignalingContractVersion
+    public let sourceProtocol: SdkSourceProtocol
     public let projectionClass: SdkProjectionClass
     public let generatedArtifactIsSemanticAuthority: Bool
     public let commands: Set<SignalingCommandKind>

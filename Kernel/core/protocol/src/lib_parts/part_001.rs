@@ -31,16 +31,16 @@ pub enum CanonicalDataClass {
 /// canonical rule が定義済みかどうかです。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CanonicalRuleStatus {
-    /// ADR または Canonical で定義済みです。
-    Defined,
-    /// ADR または Canonical による選定が必要です。
-    RequiresAdrOrCanonical,
+    /// source contract で指定済みです。
+    Specified,
+    /// source contract で未指定です。
+    Unspecified,
 }
 
 /// unknown field handling です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UnknownFieldHandling {
-    /// compatibility Canonical が明示した場合だけ ignored です。
+    /// compatibility policy が明示した場合だけ ignored です。
     IgnoredOnlyWhenCompatibilityAllows,
     /// 既定では reject します。
     Reject,
@@ -95,22 +95,22 @@ impl CanonicalEncodingRuleSet {
         }
     }
 
-    /// hash-chain や compatibility evidence に使えるだけの定義が揃っているかです。
-    pub const fn usable_for_canonical_evidence(&self) -> bool {
-        matches!(self.field_set, CanonicalRuleStatus::Defined)
-            && matches!(self.field_order, CanonicalRuleStatus::Defined)
-            && matches!(self.absent_null_handling, CanonicalRuleStatus::Defined)
-            && matches!(self.enum_representation, CanonicalRuleStatus::Defined)
-            && matches!(self.integer_representation, CanonicalRuleStatus::Defined)
-            && matches!(self.decimal_precision, CanonicalRuleStatus::Defined)
-            && matches!(self.string_normalization, CanonicalRuleStatus::Defined)
+    /// canonical encoding に必要な source rule がすべて指定済みかです。
+    pub const fn is_complete_for_canonical_encoding(&self) -> bool {
+        matches!(self.field_set, CanonicalRuleStatus::Specified)
+            && matches!(self.field_order, CanonicalRuleStatus::Specified)
+            && matches!(self.absent_null_handling, CanonicalRuleStatus::Specified)
+            && matches!(self.enum_representation, CanonicalRuleStatus::Specified)
+            && matches!(self.integer_representation, CanonicalRuleStatus::Specified)
+            && matches!(self.decimal_precision, CanonicalRuleStatus::Specified)
+            && matches!(self.string_normalization, CanonicalRuleStatus::Specified)
             && matches!(
                 self.binary_digest_representation,
-                CanonicalRuleStatus::Defined
+                CanonicalRuleStatus::Specified
             )
-            && matches!(self.timestamp_representation, CanonicalRuleStatus::Defined)
-            && matches!(self.version_field_inclusion, CanonicalRuleStatus::Defined)
-            && matches!(self.redaction_before_digest, CanonicalRuleStatus::Defined)
+            && matches!(self.timestamp_representation, CanonicalRuleStatus::Specified)
+            && matches!(self.version_field_inclusion, CanonicalRuleStatus::Specified)
+            && matches!(self.redaction_before_digest, CanonicalRuleStatus::Specified)
     }
 }
 
@@ -434,18 +434,12 @@ impl CompatibilityVersionRange {
 pub enum DeprecationLifecycleStep {
     /// affected surface and version を特定します。
     IdentifyAffectedSurfaceAndVersion,
-    /// ADR または Canonical update を作成します。
-    RecordAdrOrCanonicalUpdate,
     /// unsupported-version behavior と cataloged reason を定義します。
     DefineUnsupportedVersionBehavior,
     /// SDK parity / driver mapping rules を更新します。
     UpdateSdkParityAndDriverMapping,
-    /// compatibility / negative test plan を追加します。
-    AddCompatibilityNegativePlan,
-    /// test 実行時に evidence を記録します。
-    RecordExecutionEvidence,
-    /// documented removal condition 後に support を除去します。
-    RemoveAfterDocumentedCondition,
+    /// compatibility window の終了後に support を除去します。
+    RemoveAfterCompatibilityWindow,
 }
 
 /// deprecation decision の source contract です。
@@ -512,4 +506,3 @@ impl CompatibilityFailureKind {
         }
     }
 }
-

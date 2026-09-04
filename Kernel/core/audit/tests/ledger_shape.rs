@@ -1,14 +1,9 @@
-#![allow(non_snake_case)]
-
 use arcrtc_core_audit::{
     AuditLedgerAppendInput, AuditLedgerFailureKind, AuditLedgerRecord, AuditLedgerWriterAuthority,
     AuditReason, CanonicalEventPayloadDigest, HashAlgorithm, HashChainRecordError,
     PreviousRecordHash,
 };
 use arcrtc_core_command::UseCaseOutcome;
-
-// Test Roadmap の named assertion rule は task id と assertion target を
-// `assert_<task>__<target>` で結合するため、この test source だけ lint を限定します。
 
 fn audit_event_type() -> arcrtc_core_audit::AuditEventType {
     arcrtc_core_audit::find_audit_event_definition("atomicity_compensation_decision")
@@ -22,14 +17,14 @@ fn payload_digest() -> CanonicalEventPayloadDigest {
 }
 
 #[test]
-fn t_audit_01_ledger_constructor_fail_closed() {
-    assert_t_audit_01__missing_reason();
-    assert_t_audit_01__missing_previous_hash_when_hash_chain_required();
-    assert_t_audit_01__empty_digest();
-    assert_t_audit_01__wrong_writer_authority();
+fn ledger_constructor_is_fail_closed() {
+    assert_missing_reason();
+    assert_missing_previous_hash_when_hash_chain_required();
+    assert_empty_digest();
+    assert_wrong_writer_authority();
 }
 
-fn assert_t_audit_01__missing_reason() {
+fn assert_missing_reason() {
     let input = AuditLedgerAppendInput::<()>::new(
         audit_event_type(),
         UseCaseOutcome::Rejected,
@@ -45,7 +40,7 @@ fn assert_t_audit_01__missing_reason() {
     );
 }
 
-fn assert_t_audit_01__missing_previous_hash_when_hash_chain_required() {
+fn assert_missing_previous_hash_when_hash_chain_required() {
     let input = AuditLedgerAppendInput::<()>::new(
         audit_event_type(),
         UseCaseOutcome::Accepted,
@@ -61,7 +56,7 @@ fn assert_t_audit_01__missing_previous_hash_when_hash_chain_required() {
     );
 }
 
-fn assert_t_audit_01__empty_digest() {
+fn assert_empty_digest() {
     assert_eq!(
         CanonicalEventPayloadDigest::new(HashAlgorithm::Sha256, Vec::new()),
         Err(HashChainRecordError::EmptyDigest)
@@ -82,7 +77,7 @@ fn assert_t_audit_01__empty_digest() {
     );
 }
 
-fn assert_t_audit_01__wrong_writer_authority() {
+fn assert_wrong_writer_authority() {
     let input = AuditLedgerAppendInput::<()>::new(
         audit_event_type(),
         UseCaseOutcome::Accepted,

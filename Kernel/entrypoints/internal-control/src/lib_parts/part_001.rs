@@ -39,7 +39,7 @@ impl InternalServiceTrustClass {
         )
     }
 
-    /// test evidence にだけ閉じる trust class です。
+    /// test scope にだけ閉じる trust class です。
     pub const fn is_test_only(self) -> bool {
         matches!(self, Self::TestServiceIdentity)
     }
@@ -169,11 +169,11 @@ pub struct InternalServiceIdentityMappingGuard {
     service_discovery_endpoint_scope_relation_declared: bool,
     internal_control_authorization_context_relation_declared: bool,
     audit_shape_declared: bool,
-    raw_credential_or_peer_material_absent_from_core_state_audit_log_report: bool,
+    raw_credential_or_peer_material_absent_from_core_state_audit_log_output: bool,
     sdk_public_surface_not_present_or_raw_material_absent: bool,
-    opaque_reference_or_redacted_summary_only: bool,
-    test_identity_evidence_is_test_only: bool,
-    in_process_identity_evidence_only_when_identity_not_required: bool,
+    opaque_reference_or_redacted_output_only: bool,
+    test_identity_is_test_only: bool,
+    in_process_identity_only_when_identity_not_required: bool,
 }
 
 /// internal service identity mapping の fail-closed error です。
@@ -209,14 +209,14 @@ pub enum InternalServiceIdentityMappingError {
     InternalControlAuthorizationContextRelationMissing,
     /// audit shape がありません。
     AuditShapeMissing,
-    /// raw certificate/private key/service token/mesh assertion/secret が core state/audit body/log/SDK surface/report に入っています。
+    /// raw certificate/private key/service token/mesh assertion/secret が core state/audit body/log/SDK surface/output に入っています。
     RawCredentialMaterialEscaped,
-    /// opaque reference/redacted summary 以外が evidence に入っています。
-    NonOpaqueOrUnredactedEvidenceMaterial,
-    /// test identity が test evidence の外で使われています。
-    TestIdentityUsedOutsideTestEvidence,
-    /// service_identity_not_required が in-process evidence の外で使われています。
-    IdentityNotRequiredUsedOutsideInProcessEvidence,
+    /// opaque reference/redacted output 以外が identity material に入っています。
+    NonOpaqueOrUnredactedIdentityMaterial,
+    /// test identity が test scope の外で使われています。
+    TestIdentityUsedOutsideTestScope,
+    /// service_identity_not_required が in-process scope の外で使われています。
+    IdentityNotRequiredUsedOutsideInProcessScope,
 }
 
 impl InternalServiceIdentityMappingGuard {
@@ -239,11 +239,11 @@ impl InternalServiceIdentityMappingGuard {
         service_discovery_endpoint_scope_relation_declared: bool,
         internal_control_authorization_context_relation_declared: bool,
         audit_shape_declared: bool,
-        raw_credential_or_peer_material_absent_from_core_state_audit_log_report: bool,
+        raw_credential_or_peer_material_absent_from_core_state_audit_log_output: bool,
         sdk_public_surface_not_present_or_raw_material_absent: bool,
-        opaque_reference_or_redacted_summary_only: bool,
-        test_identity_evidence_is_test_only: bool,
-        in_process_identity_evidence_only_when_identity_not_required: bool,
+        opaque_reference_or_redacted_output_only: bool,
+        test_identity_is_test_only: bool,
+        in_process_identity_only_when_identity_not_required: bool,
     ) -> Result<Self, InternalServiceIdentityMappingError> {
         if !trust_class_declared {
             return Err(InternalServiceIdentityMappingError::TrustClassMissing);
@@ -298,24 +298,24 @@ impl InternalServiceIdentityMappingGuard {
         if !audit_shape_declared {
             return Err(InternalServiceIdentityMappingError::AuditShapeMissing);
         }
-        if !raw_credential_or_peer_material_absent_from_core_state_audit_log_report
+        if !raw_credential_or_peer_material_absent_from_core_state_audit_log_output
             || !sdk_public_surface_not_present_or_raw_material_absent
         {
             return Err(InternalServiceIdentityMappingError::RawCredentialMaterialEscaped);
         }
-        if !opaque_reference_or_redacted_summary_only {
-            return Err(InternalServiceIdentityMappingError::NonOpaqueOrUnredactedEvidenceMaterial);
+        if !opaque_reference_or_redacted_output_only {
+            return Err(InternalServiceIdentityMappingError::NonOpaqueOrUnredactedIdentityMaterial);
         }
-        if trust_class.is_test_only() && !test_identity_evidence_is_test_only {
-            return Err(InternalServiceIdentityMappingError::TestIdentityUsedOutsideTestEvidence);
+        if trust_class.is_test_only() && !test_identity_is_test_only {
+            return Err(InternalServiceIdentityMappingError::TestIdentityUsedOutsideTestScope);
         }
         if matches!(
             trust_class,
             InternalServiceTrustClass::ServiceIdentityNotRequired
-        ) && !in_process_identity_evidence_only_when_identity_not_required
+        ) && !in_process_identity_only_when_identity_not_required
         {
             return Err(
-                InternalServiceIdentityMappingError::IdentityNotRequiredUsedOutsideInProcessEvidence,
+                InternalServiceIdentityMappingError::IdentityNotRequiredUsedOutsideInProcessScope,
             );
         }
 
@@ -337,11 +337,11 @@ impl InternalServiceIdentityMappingGuard {
             service_discovery_endpoint_scope_relation_declared,
             internal_control_authorization_context_relation_declared,
             audit_shape_declared,
-            raw_credential_or_peer_material_absent_from_core_state_audit_log_report,
+            raw_credential_or_peer_material_absent_from_core_state_audit_log_output,
             sdk_public_surface_not_present_or_raw_material_absent,
-            opaque_reference_or_redacted_summary_only,
-            test_identity_evidence_is_test_only,
-            in_process_identity_evidence_only_when_identity_not_required,
+            opaque_reference_or_redacted_output_only,
+            test_identity_is_test_only,
+            in_process_identity_only_when_identity_not_required,
         })
     }
 }
@@ -462,4 +462,3 @@ pub enum InternalServiceTrustAuditError {
     /// non-success outcome の cataloged reason がありません。
     CatalogedReasonMissing,
 }
-

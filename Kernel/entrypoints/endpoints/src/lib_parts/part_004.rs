@@ -106,7 +106,7 @@ pub struct PublicEndpointObservation {
 
 /// public endpoint を observation として構成します。
 ///
-/// trust decision、domain admission、live readiness proof は生成しません。
+/// trust decision、domain admission、live readiness outcome は生成しません。
 pub const fn observe_public_endpoint(
     input: PublicEndpointObservationInput,
 ) -> PublicEndpointObservation {

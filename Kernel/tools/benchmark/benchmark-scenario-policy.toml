@@ -1,4 +1,4 @@
-# benchmark lane の source policy です。測定実行・結果採用・readiness proof は行いません。
+# benchmark scenario と threshold の source policy です。
 
 [scenario_matrix.load]
 owner = "tools/benchmark"
@@ -26,7 +26,6 @@ owner = "tools/benchmark"
 warmup_seconds = 30
 sample_seconds = 300
 cooldown_seconds = 30
-non_adoption = "measurement window policy is not benchmark output"
 
 [resource_units]
 owner = "tools/benchmark"
@@ -39,10 +38,8 @@ cpu_unit = "core-percent"
 owner = "tools/benchmark"
 threshold_mode = "closed-scenario-threshold"
 required_threshold_fields = ["latency_p95", "throughput_min", "error_rate_max", "memory_max"]
-non_adoption = "threshold policy is not correctness proof"
 
-# I-PERF-02: benchmark evidence が post-hoc な任意解釈にならないよう、
-# scenario ごとの数値閾値を source policy として先に固定します。
+# scenario ごとの数値閾値はmeasurementより前にsource policyとして固定します。
 [threshold_values.load]
 latency_p95_ms_max = 0.005
 throughput_ops_per_sec_min = 200000
@@ -65,11 +62,3 @@ memory_mib_max = 512
 pass_condition = "all_scenarios_within_thresholds"
 missing_metric_reason = "MISSING_REQUIRED_FIELD"
 failed_metric_reason = "BENCHMARK_THRESHOLD_FAILED"
-non_adoption = "threshold evaluator source is not benchmark output or readiness proof"
-
-[non_adoption]
-owner = "tools/benchmark"
-benchmark_result_is_correctness_proof = false
-benchmark_result_is_readiness_proof = false
-benchmark_result_is_release_gate_evidence = false
-adoption_boundary = "benchmark results require Evidence Roadmap records before use"

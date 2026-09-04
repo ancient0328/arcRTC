@@ -136,12 +136,12 @@ impl TimeSynchronizationDecision {
 /// time synchronization / clock skew 境界で禁止する fail-open 動作です。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProhibitedTimeSynchronizationBehavior {
-    /// wall-clock timestamp is cross-node causal order without bounded-skew evidence.
+    /// wall-clock timestamp is cross-node causal order without a bounded-skew observation.
     WallClockAsCrossNodeCausalOrder,
     /// report creation time is runtime observation time.
-    ReportCreationTimeAsRuntimeObservation,
-    /// deterministic test clock is production time synchronization evidence.
-    DeterministicTestClockAsProductionSyncEvidence,
+    ExternalRecordCreationTimeAsRuntimeObservation,
+    /// deterministic test clock is trusted as a production clock.
+    DeterministicTestClockAsProductionClockTrust,
     /// driver-local NTP status redefines core expiry/deadline policy.
     DriverNtpStatusRedefinesCorePolicy,
     /// timezone conversion is synchronization proof.
